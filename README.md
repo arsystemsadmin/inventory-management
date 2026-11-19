@@ -54,6 +54,31 @@ payroll page shows a flagged open shift.
 
 ---
 
+## Deploy to Cloudflare (binventory.arsystems.dev)
+
+The app runs on **Cloudflare Workers** via the OpenNext adapter (`@opennextjs/cloudflare`), which is Cloudflare's
+recommended way to host Next.js. It's managed under *Workers & Pages* in the dashboard. `wrangler.jsonc` already
+routes the custom domain `binventory.arsystems.dev`; Cloudflare creates its DNS record and certificate on the first
+deploy, because `arsystems.dev` is in the same account.
+
+**From GitHub (recommended):**
+
+1. Cloudflare dashboard → *Workers & Pages* → *Create* → *Import a repository* → pick `arsystemsadmin/inventory-management`.
+2. Build command: `npx opennextjs-cloudflare build`. Deploy command: `npx opennextjs-cloudflare deploy`.
+   The Worker name must match `binventory` from `wrangler.jsonc`.
+3. Variables:
+   - **Build** variables (inlined into the browser bundle): `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+   - **Runtime secret** (*Settings → Variables and Secrets*, type *Secret*): `SUPABASE_SERVICE_ROLE_KEY`.
+
+**From your machine:** `npx wrangler login`, then `npm run cf:deploy`. Run `npm run cf:preview` to test the Worker
+locally first.
+
+**Preview mode:** if the Supabase variables aren't set, the site still deploys. It shows the sign-in and sign-up pages
+with a "backend isn't connected yet" notice, and every other route redirects to sign-in. To connect it, create a
+hosted Supabase project (see *Hosted Supabase* above), set the variables, and redeploy.
+
+---
+
 ## Tests
 
 ```bash

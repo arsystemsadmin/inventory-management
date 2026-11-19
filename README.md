@@ -1,6 +1,6 @@
-# Agora: multitenant inventory for pop-up stores
+# Binventory: multitenant inventory for pop-up stores
 
-Agora (Greek for marketplace) is a proof of concept for businesses that run pop-up stores (flea markets, events) alongside permanent shops.
+A proof of concept for businesses that run pop-up stores (flea markets, events) alongside permanent shops.
 Owners manage stores, staff, pay and approvals. Employees work from their phones: they set up a pop-up's
 inventory, sell with a couple of taps, and clock in and out.
 

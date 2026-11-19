@@ -6,7 +6,7 @@ import { LiveRefresh } from "@/components/live-refresh";
 import { DemoInventoryPage } from "@/components/demo/demo-pages";
 import { STOCK_STATUSES, type StockStatus } from "@/lib/types";
 
-export const metadata = { title: "Inventory · Agora" };
+export const metadata = { title: "Inventory · Binventory" };
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status } = await searchParams;

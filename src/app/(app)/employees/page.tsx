@@ -5,7 +5,7 @@ import { EmployeesTable } from "@/components/employees/employees-table";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoEmployeesPage } from "@/components/demo/demo-pages";
 
-export const metadata = { title: "Employees · Agora" };
+export const metadata = { title: "Employees · Binventory" };
 
 export default async function EmployeesPage() {
   if (isDemoMode) return <DemoEmployeesPage />;

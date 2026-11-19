@@ -6,7 +6,7 @@ import { DemoPayrollPage } from "@/components/demo/demo-pages";
 import { PayrollView, addDays, isYmd, type PayrollRow } from "@/components/views/payroll-view";
 import { PAY_REFRESH_MS, type ShiftWithPay } from "@/lib/time";
 
-export const metadata = { title: "Payroll · Agora" };
+export const metadata = { title: "Payroll · Binventory" };
 
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
   const sp = await searchParams;

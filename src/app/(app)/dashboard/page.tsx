@@ -7,7 +7,7 @@ import { DashboardView, type DashboardSummary } from "@/components/views/dashboa
 import { PAY_REFRESH_MS, type ShiftWithPay } from "@/lib/time";
 import type { Item, Sale } from "@/lib/types";
 
-export const metadata = { title: "Dashboard · Agora" };
+export const metadata = { title: "Dashboard · Binventory" };
 
 export default async function DashboardPage() {
   if (isDemoMode) return <DemoDashboardPage />;

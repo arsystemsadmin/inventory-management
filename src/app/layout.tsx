@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Agora",
+  title: "Binventory",
   description: "Inventory for pop-up and permanent stores",
 };
 

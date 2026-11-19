@@ -6,7 +6,7 @@ import { newId, type DemoState, type DemoStore } from "./store";
 /** Unique sample-employee email within this browser (several demo businesses can exist). */
 function uniqueEmail(s: DemoState, local: string) {
   for (let n = 1; ; n++) {
-    const email = `${local}${n === 1 ? "" : n}@demo.agora`;
+    const email = `${local}${n === 1 ? "" : n}@demo.binventory`;
     if (!s.users.some((u) => u.email === email)) return email;
   }
 }

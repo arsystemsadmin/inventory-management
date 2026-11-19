@@ -5,7 +5,7 @@ import { LiveRefresh } from "@/components/live-refresh";
 import { DemoApprovalsPage } from "@/components/demo/demo-pages";
 import { ApprovalsView, type ApprovalReq } from "@/components/views/approvals-view";
 
-export const metadata = { title: "Approvals · Agora" };
+export const metadata = { title: "Approvals · Binventory" };
 
 export default async function ApprovalsPage() {
   if (isDemoMode) return <DemoApprovalsPage />;

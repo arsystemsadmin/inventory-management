@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
@@ -10,21 +9,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { centsToInput, parseMoneyToCents } from "@/lib/format";
+import { centsToInput, parseMoneyToCents, variantLabel } from "@/lib/format";
+import type { Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
+import { PhotoField } from "./photo-field";
 import { SizeQuantityPicker, type SizeRow } from "./size-quantity-picker";
-import { itemImageUrl, uploadItemImage } from "@/lib/item-images";
 
 type StoreOpt = { id: string; name: string; business_id: string };
 
-const empty = { name: "", sku: "", category: "", size: "", color: "", price: "", cost: "", quantity: "", threshold: "3" };
+const empty = { name: "", sku: "", category: "", size: "", color: "", price: "", cost: "", quantity: "1", threshold: "3" };
 
+/**
+ * Three modes:
+ *  - new product:     name, photo, category, color, sizes (+qty each), price…
+ *  - add variations:  `product` given; name/category/photo come from it
+ *  - edit variation:  `item` given; size, color, price, cost, alert, SKU
+ */
 export function ItemFormDialog({
-  open, onClose, item, stores, defaultStoreId, needsApproval, categories,
+  open, onClose, item, product, stores, defaultStoreId, needsApproval, categories,
 }: {
   open: boolean;
   onClose: () => void;
-  item?: Item | null; // edit mode when set
+  item?: Item | null;
+  product?: Product | null;
   stores: StoreOpt[];
   defaultStoreId?: string;
   needsApproval: (storeId: string) => boolean;
@@ -38,77 +45,77 @@ export function ItemFormDialog({
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
-  const nameRef = useRef<HTMLInputElement>(null);
   const colorRef = useRef<HTMLInputElement>(null);
+
+  const mode: "new" | "variations" | "edit" = item ? "edit" : product ? "variations" : "new";
 
   useEffect(() => {
     if (!open) return;
     setReason("");
     setSizes([]);
-    setImagePath(item?.image_path ?? null);
     if (item) {
       setStoreId(item.store_id);
+      setImagePath(item.image_path ?? null);
       setF({
         name: item.name, sku: item.sku ?? "", category: item.category ?? "", size: item.size ?? "", color: item.color ?? "",
         price: centsToInput(item.price_cents), cost: centsToInput(item.cost_cents), quantity: String(item.quantity),
         threshold: String(item.low_stock_threshold),
       });
+    } else if (product) {
+      const base = product.variants[0];
+      setStoreId(product.store_id);
+      setImagePath(product.image_path);
+      setF({
+        ...empty, name: product.name, category: product.category ?? "",
+        price: centsToInput(base.price_cents), cost: centsToInput(base.cost_cents), threshold: String(base.low_stock_threshold),
+      });
     } else {
       setF(empty);
+      setImagePath(null);
       setStoreId(defaultStoreId ?? stores[0]?.id ?? "");
     }
-    // Only reset when the dialog opens or switches item, not when a live
+    // Only reset when the dialog opens or switches target, not when a live
     // refresh hands us new props (that would wipe "Save & add another").
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, item?.id]);
+  }, [open, item?.id, product?.key]);
 
   const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
-  const approval = !!item && needsApproval(item.store_id);
-
-  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow picking the same file again
-    if (!file) return;
-    const targetStore = item?.store_id ?? storeId;
-    const businessId = item?.business_id ?? stores.find((x) => x.id === targetStore)?.business_id;
-    if (!targetStore || !businessId) { toast.error("Pick a store first"); return; }
-    setUploading(true);
-    const res = await uploadItemImage(file, businessId, targetStore);
-    setUploading(false);
-    if (res.ok) setImagePath(res.path); else toast.error(res.error);
-  };
-  const photoUrl = itemImageUrl(imagePath);
+  const approval = mode === "edit" && needsApproval(item!.store_id);
+  const businessId = item?.business_id ?? product?.variants[0].business_id ?? stores.find((x) => x.id === storeId)?.business_id;
 
   const submit = (addAnother: boolean) => {
     const price = parseMoneyToCents(f.price || "0");
     const cost = parseMoneyToCents(f.cost || "0");
     if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error("Enter prices like 12.50"); return; }
-    const fields = {
-      name: f.name, sku: f.sku, category: f.category, size: f.size, color: f.color,
-      price_cents: price, cost_cents: cost, low_stock_threshold: Number(f.threshold || 0), image_path: imagePath,
-    };
+
     startTransition(async () => {
-      if (item) {
-        // Send only what changed.
+      if (mode === "edit") {
+        const fields = {
+          sku: f.sku, size: f.size, color: f.color, price_cents: price, cost_cents: cost, low_stock_threshold: Number(f.threshold || 0),
+        };
         const before: Record<string, unknown> = {
-          name: item.name, sku: item.sku ?? "", category: item.category ?? "", size: item.size ?? "", color: item.color ?? "",
-          price_cents: item.price_cents, cost_cents: item.cost_cents, low_stock_threshold: item.low_stock_threshold,
-          image_path: item.image_path ?? null,
+          sku: item!.sku ?? "", size: item!.size ?? "", color: item!.color ?? "", price_cents: item!.price_cents,
+          cost_cents: item!.cost_cents, low_stock_threshold: item!.low_stock_threshold,
         };
         const changes = Object.fromEntries(Object.entries(fields).filter(([k, v]) => before[k] !== v));
-        const res = await actions.saveItemEdit({ itemId: item.id, changes, reason });
+        const res = await actions.saveItemEdit({ itemId: item!.id, changes, reason });
         if (!res.ok) { toast.error(res.error); return; }
         toast.success(res.message);
         onClose();
         return;
       }
-      // One item per selected size (each with its own quantity), or a single
-      // item without a size when none are picked.
+
+      // New product or more variations: one variation per selected size (each
+      // with its own quantity), or a single variation without a size.
+      const shared = {
+        name: f.name, category: f.category, color: f.color, image_path: imagePath, store_id: storeId,
+        price_cents: price, cost_cents: cost, low_stock_threshold: Number(f.threshold || 0),
+      };
       const sku = f.sku.trim();
       const skuFor = (size: string) => (sku ? `${sku}-${size.replace(/\s+/g, "").toUpperCase()}`.slice(0, 64) : "");
       const rows = sizes.length
-        ? sizes.map((r) => ({ ...fields, size: r.size, sku: skuFor(r.size), store_id: storeId, quantity: Number(r.qty || 0) }))
-        : [{ ...fields, size: "", store_id: storeId, quantity: Number(f.quantity || 0) }];
+        ? sizes.map((r) => ({ ...shared, size: r.size, sku: skuFor(r.size), quantity: Number(r.qty || 0) }))
+        : [{ ...shared, size: "", sku, quantity: Number(f.quantity || 0) }];
       const res = await actions.createItems(rows);
       if (!res.ok) { toast.error(res.error); return; }
       const color = f.color ? ` · ${f.color}` : "";
@@ -117,8 +124,7 @@ export function ItemFormDialog({
         : `Added ${f.name}${color}`);
       if (addAnother) {
         // Same product in another color: keep details and sizes, reset color and quantities.
-        setF((s) => ({ ...s, sku: "", color: "", quantity: "" }));
-        setImagePath(null);
+        setF((s) => ({ ...s, sku: "", color: "", quantity: "1" }));
         setSizes((rs) => rs.map((r) => ({ ...r, qty: "1" })));
         colorRef.current?.focus();
       } else {
@@ -127,19 +133,24 @@ export function ItemFormDialog({
     });
   };
 
+  const title = mode === "edit"
+    ? `Edit ${item!.name}${variantLabel(item!.size, item!.color) ? ` · ${variantLabel(item!.size, item!.color)}` : ""}`
+    : mode === "variations" ? `Add variations to ${product!.name}` : "Add product";
+  const description = approval
+    ? "Setup is finished for this store, so the owner must approve changes."
+    : mode === "edit" ? "Changes apply to this variation only. Use “Edit product” to change the name, photo or category."
+    : mode === "variations" ? "Pick a color and the sizes to add, with how many of each."
+    : "Pick a color and every size you have, with how many of each. They're saved as variations of this product.";
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{item ? "Edit item" : "Add item"}</DialogTitle>
-          <DialogDescription>
-            {approval
-              ? "Setup is finished for this store, so the owner must approve changes."
-              : item ? "Changes apply immediately." : "Pick every size you have and set how many of each. Each size gets its own stock."}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); submit(false); }}>
-          {!item && stores.length > 1 && (
+          {mode === "new" && stores.length > 1 && (
             <div className="grid gap-1.5">
               <Label htmlFor="store">Store</Label>
               <NativeSelect id="store" value={storeId} onChange={(e) => setStoreId(e.target.value)}>
@@ -147,36 +158,21 @@ export function ItemFormDialog({
               </NativeSelect>
             </div>
           )}
-          <div className="grid gap-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" ref={nameRef} value={f.name} onChange={set("name")} required maxLength={200} placeholder="e.g. Linen Shirt" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>Photo <span className="font-normal text-muted-foreground">(optional)</span></Label>
-            <div className="flex items-center gap-3">
-              <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted">
-                {uploading ? <Loader2 className="size-5 animate-spin text-muted-foreground" />
-                  : photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- user photos; no image optimizer on Workers
-                    <img src={photoUrl} alt="Item photo" className="size-full object-cover" />
-                  ) : <ImageIcon className="size-6 text-muted-foreground" />}
+          {mode === "new" && (
+            <>
+              <div className="grid gap-1.5">
+                <Label htmlFor="name">Product name</Label>
+                <Input id="name" value={f.name} onChange={set("name")} required maxLength={200} placeholder="e.g. Linen Shirt" />
               </div>
-              <div className="flex flex-col items-start gap-1.5">
-                <label className="inline-flex h-10 cursor-pointer items-center rounded-md border px-4 text-sm font-medium hover:bg-muted">
-                  {photoUrl ? "Change photo" : "Add photo"}
-                  <input type="file" accept="image/*" className="sr-only" onChange={onPhoto} disabled={uploading} />
-                </label>
-                {photoUrl && !uploading && (
-                  <button type="button" className="text-sm text-muted-foreground underline" onClick={() => setImagePath(null)}>Remove photo</button>
-                )}
-              </div>
-            </div>
-          </div>
-          {item ? (
+              <PhotoField value={imagePath} onChange={setImagePath} businessId={businessId} storeId={storeId} onUploadingChange={setUploading} />
+            </>
+          )}
+
+          {mode === "edit" ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="size">Size</Label>
-                <Input id="size" value={f.size} onChange={set("size")} maxLength={40} placeholder="S, M, 32…" />
+                <Input id="size" value={f.size} onChange={set("size")} maxLength={40} placeholder="XS, S, M, L, XL…" />
               </div>
               <div className="grid gap-1.5">
                 <Label htmlFor="color">Color</Label>
@@ -195,6 +191,7 @@ export function ItemFormDialog({
               </div>
             </>
           )}
+
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="price">Price (₪)</Label>
@@ -206,7 +203,7 @@ export function ItemFormDialog({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {!item && sizes.length === 0 && (
+            {mode !== "edit" && sizes.length === 0 && (
               <div className="grid gap-1.5">
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input id="quantity" inputMode="numeric" value={f.quantity} onChange={set("quantity")} placeholder="0" />
@@ -218,14 +215,17 @@ export function ItemFormDialog({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="category">Category</Label>
-              <Input id="category" list="category-options" value={f.category} onChange={set("category")} maxLength={100} />
-              <datalist id="category-options">{categories.map((c) => <option key={c} value={c} />)}</datalist>
-            </div>
+            {mode === "new" && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="category">Category</Label>
+                <Input id="category" list="category-options" value={f.category} onChange={set("category")} maxLength={100} />
+                <datalist id="category-options">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor="sku">SKU</Label>
-              <Input id="sku" value={f.sku} onChange={set("sku")} maxLength={58} placeholder={sizes.length ? "Size is added, e.g. LS-NVY-M" : ""} />
+              <Input id="sku" value={f.sku} onChange={set("sku")} maxLength={58}
+                placeholder={mode !== "edit" && sizes.length ? "Size is added, e.g. LS-NVY-M" : ""} />
             </div>
           </div>
           {approval && (
@@ -235,7 +235,7 @@ export function ItemFormDialog({
             </div>
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-1">
-            {!item && (
+            {mode !== "edit" && (
               <Button type="button" variant="outline" size="lg" disabled={pending || uploading} onClick={() => submit(true)}>
                 Save &amp; add another color
               </Button>

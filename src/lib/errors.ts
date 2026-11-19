@@ -21,6 +21,8 @@ const MESSAGES: Record<string, string> = {
   NO_CHANGES: "Nothing changed.",
   CANNOT_DEACTIVATE_OWNER: "The owner account can't be deactivated.",
   EMAIL_TAKEN: "A user with this email already exists.",
+  VARIANT_EXISTS: "This product already has that size and color. Use “Add stock” on it instead.",
+  items_variant_unique: "This product already has that size and color. Use “Add stock” on it instead.",
   INVALID_CREDENTIALS: "Invalid email or password.",
   ACCOUNT_INACTIVE: "This account has been deactivated.",
   NOT_FOUND: "Not found. It may have been removed.",

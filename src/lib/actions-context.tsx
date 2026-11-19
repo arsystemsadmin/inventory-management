@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { addStock, createItem, createItems, removeItem, removeStock, restoreItem, saveItemEdit, sellItem } from "@/app/actions/inventory";
+import { addStock, createItem, createItems, removeItem, removeStock, restoreItem, saveItemEdit, saveProductEdit, sellItem } from "@/app/actions/inventory";
 import { createStore, finishSetup, reopenSetup, setStoreMembers, updateStore } from "@/app/actions/stores";
 import { decideApproval, requestVoid, voidSale } from "@/app/actions/sales";
 import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
@@ -9,7 +9,7 @@ import { clockIn, clockOut, deleteTimeEntry, saveTimeEntry } from "@/app/actions
 
 /** Default: server actions backed by Supabase. Demo mode swaps in browser implementations. */
 export const serverActions = {
-  sellItem, createItem, createItems, saveItemEdit, addStock, removeStock, removeItem, restoreItem,
+  sellItem, createItem, createItems, saveItemEdit, saveProductEdit, addStock, removeStock, removeItem, restoreItem,
   createStore, updateStore, finishSetup, reopenSetup, setStoreMembers,
   voidSale, requestVoid, decideApproval,
   createEmployee, updateEmployee, setEmployeeActive,

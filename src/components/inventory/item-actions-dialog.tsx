@@ -60,7 +60,7 @@ export function ItemActionsDialog({
             {item.archived ? (
               isOwner && (
                 <Button size="lg" variant="outline" onClick={() => run(() => actions.restoreItem(item.id))} disabled={pending}>
-                  <Undo2 /> Restore item
+                  <Undo2 /> Restore variation
                 </Button>
               )
             ) : (
@@ -70,10 +70,10 @@ export function ItemActionsDialog({
                   <Minus /> Remove stock{needsApproval && " (needs approval)"}
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => { onClose(); onEdit(item); }}>
-                  <Pencil /> Edit details{needsApproval && " (needs approval)"}
+                  <Pencil /> Edit variation{needsApproval && " (needs approval)"}
                 </Button>
                 <Button size="lg" variant="ghost" className="text-destructive" onClick={() => setMode("delete")}>
-                  <Trash2 /> Remove item{deleteNeedsApproval && " (needs approval)"}
+                  <Trash2 /> Remove variation{deleteNeedsApproval && " (needs approval)"}
                 </Button>
               </>
             )}
@@ -113,8 +113,8 @@ export function ItemActionsDialog({
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); run(() => actions.removeItem({ itemId: item.id, reason })); }}>
             <p className="text-sm text-muted-foreground">
               {deleteNeedsApproval
-                ? "The owner will be asked to approve removing this item from inventory."
-                : "The item is hidden from inventory. Its sales history is kept and you can restore it later."}
+                ? "The owner will be asked to approve removing this variation from inventory."
+                : "This variation is hidden from inventory. Its sales history is kept and you can restore it later."}
             </p>
             {deleteNeedsApproval && (
               <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="Reason (optional)" />
@@ -122,7 +122,7 @@ export function ItemActionsDialog({
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>Back</Button>
               <Button type="submit" variant="destructive" size="lg" className="flex-1" disabled={pending}>
-                {deleteNeedsApproval ? "Request removal" : "Remove item"}
+                {deleteNeedsApproval ? "Request removal" : "Remove variation"}
               </Button>
             </div>
           </form>

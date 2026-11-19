@@ -59,14 +59,27 @@ export const demoActions: AppActions = {
     if (imageChanged) {
       const r = run(() => commit((s) => L.setItemImage(s, u.id, itemId, image_path ?? null)));
       if (!r.ok) return r;
-      if (!Object.keys(diff).length) return { ok: true, message: image_path ? "Photo updated" : "Photo removed" };
+      if (!Object.keys(diff).length) return { ok: true, data: "applied" as const, message: image_path ? "Photo updated" : "Photo removed" };
     }
     if (L.canEditDirectly(getState(), u, item.store_id)) {
       const r = run(() => commit((s) => L.editItem(s, u.id, itemId, diff)), "Item updated");
-      return r.ok ? { ok: true, message: r.message } : r;
+      return r.ok ? { ok: true, data: "applied" as const, message: r.message } : r;
     }
     const r = run(() => commit((s) => L.requestApproval(s, u.id, "edit_item", itemId, reason, diff)), "Edit sent to the owner for approval");
-    return r.ok ? { ok: true, message: r.message } : r;
+    return r.ok ? { ok: true, data: "requested" as const, message: r.message } : r;
+  },
+  async saveProductEdit({ storeId, name, changes, reason }) {
+    const ids = getState().items
+      .filter((i) => i.store_id === storeId && !i.archived && i.name.trim().toLowerCase() === name.trim().toLowerCase())
+      .map((i) => i.id);
+    if (!ids.length) return { ok: false, error: "Product not found." };
+    let requested = false;
+    for (const itemId of ids) {
+      const res = await demoActions.saveItemEdit({ itemId, changes, reason });
+      if (!res.ok) return res;
+      if (res.data === "requested") requested = true;
+    }
+    return { ok: true, message: requested ? "Changes sent to the owner for approval" : "Product updated" };
   },
   async addStock(input) {
     const p = z.object({ itemId: uuid, quantity: qty }).safeParse(input);

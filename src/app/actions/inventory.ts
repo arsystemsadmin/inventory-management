@@ -62,7 +62,7 @@ export async function createItems(input: unknown): Promise<ActionResult<number>>
   return { ok: true, data: parsed.data.length, message: `Added ${parsed.data.length} item${parsed.data.length === 1 ? "" : "s"}` };
 }
 
-export async function saveItemEdit(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult> {
+export async function saveItemEdit(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult<"applied" | "requested">> {
   const id = uuid.safeParse(input.itemId);
   const changes = itemFields.partial().safeParse(input.changes);
   if (!id.success || !changes.success) return { ok: false, error: changes.error?.issues[0].message ?? "Invalid item" };
@@ -82,7 +82,7 @@ export async function saveItemEdit(input: { itemId: string; changes: unknown; re
     if (error) return { ok: false, error: friendlyError(error) };
     if (Object.keys(diff).length === 0) {
       revalidateInventory();
-      return { ok: true, message: image_path ? "Photo updated" : "Photo removed" };
+      return { ok: true, data: "applied", message: image_path ? "Photo updated" : "Photo removed" };
     }
   }
 
@@ -90,14 +90,35 @@ export async function saveItemEdit(input: { itemId: string; changes: unknown; re
     const { error } = await supabase.from("items").update(diff).eq("id", id.data);
     if (error) return { ok: false, error: friendlyError(error) };
     revalidateInventory();
-    return { ok: true, message: "Item updated" };
+    return { ok: true, data: "applied", message: "Item updated" };
   }
   const { error } = await supabase.rpc("request_approval", {
     p_kind: "edit_item", p_target_id: id.data, p_reason: input.reason ?? null, p_changes: diff,
   });
   if (error) return { ok: false, error: friendlyError(error) };
   revalidatePath("/approvals");
-  return { ok: true, message: "Edit sent to the owner for approval" };
+  return { ok: true, data: "requested", message: "Edit sent to the owner for approval" };
+}
+
+/**
+ * Edits a whole product: applies the same changes (name, category, photo,
+ * price…) to every variation. Each variation goes through saveItemEdit, so
+ * setup-lock approval rules apply exactly as for single edits.
+ */
+export async function saveProductEdit(input: { storeId: string; name: string; changes: unknown; reason?: string }): Promise<ActionResult> {
+  const parsed = z.object({ storeId: uuid, name: z.string().trim().min(1).max(200) }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid product" };
+  const supabase = await createClient();
+  const { data } = await supabase.from("items").select("id, name").eq("store_id", parsed.data.storeId).eq("archived", false);
+  const ids = (data ?? []).filter((r) => r.name.trim().toLowerCase() === parsed.data.name.toLowerCase()).map((r) => r.id);
+  if (!ids.length) return { ok: false, error: "Product not found." };
+  let requested = false;
+  for (const itemId of ids) {
+    const res = await saveItemEdit({ itemId, changes: input.changes, reason: input.reason });
+    if (!res.ok) return res;
+    if (res.data === "requested") requested = true;
+  }
+  return { ok: true, message: requested ? "Changes sent to the owner for approval" : "Product updated" };
 }
 
 export async function addStock(input: { itemId: string; quantity: number }): Promise<ActionResult<number>> {

@@ -1,21 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, MoreHorizontal, Plus, Search } from "lucide-react";
+import { AlertTriangle, MoreHorizontal, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { StockBadge } from "@/components/stock-badge";
 import { cn } from "@/lib/utils";
 import { formatMoney, STOCK_ORDER } from "@/lib/format";
+import { groupProducts, type Product } from "@/lib/products";
 import { STOCK_STATUSES, type Item, type Role, type StockStatus } from "@/lib/types";
 import { SellDialog } from "./sell-dialog";
 import { ItemFormDialog } from "./item-form-dialog";
 import { ItemActionsDialog } from "./item-actions-dialog";
 import { ItemThumb } from "./item-thumb";
+import { ProductEditDialog } from "./product-edit-dialog";
 
 export type InventoryStore = { id: string; business_id: string; name: string; inventory_locked_at: string | null; status: string };
 
+/**
+ * Inventory grouped by product: each card is one product with all of its
+ * variations (size/color) underneath. Selling starts from the product and
+ * asks only which variation and how many.
+ */
 export function InventoryView({
   items, stores, role, fixedStoreId, initialStatus,
 }: {
@@ -30,9 +37,11 @@ export function InventoryView({
   const [status, setStatus] = useState<StockStatus | "ALERTS" | "">(initialStatus ?? "");
   const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [showArchived, setShowArchived] = useState(false);
-  const [selling, setSelling] = useState<Item | null>(null);
+  const [selling, setSelling] = useState<{ item: Item; variants: Item[] } | null>(null);
   const [acting, setActing] = useState<Item | null>(null);
   const [editing, setEditing] = useState<Item | null>(null);
+  const [addingTo, setAddingTo] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adding, setAdding] = useState(false);
 
   const isOwner = role === "owner";
@@ -48,6 +57,7 @@ export function InventoryView({
     () => Array.from(new Set(items.map((i) => i.category).filter(Boolean) as string[])).sort(),
     [items],
   );
+  // Counts are per variation: that's what runs out.
   const counts = useMemo(() => {
     const c: Record<StockStatus, number> = { OUT: 0, CRITICAL: 0, LOW: 0, OK: 0 };
     scoped.forEach((i) => c[i.stock_status]++);
@@ -55,23 +65,28 @@ export function InventoryView({
   }, [scoped]);
   const alerts = counts.OUT + counts.CRITICAL + counts.LOW;
 
-  const filtered = useMemo(() => {
+  const products = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return scoped
-      .filter((i) => !category || i.category === category)
-      .filter((i) => !status || (status === "ALERTS" ? i.stock_status !== "OK" : i.stock_status === status))
-      .filter((i) =>
-        !needle ||
-        [i.name, i.sku, i.size, i.color, i.category].some((v) => v?.toLowerCase().includes(needle)),
-      )
-      .sort((a, b) =>
-        a.name.localeCompare(b.name) || (a.size ?? "").localeCompare(b.size ?? "", undefined, { numeric: true }) ||
-        (a.color ?? "").localeCompare(b.color ?? ""),
-      );
+    const statusOk = (i: Item) => !status || (status === "ALERTS" ? i.stock_status !== "OK" : i.stock_status === status);
+    return groupProducts(scoped)
+      .filter((p) => !category || p.category === category)
+      .map((p) => {
+        // Product name/category match shows all variations; otherwise only matching ones.
+        const productMatch = !needle || [p.name, p.category].some((v) => v?.toLowerCase().includes(needle));
+        const variants = p.variants.filter((v) => statusOk(v) &&
+          (productMatch || [v.sku, v.size, v.color].some((x) => x?.toLowerCase().includes(needle))));
+        return { product: p, variants };
+      })
+      .filter((x) => x.variants.length > 0);
   }, [scoped, q, category, status]);
 
-  const variantsOf = (item: Item) =>
-    items.filter((i) => i.store_id === item.store_id && i.name === item.name && !i.archived);
+  const totalProducts = useMemo(() => groupProducts(scoped).length, [scoped]);
+
+  const startSale = (p: Product) => {
+    const active = items.filter((i) => i.store_id === p.store_id && !i.archived && i.name === p.name);
+    const first = [...active].sort((a, b) => Number(b.quantity > 0) - Number(a.quantity > 0))[0];
+    if (first) setSelling({ item: first, variants: active });
+  };
 
   return (
     <div className="grid gap-4">
@@ -83,7 +98,7 @@ export function InventoryView({
         >
           <AlertTriangle className="size-5 shrink-0 text-amber-600" />
           <span className="flex-1">
-            <b>{alerts} item{alerts > 1 ? "s" : ""} need restocking</b>
+            <b>{alerts} variation{alerts > 1 ? "s" : ""} need restocking</b>
             {" — "}{counts.OUT} out, {counts.CRITICAL} critical, {counts.LOW} low.
           </span>
           <span className="underline shrink-0">{status === "ALERTS" ? "Show all" : "Show"}</span>
@@ -93,7 +108,7 @@ export function InventoryView({
       <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, size, color, SKU…" className="pl-9" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search product, size, color, SKU…" className="pl-9" />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
           {!fixedStoreId && stores.length > 1 && (
@@ -108,7 +123,7 @@ export function InventoryView({
           </NativeSelect>
         </div>
         {editableStores.length > 0 && (
-          <Button size="lg" onClick={() => setAdding(true)}><Plus /> Add item</Button>
+          <Button size="lg" onClick={() => setAdding(true)}><Plus /> Add product</Button>
         )}
       </div>
 
@@ -123,7 +138,7 @@ export function InventoryView({
               status === s ? "bg-foreground text-background border-foreground" : "bg-background",
             )}
           >
-            {s === "" ? `All (${scoped.length})` : `${s[0]}${s.slice(1).toLowerCase()} (${counts[s]})`}
+            {s === "" ? `All (${totalProducts})` : `${s[0]}${s.slice(1).toLowerCase()} (${counts[s]})`}
           </button>
         ))}
         {isOwner && (
@@ -134,55 +149,74 @@ export function InventoryView({
         )}
       </div>
 
-      {filtered.length === 0 ? (
+      {products.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          {items.length === 0 ? "No items yet. Tap “Add item” to start building this inventory." : "No items match these filters."}
+          {items.length === 0 ? "No products yet. Tap “Add product” to start building this inventory." : "Nothing matches these filters."}
         </div>
       ) : (
-        <ul className="divide-y rounded-lg border bg-card">
-          {filtered.map((item) => (
-            <li key={item.id} className="flex items-center gap-3 px-3 py-3">
-              <ItemThumb path={item.image_path} alt={item.name} />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <span className="font-medium">{item.name}</span>
-                  <StockBadge status={item.stock_status} />
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1.5 text-xs">
-                  {item.size && <span className="rounded bg-muted px-1.5 py-0.5 font-medium">{item.size}</span>}
-                  {item.color && <span className="rounded bg-muted px-1.5 py-0.5 font-medium">{item.color}</span>}
-                  {item.category && <span className="text-muted-foreground">{item.category}</span>}
-                  {!fixedStoreId && stores.length > 1 && (
-                    <span className="text-muted-foreground">· {storeById.get(item.store_id)?.name}</span>
+        <ul className="grid gap-3">
+          {products.map(({ product: p, variants }) => {
+            const store = storeById.get(p.store_id);
+            const closed = store?.status === "closed";
+            const price = p.minPrice === p.maxPrice ? formatMoney(p.minPrice) : `${formatMoney(p.minPrice)}–${formatMoney(p.maxPrice)}`;
+            return (
+              <li key={p.key} className="overflow-hidden rounded-xl border bg-card">
+                <div className="flex items-center gap-3 p-3">
+                  <ItemThumb path={p.image_path} alt={p.name} className="size-14" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-semibold">{p.name}</span>
+                      {p.status !== "OK" && <StockBadge status={p.status} />}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {[p.category, !fixedStoreId && stores.length > 1 ? store?.name : null,
+                        `${p.variants.length} variation${p.variants.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}
+                    </div>
+                    <div className="mt-0.5 text-sm">
+                      <span className="font-semibold">{price}</span>
+                      <span className="ml-2 text-muted-foreground">{p.quantity} in stock</span>
+                    </div>
+                  </div>
+                  {!showArchived && (
+                    <Button size="lg" variant="success" className="min-w-20" disabled={p.quantity === 0 || closed} onClick={() => startSale(p)}>
+                      Sell
+                    </Button>
                   )}
                 </div>
-                <div className="mt-1 text-sm">
-                  <span className="font-semibold">{formatMoney(item.price_cents)}</span>
-                  <span className={cn("ml-2", item.stock_status !== "OK" && "font-semibold text-orange-700", item.quantity === 0 && "text-red-700")}>
-                    {item.quantity} in stock
-                  </span>
-                </div>
-              </div>
-              {!item.archived && (
-                <Button
-                  size="lg"
-                  variant="success"
-                  className="min-w-20"
-                  disabled={item.quantity === 0 || storeById.get(item.store_id)?.status === "closed"}
-                  onClick={() => setSelling(item)}
-                >
-                  Sell
-                </Button>
-              )}
-              <Button variant="ghost" size="icon-lg" aria-label={`More actions for ${item.name}`} onClick={() => setActing(item)}>
-                <MoreHorizontal />
-              </Button>
-            </li>
-          ))}
+
+                <ul className="divide-y border-t bg-muted/20">
+                  {variants.map((v) => (
+                    <li key={v.id} className="flex items-center gap-2 py-1.5 pl-3 pr-1">
+                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
+                        {v.size && <span className="rounded bg-background px-1.5 py-0.5 font-semibold ring-1 ring-border">{v.size}</span>}
+                        {v.color && <span className="rounded bg-background px-1.5 py-0.5 ring-1 ring-border">{v.color}</span>}
+                        {!v.size && !v.color && <span className="text-muted-foreground">Standard</span>}
+                        {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
+                      </div>
+                      <span className={cn("w-16 text-right text-sm tabular-nums", v.stock_status !== "OK" && "font-semibold text-orange-700", v.quantity === 0 && "text-red-700")}>
+                        {v.quantity} left
+                      </span>
+                      <StockBadge status={v.stock_status} className="w-16 justify-center" />
+                      <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${p.name} ${v.size ?? ""} ${v.color ?? ""}`} onClick={() => setActing(v)}>
+                        <MoreHorizontal />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+
+                {!showArchived && !closed && (
+                  <div className="flex gap-2 border-t px-3 py-2">
+                    <Button variant="outline" size="sm" onClick={() => setAddingTo(p)}><Plus /> Add variation</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingProduct(p)}><Pencil /> Edit product</Button>
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
-      <SellDialog item={selling} variants={selling ? variantsOf(selling) : []} onClose={() => setSelling(null)} />
+      <SellDialog item={selling?.item ?? null} variants={selling?.variants ?? []} onClose={() => setSelling(null)} />
       <ItemActionsDialog
         item={acting}
         onClose={() => setActing(null)}
@@ -191,12 +225,19 @@ export function InventoryView({
         isOwner={isOwner}
       />
       <ItemFormDialog
-        open={adding || !!editing}
-        onClose={() => { setAdding(false); setEditing(null); }}
+        open={adding || !!editing || !!addingTo}
+        onClose={() => { setAdding(false); setEditing(null); setAddingTo(null); }}
         item={editing}
+        product={addingTo}
         stores={editableStores}
         defaultStoreId={fixedStoreId || storeId || undefined}
         needsApproval={needsApproval}
+        categories={categories}
+      />
+      <ProductEditDialog
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        needsApproval={editingProduct ? needsApproval(editingProduct.store_id) : false}
         categories={categories}
       />
     </div>

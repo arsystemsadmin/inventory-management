@@ -137,6 +137,14 @@ type ItemFields = {
   price_cents: number; cost_cents: number; low_stock_threshold: number;
 };
 
+function checkVariant(s: DemoState, storeId: string, name: string, size: string | null, color: string | null, exceptId?: string) {
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  if (s.items.some((i) => i.store_id === storeId && !i.archived && i.id !== exceptId && norm(i.name) === norm(name)
+    && norm(i.size) === norm(size) && norm(i.color) === norm(color))) {
+    throw Object.assign(new DemoError("VARIANT_EXISTS"), { code: "23505" });
+  }
+}
+
 function checkSku(s: DemoState, storeId: string, sku: string | null, exceptId?: string) {
   if (sku && s.items.some((i) => i.store_id === storeId && !i.archived && i.id !== exceptId && i.sku?.toLowerCase() === sku.toLowerCase())) {
     throw Object.assign(new DemoError("DUPLICATE"), { code: "23505" });
@@ -147,6 +155,7 @@ export function createItem(s: DemoState, uid: string | null, input: ItemFields &
   const u = requireUser(s, uid);
   if (!canAccessStore(s, u, input.store_id)) fail("NOT_STORE_MEMBER");
   checkSku(s, input.store_id, input.sku);
+  checkVariant(s, input.store_id, input.name, input.size, input.color);
   const store = s.stores.find((x) => x.id === input.store_id)!;
   const item: DemoItem = {
     ...input, image_path: input.image_path ?? null, id: newId(), business_id: store.business_id, store_id: store.id, archived: false,
@@ -175,6 +184,10 @@ export function editItem(s: DemoState, uid: string | null, itemId: string, chang
 function applyEdit(s: DemoState, u: DemoUser, item: DemoItem, changes: Partial<ItemFields> & { quantity_delta?: number }) {
   const { quantity_delta, ...fields } = changes;
   if (fields.sku !== undefined) checkSku(s, item.store_id, fields.sku, item.id);
+  if (fields.name !== undefined || fields.size !== undefined || fields.color !== undefined) {
+    checkVariant(s, item.store_id, fields.name ?? item.name, fields.size !== undefined ? fields.size : item.size,
+      fields.color !== undefined ? fields.color : item.color, item.id);
+  }
   if (quantity_delta && item.quantity + quantity_delta < 0) {
     fail("OUT_OF_STOCK", `Cannot remove ${-quantity_delta}, only ${item.quantity} left`);
   }

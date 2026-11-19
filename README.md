@@ -194,7 +194,7 @@ and the `items_with_status` view feed:
 | `/signup`, `/login` | public | Sign-up creates the business and owner (in demo mode: in browser storage) |
 | `/dashboard` | owner | Sales today and this week per store, on-shift staff with accrued pay, wages this week, stock alerts, approvals, live sales feed |
 | `/stores`, `/stores/[id]` | both (scoped) | Store info, today's numbers, setup banner / *Finish setup*, inventory, latest sales. Owner: edit, staff, reopen setup |
-| `/inventory` | both (scoped) | Search; filter by store, category and stock status; add/edit; one-tap **Sell** with variant chips and a quantity stepper |
+| `/inventory` | both (scoped) | Products with their variations (size/color) grouped underneath; search and filter by store, category and stock status; add products or variations, edit a whole product or one variation; **Sell** from the product, which asks only for the variation and quantity |
 | `/sales` | both (scoped) | History. Owner voids directly; employee requests a void |
 | `/approvals` | both | Owner approves or rejects with a before → after diff. Employees see their own requests |
 | `/employees` | owner | Create (with temporary password), edit rate, assign stores, deactivate or reactivate |
@@ -211,4 +211,5 @@ inputs so iOS doesn't zoom.
 - **POS and card payments:** `sales` keeps unit price and total snapshots.
 - **Multiple owners or a manager role:** drop the `profiles_one_owner_per_business` index and extend `role`.
 - **Stock transfers:** add a `transfer` movement reason. Store ids are immutable on items by design.
+- **Products:** variations are grouped by product name within a store (a unique index blocks duplicate size + color). A separate `products` table could replace the name grouping later without changing how stock or sales are recorded.
 - **Exports:** all reporting is plain SQL (`sales_summary`, `payroll_report`).

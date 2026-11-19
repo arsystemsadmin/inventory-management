@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Lock, LockOpen, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
-import { finishSetup, reopenSetup, setStoreMembers } from "@/app/actions/stores";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import type { Store } from "@/lib/types";
 
 export function SetupBanner({ store, isOwner, itemCount }: { store: Store; isOwner: boolean; itemCount: number }) {
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   const [confirming, setConfirming] = useState(false);
   const locked = !!store.inventory_locked_at;
   const run = (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) =>
@@ -25,7 +26,7 @@ export function SetupBanner({ store, isOwner, itemCount }: { store: Store; isOwn
       <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
         <Lock className="size-4" />
         <span className="flex-1">Inventory locked. Employees can sell and add stock; edits and removals need your approval.</span>
-        <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => reopenSetup(store.id))}>
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run(() => actions.reopenSetup(store.id))}>
           <LockOpen /> Reopen setup
         </Button>
       </div>
@@ -49,7 +50,7 @@ export function SetupBanner({ store, isOwner, itemCount }: { store: Store; isOwn
               editing details or removing stock will need owner approval.
             </DialogDescription>
           </DialogHeader>
-          <Button size="lg" disabled={pending} onClick={() => run(() => finishSetup(store.id))}>Yes, finish setup</Button>
+          <Button size="lg" disabled={pending} onClick={() => run(() => actions.finishSetup(store.id))}>Yes, finish setup</Button>
         </DialogContent>
       </Dialog>
     </div>
@@ -67,10 +68,11 @@ export function StoreOwnerActions({
   const [staffOpen, setStaffOpen] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set(memberIds));
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
 
   const save = () =>
     startTransition(async () => {
-      const res = await setStoreMembers(store.id, [...selected]);
+      const res = await actions.setStoreMembers(store.id, [...selected]);
       if (res.ok) { toast.success(res.message); setStaffOpen(false); } else toast.error(res.error);
     });
 

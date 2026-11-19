@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { Minus, Pencil, Plus, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { addStock, removeItem, removeStock, restoreItem } from "@/app/actions/inventory";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ export function ItemActionsDialog({
   const [qty, setQty] = useState("1");
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (item) { setMode("menu"); setQty("1"); setReason(""); } }, [item?.id]);
@@ -58,7 +59,7 @@ export function ItemActionsDialog({
           <div className="grid gap-2">
             {item.archived ? (
               isOwner && (
-                <Button size="lg" variant="outline" onClick={() => run(() => restoreItem(item.id))} disabled={pending}>
+                <Button size="lg" variant="outline" onClick={() => run(() => actions.restoreItem(item.id))} disabled={pending}>
                   <Undo2 /> Restore item
                 </Button>
               )
@@ -85,8 +86,8 @@ export function ItemActionsDialog({
             onSubmit={(e) => {
               e.preventDefault();
               run(() => mode === "add"
-                ? addStock({ itemId: item.id, quantity: n })
-                : removeStock({ itemId: item.id, quantity: n, reason }));
+                ? actions.addStock({ itemId: item.id, quantity: n })
+                : actions.removeStock({ itemId: item.id, quantity: n, reason }));
             }}
           >
             <div className="grid gap-1.5">
@@ -109,7 +110,7 @@ export function ItemActionsDialog({
         )}
 
         {mode === "delete" && (
-          <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); run(() => removeItem({ itemId: item.id, reason })); }}>
+          <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); run(() => actions.removeItem({ itemId: item.id, reason })); }}>
             <p className="text-sm text-muted-foreground">
               {deleteNeedsApproval
                 ? "The owner will be asked to approve removing this item from inventory."

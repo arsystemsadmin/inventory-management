@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createItem, saveItemEdit } from "@/app/actions/inventory";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ export function ItemFormDialog({
   const [storeId, setStoreId] = useState(defaultStoreId ?? stores[0]?.id ?? "");
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   const nameRef = useRef<HTMLInputElement>(null);
   const sizeRef = useRef<HTMLInputElement>(null);
 
@@ -72,13 +73,13 @@ export function ItemFormDialog({
           price_cents: item.price_cents, cost_cents: item.cost_cents, low_stock_threshold: item.low_stock_threshold,
         };
         const changes = Object.fromEntries(Object.entries(fields).filter(([k, v]) => before[k] !== v));
-        const res = await saveItemEdit({ itemId: item.id, changes, reason });
+        const res = await actions.saveItemEdit({ itemId: item.id, changes, reason });
         if (!res.ok) { toast.error(res.error); return; }
         toast.success(res.message);
         onClose();
         return;
       }
-      const res = await createItem({ ...fields, store_id: storeId, quantity: Number(f.quantity || 0) });
+      const res = await actions.createItem({ ...fields, store_id: storeId, quantity: Number(f.quantity || 0) });
       if (!res.ok) { toast.error(res.error); return; }
       toast.success(`Added ${f.name}${f.size || f.color ? ` (${[f.size, f.color].filter(Boolean).join(" · ")})` : ""}`);
       if (addAnother) {

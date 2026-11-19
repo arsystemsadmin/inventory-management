@@ -9,14 +9,8 @@ export async function updateSession(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
-  // Preview mode: no backend configured yet. Only the public pages are reachable.
-  if (!supabaseConfigured) {
-    if (isPublic) return response;
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  // Demo mode (no backend configured): auth happens in the browser.
+  if (!supabaseConfigured) return response;
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { sellItem } from "@/app/actions/inventory";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StockBadge } from "@/components/stock-badge";
@@ -19,6 +19,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
 
   useEffect(() => {
     if (item) { setSelectedId(item.id); setQty(1); }
@@ -43,7 +44,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
 
   const confirm = () => {
     startTransition(async () => {
-      const res = await sellItem({ itemId: selected.id, quantity: qty });
+      const res = await actions.sellItem({ itemId: selected.id, quantity: qty });
       if (!res.ok) { toast.error(res.error); return; }
       const r = res.data!;
       const v = variantLabel(r.size, r.color);

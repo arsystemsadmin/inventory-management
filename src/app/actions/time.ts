@@ -31,15 +31,7 @@ export async function clockOut(): Promise<ActionResult> {
   return { ok: true, message: "Clocked out" };
 }
 
-const entrySchema = z.object({
-  id: z.string().uuid().optional(),
-  profile_id: z.string().uuid(),
-  store_id: z.string().uuid(),
-  clock_in: z.string().datetime({ offset: true }),
-  clock_out: z.string().datetime({ offset: true }).nullable(),
-  hourly_rate_cents_snapshot: z.coerce.number().int().min(0).max(100_000),
-  note: z.string().trim().max(500).optional().transform((v) => v || null),
-}).refine((v) => !v.clock_out || v.clock_out > v.clock_in, { message: "Clock-out must be after clock-in" });
+import { timeEntrySchema as entrySchema } from "@/lib/validation";
 
 /** Owner adds or corrects a shift manually (RLS: owner-only writes). */
 export async function saveTimeEntry(input: unknown): Promise<ActionResult> {

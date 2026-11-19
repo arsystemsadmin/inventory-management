@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { clockIn, clockOut } from "@/app/actions/time";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 
 export function ClockControls({ isOpen, stores }: { isOpen: boolean; stores: { id: string; name: string }[] }) {
   const [storeId, setStoreId] = useState(stores[0]?.id ?? "");
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   const run = (fn: () => Promise<{ ok: boolean; error?: string; message?: string }>) =>
     startTransition(async () => {
       const res = await fn();
@@ -17,7 +18,7 @@ export function ClockControls({ isOpen, stores }: { isOpen: boolean; stores: { i
 
   if (isOpen) {
     return (
-      <Button size="xl" variant="destructive" className="w-full" disabled={pending} onClick={() => run(clockOut)}>
+      <Button size="xl" variant="destructive" className="w-full" disabled={pending} onClick={() => run(actions.clockOut)}>
         {pending ? "…" : "Clock out"}
       </Button>
     );
@@ -30,7 +31,7 @@ export function ClockControls({ isOpen, stores }: { isOpen: boolean; stores: { i
           {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
         </NativeSelect>
       )}
-      <Button size="xl" variant="success" className="w-full" disabled={pending || !storeId} onClick={() => run(() => clockIn(storeId))}>
+      <Button size="xl" variant="success" className="w-full" disabled={pending || !storeId} onClick={() => run(() => actions.clockIn(storeId))}>
         {pending ? "…" : `Clock in${stores.length === 1 ? ` at ${stores[0].name}` : ""}`}
       </Button>
     </div>

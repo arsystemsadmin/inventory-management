@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { deleteTimeEntry, saveTimeEntry } from "@/app/actions/time";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ export function TimeEntryDialog({
 }) {
   const [f, setF] = useState({ profile_id: "", store_id: "", clock_in: "", clock_out: "", rate: "", note: "" });
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
 
   useEffect(() => {
     if (!open) return;
@@ -57,7 +58,7 @@ export function TimeEntryDialog({
     const rate = parseMoneyToCents(f.rate || "0");
     if (Number.isNaN(rate) || !f.clock_in) { toast.error("Check the times and rate"); return; }
     startTransition(async () => {
-      const res = await saveTimeEntry({
+      const res = await actions.saveTimeEntry({
         id: entry?.id, profile_id: f.profile_id, store_id: f.store_id,
         clock_in: new Date(f.clock_in).toISOString(),
         clock_out: f.clock_out ? new Date(f.clock_out).toISOString() : null,
@@ -68,7 +69,7 @@ export function TimeEntryDialog({
   };
 
   const remove = () => entry && startTransition(async () => {
-    const res = await deleteTimeEntry(entry.id);
+    const res = await actions.deleteTimeEntry(entry.id);
     if (res.ok) { toast.success(res.message); onClose(); } else toast.error(res.error);
   });
 

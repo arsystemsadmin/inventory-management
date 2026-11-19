@@ -1,17 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { NOT_CONNECTED_MESSAGE, supabaseConfigured } from "@/lib/supabase/config";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
-const loginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(1, "Enter your password"),
-  next: z.string().optional(),
-});
+import { loginSchema, signupSchema } from "@/lib/validation";
 
 function safeNext(next: string | undefined) {
   // Only allow same-site relative paths (no "//evil.com" open redirects).
@@ -33,13 +28,6 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
   }
   redirect(safeNext(parsed.data.next));
 }
-
-const signupSchema = z.object({
-  business_name: z.string().trim().min(1, "Business name is required").max(200),
-  full_name: z.string().trim().min(1, "Your name is required").max(200),
-  email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(72),
-});
 
 export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   if (!supabaseConfigured) return { error: NOT_CONNECTED_MESSAGE };

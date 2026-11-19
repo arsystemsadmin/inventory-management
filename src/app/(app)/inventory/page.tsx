@@ -1,14 +1,17 @@
 import { requireProfile } from "@/lib/auth";
 import { loadInventory } from "@/lib/queries";
+import { isDemoMode } from "@/lib/mode";
 import { InventoryView } from "@/components/inventory/inventory-view";
 import { LiveRefresh } from "@/components/live-refresh";
+import { DemoInventoryPage } from "@/components/demo/demo-pages";
 import { STOCK_STATUSES, type StockStatus } from "@/lib/types";
 
 export const metadata = { title: "Inventory · Binventory" };
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const profile = await requireProfile();
   const { status } = await searchParams;
+  if (isDemoMode) return <DemoInventoryPage status={status} />;
+  const profile = await requireProfile();
   const { items, stores } = await loadInventory();
   const initial = status === "ALERTS" || STOCK_STATUSES.includes(status as StockStatus) ? (status as StockStatus | "ALERTS") : undefined;
 

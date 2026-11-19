@@ -73,9 +73,17 @@ deploy, because `arsystems.dev` is in the same account.
 **From your machine:** `npx wrangler login`, then `npm run cf:deploy`. Run `npm run cf:preview` to test the Worker
 locally first.
 
-**Preview mode:** if the Supabase variables aren't set, the site still deploys. It shows the sign-in and sign-up pages
-with a "backend isn't connected yet" notice, and every other route redirects to sign-in. To connect it, create a
-hosted Supabase project (see *Hosted Supabase* above), set the variables, and redeploy.
+**Demo mode (no database yet):** if the Supabase variables aren't set, the whole app runs in the browser instead.
+Sign-up, sign-in and every feature work, with the same rules and permissions as the database version. Data is
+saved in that browser's local storage, so it survives refreshes but isn't shared across browsers or devices.
+
+- Sign-up offers to load sample data: 3 stores, about 30 items, 2 employees (password `password123`), and a week
+  of sales and shifts.
+- Each tab keeps its own sign-in. Open the owner in one tab and an employee in another to watch sales arrive live.
+- The sign-in page lists the accounts saved in that browser.
+
+Once the Supabase variables are set and the site is redeployed, the app uses the real database automatically.
+Demo data is not migrated.
 
 ---
 
@@ -181,7 +189,7 @@ and the `items_with_status` view feed:
 
 | Route | Who | |
 |---|---|---|
-| `/signup`, `/login` | public | Sign-up creates the business and owner |
+| `/signup`, `/login` | public | Sign-up creates the business and owner (in demo mode: in browser storage) |
 | `/dashboard` | owner | Sales today and this week per store, on-shift staff with accrued pay, wages this week, stock alerts, approvals, live sales feed |
 | `/stores`, `/stores/[id]` | both (scoped) | Store info, today's numbers, setup banner / *Finish setup*, inventory, latest sales. Owner: edit, staff, reopen setup |
 | `/inventory` | both (scoped) | Search; filter by store, category and stock status; add/edit; one-tap **Sell** with variant chips and a quantity stepper |

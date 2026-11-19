@@ -7,35 +7,7 @@ import { requireOwner } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
 
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
-
-const storeSchema = z
-  .object({
-    name: z.string().trim().min(1, "Name is required").max(200),
-    type: z.enum(["popup", "permanent"]),
-    address: z.string().trim().max(300).optional().transform((v) => v || null),
-    starts_on: date.optional().or(z.literal("")),
-    ends_on: date.optional().or(z.literal("")),
-    status: z.enum(["upcoming", "active", "closed"]).optional(),
-  })
-  .superRefine((v, ctx) => {
-    if (v.type === "popup") {
-      if (!v.starts_on || !v.ends_on) ctx.addIssue({ code: "custom", message: "Pop-ups need start and end dates" });
-      else if (v.ends_on < v.starts_on) ctx.addIssue({ code: "custom", message: "End date must be after start date" });
-    }
-  });
-
-function toRow(v: z.infer<typeof storeSchema>) {
-  const popup = v.type === "popup";
-  const starts_at = popup ? `${v.starts_on}T00:00:00Z` : null;
-  const ends_at = popup ? `${v.ends_on}T23:59:59Z` : null;
-  let status = v.status;
-  if (!status) {
-    const now = new Date().toISOString();
-    status = !popup ? "active" : starts_at! > now ? "upcoming" : ends_at! < now ? "closed" : "active";
-  }
-  return { name: v.name, type: v.type, address: v.address, starts_at, ends_at, status };
-}
+import { storeSchema, storeToRow as toRow } from "@/lib/validation";
 
 export async function createStore(input: unknown): Promise<ActionResult<string>> {
   const owner = await requireOwner();

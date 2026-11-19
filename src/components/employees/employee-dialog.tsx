@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ export function EmployeeDialog({
   const [f, setF] = useState({ full_name: "", email: "", password: "", rate: "" });
   const [storeIds, setStoreIds] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
 
   useEffect(() => {
     if (!open) return;
@@ -39,15 +40,15 @@ export function EmployeeDialog({
     if (Number.isNaN(rate)) { toast.error("Enter the hourly rate like 18.50"); return; }
     startTransition(async () => {
       const res = employee
-        ? await updateEmployee({ profile_id: employee.id, full_name: f.full_name, hourly_rate_cents: rate, store_ids: [...storeIds] })
-        : await createEmployee({ full_name: f.full_name, email: f.email, password: f.password, hourly_rate_cents: rate, store_ids: [...storeIds] });
+        ? await actions.updateEmployee({ profile_id: employee.id, full_name: f.full_name, hourly_rate_cents: rate, store_ids: [...storeIds] })
+        : await actions.createEmployee({ full_name: f.full_name, email: f.email, password: f.password, hourly_rate_cents: rate, store_ids: [...storeIds] });
       if (res.ok) { toast.success(res.message); onClose(); } else toast.error(res.error);
     });
   };
 
   const toggleActive = () => startTransition(async () => {
     if (!employee) return;
-    const res = await setEmployeeActive(employee.id, !employee.active);
+    const res = await actions.setEmployeeActive(employee.id, !employee.active);
     if (res.ok) { toast.success(res.message); onClose(); } else toast.error(res.error);
   });
 

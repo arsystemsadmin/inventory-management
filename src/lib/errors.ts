@@ -20,6 +20,10 @@ const MESSAGES: Record<string, string> = {
   NOT_CLOCKED_IN: "You are not clocked in.",
   NO_CHANGES: "Nothing changed.",
   CANNOT_DEACTIVATE_OWNER: "The owner account can't be deactivated.",
+  EMAIL_TAKEN: "A user with this email already exists.",
+  INVALID_CREDENTIALS: "Invalid email or password.",
+  ACCOUNT_INACTIVE: "This account has been deactivated.",
+  NOT_FOUND: "Not found. It may have been removed.",
 };
 
 type PgLikeError = { message?: string; code?: string; details?: string | null } | null | undefined;

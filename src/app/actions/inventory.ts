@@ -7,22 +7,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult, SellResult } from "@/lib/types";
 
-const uuid = z.string().uuid();
-const qty = z.coerce.number().int().min(1, "Quantity must be at least 1").max(10000);
-const optText = (max: number) =>
-  z.string().trim().max(max).optional().nullable().transform((v) => (v ? v : null));
-const cents = z.coerce.number().int().min(0).max(100_000_000);
-
-const itemFields = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
-  sku: optText(64),
-  category: optText(100),
-  size: optText(40),
-  color: optText(40),
-  price_cents: cents,
-  cost_cents: cents,
-  low_stock_threshold: z.coerce.number().int().min(0).max(100000),
-});
+import { itemFields, newItemSchema, qty, uuid } from "@/lib/validation";
 
 function revalidateInventory() {
   revalidatePath("/inventory");
@@ -52,7 +37,7 @@ export async function sellItem(input: { itemId: string; quantity: number }): Pro
 }
 
 export async function createItem(input: unknown): Promise<ActionResult> {
-  const parsed = itemFields.extend({ store_id: uuid, quantity: z.coerce.number().int().min(0).max(100000) }).safeParse(input);
+  const parsed = newItemSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const supabase = await createClient();
   // business_id is filled by trigger from the store; RLS checks membership.

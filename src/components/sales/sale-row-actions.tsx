@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { requestVoid, voidSale } from "@/app/actions/sales";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,10 +13,11 @@ export function SaleRowActions({ saleId, label, isOwner, pendingRequest }: {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   if (!isOwner && pendingRequest) return <span className="text-xs text-amber-700">Void requested</span>;
 
   const go = () => startTransition(async () => {
-    const res = isOwner ? await voidSale(saleId) : await requestVoid(saleId, reason);
+    const res = isOwner ? await actions.voidSale(saleId) : await actions.requestVoid(saleId, reason);
     if (res.ok) { toast.success(res.message); setOpen(false); } else toast.error(res.error);
   });
 

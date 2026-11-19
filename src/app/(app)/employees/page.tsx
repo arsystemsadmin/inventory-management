@@ -1,11 +1,14 @@
 import { requireOwner } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isDemoMode } from "@/lib/mode";
 import { EmployeesTable } from "@/components/employees/employees-table";
 import { LiveRefresh } from "@/components/live-refresh";
+import { DemoEmployeesPage } from "@/components/demo/demo-pages";
 
 export const metadata = { title: "Employees · Binventory" };
 
 export default async function EmployeesPage() {
+  if (isDemoMode) return <DemoEmployeesPage />;
   await requireOwner();
   const supabase = await createClient();
   const [{ data: profiles }, { data: pay }, { data: members }, { data: stores }, { data: open }] = await Promise.all([

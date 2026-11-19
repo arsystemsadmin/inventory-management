@@ -12,7 +12,7 @@ function Checkbox({
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => onCheckedChange?.(e.target.checked)}
+        onChange={onCheckedChange ? (e) => onCheckedChange(e.target.checked) : undefined}
         className="peer size-5 appearance-none rounded border border-input bg-background checked:border-primary checked:bg-primary focus-visible:ring-[3px] focus-visible:ring-ring/50"
         {...props}
       />

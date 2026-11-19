@@ -8,15 +8,7 @@ import { requireOwner } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
 
-const rateCents = z.coerce.number().int().min(0).max(100_000);
-
-const createSchema = z.object({
-  full_name: z.string().trim().min(1, "Name is required").max(200),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Temporary password must be at least 8 characters").max(72),
-  hourly_rate_cents: rateCents,
-  store_ids: z.array(z.string().uuid()).max(200).default([]),
-});
+import { createEmployeeSchema as createSchema, updateEmployeeSchema } from "@/lib/validation";
 
 export async function createEmployee(input: unknown): Promise<ActionResult> {
   const owner = await requireOwner();
@@ -63,12 +55,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult> {
 
 export async function updateEmployee(input: unknown): Promise<ActionResult> {
   const owner = await requireOwner();
-  const parsed = z.object({
-    profile_id: z.string().uuid(),
-    full_name: z.string().trim().min(1).max(200),
-    hourly_rate_cents: rateCents,
-    store_ids: z.array(z.string().uuid()).max(200),
-  }).safeParse(input);
+  const parsed = updateEmployeeSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const v = parsed.data;
   const supabase = await createClient();

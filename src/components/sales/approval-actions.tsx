@@ -2,13 +2,14 @@
 
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { decideApproval } from "@/app/actions/sales";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 
 export function ApprovalActions({ id }: { id: string }) {
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   const decide = (approve: boolean) => startTransition(async () => {
-    const res = await decideApproval(id, approve);
+    const res = await actions.decideApproval(id, approve);
     if (res.ok) toast.success(res.message); else toast.error(res.error);
   });
   return (

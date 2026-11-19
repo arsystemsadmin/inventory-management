@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createStore, updateStore } from "@/app/actions/stores";
+import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import type { Store } from "@/lib/types";
 export function StoreFormDialog({ open, onClose, store }: { open: boolean; onClose: () => void; store?: Store }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const actions = useActions();
   const [f, setF] = useState({ name: "", type: "popup", address: "", starts_on: "", ends_on: "", status: "" });
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function StoreFormDialog({ open, onClose, store }: { open: boolean; onClo
     e.preventDefault();
     startTransition(async () => {
       const payload = { ...f, status: f.status || undefined };
-      const res = store ? await updateStore(store.id, payload) : await createStore(payload);
+      const res = store ? await actions.updateStore(store.id, payload) : await actions.createStore(payload);
       if (!res.ok) { toast.error(res.error); return; }
       toast.success(res.message);
       onClose();

@@ -18,7 +18,7 @@ export default function SignupPage() {
     async (prev: { error?: string; message?: string } | undefined, form: FormData): Promise<{ error?: string; message?: string } | undefined> => {
       if (!isDemoMode) return signup(prev, form);
       const res = await demoSignup(form);
-      if (!res.error) router.replace("/");
+      if (!res.error) router.replace("/app");
       return res;
     },
     undefined,

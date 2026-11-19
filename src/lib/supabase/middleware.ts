@@ -2,12 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { supabaseConfigured } from "./config";
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+const AUTH_PATHS = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+  const isAuthPage = AUTH_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+  const isPublic = isAuthPage || path === "/";
 
   // Demo mode (no backend configured): auth happens in the browser.
   if (!supabaseConfigured) return response;
@@ -35,9 +36,9 @@ export async function updateSession(request: NextRequest) {
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
-  if (user && isPublic) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/app";
     url.search = "";
     return NextResponse.redirect(url);
   }

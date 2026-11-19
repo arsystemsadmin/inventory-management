@@ -66,3 +66,45 @@
     input, select, textarea { font-size: 14px; }
   }
 }
+
+/* ------------------------------------------------------------------------ */
+/* Landing page (matches the AR Systems / Sophia site)                       */
+/* ------------------------------------------------------------------------ */
+.landing {
+  --ink: #17243b;
+  --muted: #59677d;
+  --blue: #2457d6;
+  --blue-deep: #1743a3;
+  --blue-soft: #eaf0ff;
+  --mark: #cfe0ff;
+  --line: #e6eaf2;
+  --night: #0f1a30;
+  --page: #f5f7fb;
+  background: var(--page);
+  color: var(--ink);
+  font-family: Inter, "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+}
+.landing .serif {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.landing .mark {
+  background: linear-gradient(transparent 62%, var(--mark) 62%, var(--mark) 92%, transparent 92%);
+  padding: 0 0.08em;
+}
+.landing .mark-night {
+  background: linear-gradient(transparent 62%, rgba(36, 87, 214, 0.75) 62%, rgba(36, 87, 214, 0.75) 92%, transparent 92%);
+  padding: 0 0.08em;
+}
+.landing .eyebrow {
+  font-family: SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.landing details > summary { list-style: none; }
+.landing details > summary::-webkit-details-marker { display: none; }
+.landing details[open] .faq-plus { transform: rotate(45deg); }

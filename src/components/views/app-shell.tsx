@@ -18,7 +18,7 @@ export function AppShellView({
     <div className="min-h-dvh flex flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
-          <Link href="/" className="flex items-center gap-2 font-semibold shrink-0">
+          <Link href="/app" className="flex items-center gap-2 font-semibold shrink-0">
             <Boxes className="size-5" />
             <span className="truncate max-w-[10rem] sm:max-w-none">{businessName}</span>
           </Link>

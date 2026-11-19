@@ -10,7 +10,7 @@ import { loginSchema, signupSchema } from "@/lib/validation";
 
 function safeNext(next: string | undefined) {
   // Only allow same-site relative paths (no "//evil.com" open redirects).
-  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/app";
 }
 
 export async function login(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -46,7 +46,7 @@ export async function signup(_prev: AuthFormState, formData: FormData): Promise<
   if (!data.session) {
     return { message: "Check your email to confirm your account, then sign in." };
   }
-  redirect("/");
+  redirect("/app");
 }
 
 export async function logout() {

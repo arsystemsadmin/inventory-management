@@ -189,6 +189,8 @@ and the `items_with_status` view feed:
 
 | Route | Who | |
 |---|---|---|
+| `/` | public | Landing page (product overview, same style as other AR Systems sites) |
+| `/app` | both | Sends owners to the dashboard and employees to their stores |
 | `/signup`, `/login` | public | Sign-up creates the business and owner (in demo mode: in browser storage) |
 | `/dashboard` | owner | Sales today and this week per store, on-shift staff with accrued pay, wages this week, stock alerts, approvals, live sales feed |
 | `/stores`, `/stores/[id]` | both (scoped) | Store info, today's numbers, setup banner / *Finish setup*, inventory, latest sales. Owner: edit, staff, reopen setup |

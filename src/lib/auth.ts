@@ -25,6 +25,6 @@ export async function requireProfile(): Promise<Profile> {
 
 export async function requireOwner(): Promise<Profile> {
   const profile = await requireProfile();
-  if (profile.role !== "owner") redirect("/");
+  if (profile.role !== "owner") redirect("/stores");
   return profile;
 }

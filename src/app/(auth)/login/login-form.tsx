@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { demoAccounts, demoLogin } from "@/lib/demo/auth";
 import { isDemoMode } from "@/lib/mode";
 
-const safeNext = (n?: string) => (n && n.startsWith("/") && !n.startsWith("//") ? n : "/");
+const safeNext = (n?: string) => (n && n.startsWith("/") && !n.startsWith("//") ? n : "/app");
 
 export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
   const router = useRouter();
@@ -37,7 +37,7 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
         </CardHeader>
         <CardContent>
           <form action={action} className="grid gap-4">
-            <input type="hidden" name="next" value={next ?? "/"} />
+            <input type="hidden" name="next" value={next ?? "/app"} />
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />

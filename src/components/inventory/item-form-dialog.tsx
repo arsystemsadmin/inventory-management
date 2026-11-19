@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { centsToInput, parseMoneyToCents } from "@/lib/format";
 import type { Item } from "@/lib/types";
 import { SizeQuantityPicker, type SizeRow } from "./size-quantity-picker";
+import { itemImageUrl, uploadItemImage } from "@/lib/item-images";
 
-type StoreOpt = { id: string; name: string };
+type StoreOpt = { id: string; name: string; business_id: string };
 
 const empty = { name: "", sku: "", category: "", size: "", color: "", price: "", cost: "", quantity: "", threshold: "3" };
 
@@ -32,6 +34,8 @@ export function ItemFormDialog({
   const [storeId, setStoreId] = useState(defaultStoreId ?? stores[0]?.id ?? "");
   const [reason, setReason] = useState("");
   const [sizes, setSizes] = useState<SizeRow[]>([]);
+  const [imagePath, setImagePath] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const nameRef = useRef<HTMLInputElement>(null);
@@ -41,6 +45,7 @@ export function ItemFormDialog({
     if (!open) return;
     setReason("");
     setSizes([]);
+    setImagePath(item?.image_path ?? null);
     if (item) {
       setStoreId(item.store_id);
       setF({
@@ -60,13 +65,27 @@ export function ItemFormDialog({
   const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
   const approval = !!item && needsApproval(item.store_id);
 
+  const onPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow picking the same file again
+    if (!file) return;
+    const targetStore = item?.store_id ?? storeId;
+    const businessId = item?.business_id ?? stores.find((x) => x.id === targetStore)?.business_id;
+    if (!targetStore || !businessId) { toast.error("Pick a store first"); return; }
+    setUploading(true);
+    const res = await uploadItemImage(file, businessId, targetStore);
+    setUploading(false);
+    if (res.ok) setImagePath(res.path); else toast.error(res.error);
+  };
+  const photoUrl = itemImageUrl(imagePath);
+
   const submit = (addAnother: boolean) => {
     const price = parseMoneyToCents(f.price || "0");
     const cost = parseMoneyToCents(f.cost || "0");
     if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error("Enter prices like 12.50"); return; }
     const fields = {
       name: f.name, sku: f.sku, category: f.category, size: f.size, color: f.color,
-      price_cents: price, cost_cents: cost, low_stock_threshold: Number(f.threshold || 0),
+      price_cents: price, cost_cents: cost, low_stock_threshold: Number(f.threshold || 0), image_path: imagePath,
     };
     startTransition(async () => {
       if (item) {
@@ -74,6 +93,7 @@ export function ItemFormDialog({
         const before: Record<string, unknown> = {
           name: item.name, sku: item.sku ?? "", category: item.category ?? "", size: item.size ?? "", color: item.color ?? "",
           price_cents: item.price_cents, cost_cents: item.cost_cents, low_stock_threshold: item.low_stock_threshold,
+          image_path: item.image_path ?? null,
         };
         const changes = Object.fromEntries(Object.entries(fields).filter(([k, v]) => before[k] !== v));
         const res = await actions.saveItemEdit({ itemId: item.id, changes, reason });
@@ -98,7 +118,8 @@ export function ItemFormDialog({
       if (addAnother) {
         // Same product in another color: keep details and sizes, reset color and quantities.
         setF((s) => ({ ...s, sku: "", color: "", quantity: "" }));
-        setSizes((rs) => rs.map((r) => ({ ...r, qty: "" })));
+        setImagePath(null);
+        setSizes((rs) => rs.map((r) => ({ ...r, qty: "1" })));
         colorRef.current?.focus();
       } else {
         onClose();
@@ -130,6 +151,27 @@ export function ItemFormDialog({
             <Label htmlFor="name">Name</Label>
             <Input id="name" ref={nameRef} value={f.name} onChange={set("name")} required maxLength={200} placeholder="e.g. Linen Shirt" />
           </div>
+          <div className="grid gap-1.5">
+            <Label>Photo <span className="font-normal text-muted-foreground">(optional)</span></Label>
+            <div className="flex items-center gap-3">
+              <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-lg border bg-muted">
+                {uploading ? <Loader2 className="size-5 animate-spin text-muted-foreground" />
+                  : photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- user photos; no image optimizer on Workers
+                    <img src={photoUrl} alt="Item photo" className="size-full object-cover" />
+                  ) : <ImageIcon className="size-6 text-muted-foreground" />}
+              </div>
+              <div className="flex flex-col items-start gap-1.5">
+                <label className="inline-flex h-10 cursor-pointer items-center rounded-md border px-4 text-sm font-medium hover:bg-muted">
+                  {photoUrl ? "Change photo" : "Add photo"}
+                  <input type="file" accept="image/*" className="sr-only" onChange={onPhoto} disabled={uploading} />
+                </label>
+                {photoUrl && !uploading && (
+                  <button type="button" className="text-sm text-muted-foreground underline" onClick={() => setImagePath(null)}>Remove photo</button>
+                )}
+              </div>
+            </div>
+          </div>
           {item ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
@@ -155,11 +197,11 @@ export function ItemFormDialog({
           )}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="price">Price ($)</Label>
+              <Label htmlFor="price">Price (₪)</Label>
               <Input id="price" inputMode="decimal" value={f.price} onChange={set("price")} required placeholder="0.00" />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="cost">Cost ($)</Label>
+              <Label htmlFor="cost">Cost (₪)</Label>
               <Input id="cost" inputMode="decimal" value={f.cost} onChange={set("cost")} placeholder="0.00" />
             </div>
           </div>
@@ -194,11 +236,11 @@ export function ItemFormDialog({
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-1">
             {!item && (
-              <Button type="button" variant="outline" size="lg" disabled={pending} onClick={() => submit(true)}>
+              <Button type="button" variant="outline" size="lg" disabled={pending || uploading} onClick={() => submit(true)}>
                 Save &amp; add another color
               </Button>
             )}
-            <Button type="submit" size="lg" disabled={pending}>
+            <Button type="submit" size="lg" disabled={pending || uploading}>
               {pending ? "Saving…" : approval ? "Request approval" : "Save"}
             </Button>
           </div>

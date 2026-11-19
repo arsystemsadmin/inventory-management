@@ -7,7 +7,7 @@ import type { InventoryStore } from "@/components/inventory/inventory-view";
 export async function loadInventory(storeId?: string) {
   const supabase = await createClient();
   let itemsQ = supabase.from("items_with_status").select("*").order("name");
-  let storesQ = supabase.from("stores").select("id, name, inventory_locked_at, status").order("name");
+  let storesQ = supabase.from("stores").select("id, business_id, name, inventory_locked_at, status").order("name");
   if (storeId) {
     itemsQ = itemsQ.eq("store_id", storeId);
     storesQ = storesQ.eq("id", storeId);

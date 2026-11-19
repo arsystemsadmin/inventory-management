@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { centsToInput, parseMoneyToCents } from "@/lib/format";
+import { centsToInput, formatMoney, parseMoneyToCents } from "@/lib/format";
 import type { ShiftWithPay } from "@/lib/time";
 
 type Person = { id: string; full_name: string; rate_cents: number | null };
@@ -101,7 +101,7 @@ export function TimeEntryDialog({
             <Input id="t-out" type="datetime-local" value={f.clock_out} onChange={set("clock_out")} />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="t-rate">Rate for this shift ($/h)</Label>
+            <Label htmlFor="t-rate">Rate for this shift (₪/h)</Label>
             <Input id="t-rate" inputMode="decimal" value={f.rate} onChange={set("rate")} required />
           </div>
           <div className="grid gap-1.5">
@@ -126,7 +126,7 @@ export function PayrollEntries({
   const personName = new Map(people.map((p) => [p.id, p.full_name]));
   const storeName = new Map(stores.map((s) => [s.id, s.name]));
   const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const money = (c: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(c / 100);
+  const money = formatMoney;
   const mins = (m: number) => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
 
   return (

@@ -49,11 +49,18 @@ export const demoActions: AppActions = {
   async saveItemEdit({ itemId, changes, reason }) {
     const p = itemFields.partial().safeParse(changes);
     if (!p.success) return invalid(p.error);
-    const diff = Object.fromEntries(Object.entries(p.data).filter(([, v]) => v !== undefined));
-    if (!Object.keys(diff).length) return { ok: false, error: "Nothing changed." };
+    const { image_path, ...rest } = p.data;
+    const diff = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
+    const imageChanged = "image_path" in (changes as object);
+    if (!Object.keys(diff).length && !imageChanged) return { ok: false, error: "Nothing changed." };
     const u = me();
     const item = getState().items.find((i) => i.id === itemId);
     if (!u || !item) return { ok: false, error: "Item not found." };
+    if (imageChanged) {
+      const r = run(() => commit((s) => L.setItemImage(s, u.id, itemId, image_path ?? null)));
+      if (!r.ok) return r;
+      if (!Object.keys(diff).length) return { ok: true, message: image_path ? "Photo updated" : "Photo removed" };
+    }
     if (L.canEditDirectly(getState(), u, item.store_id)) {
       const r = run(() => commit((s) => L.editItem(s, u.id, itemId, diff)), "Item updated");
       return r.ok ? { ok: true, message: r.message } : r;

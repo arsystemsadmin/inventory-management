@@ -17,7 +17,12 @@ export const itemFields = z.object({
   price_cents: cents,
   cost_cents: cents,
   low_stock_threshold: z.coerce.number().int().min(0).max(100000),
+  // Storage path (database mode) or a small data URL (browser demo mode).
+  image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
 });
+
+/** Storage paths look like <business uuid>/<store uuid>/<file uuid>.jpg */
+export const STORAGE_IMAGE_PATH = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|jpeg|png|webp)$/i;
 
 export const newItemSchema = itemFields.extend({
   store_id: uuid,

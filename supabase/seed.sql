@@ -42,9 +42,9 @@ select pg_temp.seed_user('00000000-0000-4000-a000-000000000003', 'leo@popup.test
   jsonb_build_object('business_id', (select biz from seed_ids)), '{"full_name":"Leo Park"}');
 
 insert into public.employee_pay (profile_id, business_id, hourly_rate_cents)
-select '00000000-0000-4000-a000-000000000002'::uuid, biz, 1800 from seed_ids
+select '00000000-0000-4000-a000-000000000002'::uuid, biz, 4500 from seed_ids
 union all
-select '00000000-0000-4000-a000-000000000003'::uuid, biz, 1650 from seed_ids;
+select '00000000-0000-4000-a000-000000000003'::uuid, biz, 4500 from seed_ids;
 
 -- ---------------------------------------------------------------------------
 -- Stores
@@ -75,39 +75,39 @@ select s, p, biz from seed_ids, (values
 -- ---------------------------------------------------------------------------
 insert into public.items (store_id, name, sku, category, size, color, price_cents, cost_cents, quantity, low_stock_threshold) values
   -- Main Street Shop
-  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-WHT-S', 'Shirts',    'S',  'White', 5800, 2200, 12, 4),
-  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-WHT-M', 'Shirts',    'M',  'White', 5800, 2200, 6,  4),
-  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-NVY-M', 'Shirts',    'M',  'Navy',  5800, 2200, 4,  4),
-  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-NVY-L', 'Shirts',    'L',  'Navy',  5800, 2200, 9,  4),
-  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-30','Pants',     '30', 'Indigo',12800,5200, 7,  3),
-  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-32','Pants',     '32', 'Indigo',12800,5200, 2,  3),
-  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-34','Pants',     '34', 'Indigo',12800,5200, 5,  3),
-  ('00000000-0000-4000-b000-000000000001', 'Wool Beanie',     'WB-CHR',   'Accessories','One size','Charcoal',2800,900, 20, 6),
-  ('00000000-0000-4000-b000-000000000001', 'Wool Beanie',     'WB-RST',   'Accessories','One size','Rust',    2800,900, 1,  6),
-  ('00000000-0000-4000-b000-000000000001', 'Canvas Tote',     'CT-NAT',   'Accessories','One size','Natural', 3200,1100, 15, 5),
-  ('00000000-0000-4000-b000-000000000001', 'Leather Belt',    'LB-BRN-M', 'Accessories','M',  'Brown',   4800,1800, 0,  2),
-  ('00000000-0000-4000-b000-000000000001', 'Leather Belt',    'LB-BLK-M', 'Accessories','M',  'Black',   4800,1800, 6,  2),
+  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-WHT-S', 'Shirts',    'S',  'White', 17400, 6600, 12, 4),
+  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-WHT-M', 'Shirts',    'M',  'White', 17400, 6600, 6, 4),
+  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-NVY-M', 'Shirts',    'M',  'Navy', 17400, 6600, 4, 4),
+  ('00000000-0000-4000-b000-000000000001', 'Linen Shirt',     'LS-NVY-L', 'Shirts',    'L',  'Navy', 17400, 6600, 9, 4),
+  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-30','Pants',     '30', 'Indigo', 38400, 15600, 7, 3),
+  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-32','Pants',     '32', 'Indigo', 38400, 15600, 2, 3),
+  ('00000000-0000-4000-b000-000000000001', 'Selvedge Jeans',  'SJ-IND-34','Pants',     '34', 'Indigo', 38400, 15600, 5, 3),
+  ('00000000-0000-4000-b000-000000000001', 'Wool Beanie',     'WB-CHR',   'Accessories','One size','Charcoal', 8400, 2700, 20, 6),
+  ('00000000-0000-4000-b000-000000000001', 'Wool Beanie',     'WB-RST',   'Accessories','One size','Rust', 8400, 2700, 1, 6),
+  ('00000000-0000-4000-b000-000000000001', 'Canvas Tote',     'CT-NAT',   'Accessories','One size','Natural', 9600, 3300, 15, 5),
+  ('00000000-0000-4000-b000-000000000001', 'Leather Belt',    'LB-BRN-M', 'Accessories','M',  'Brown', 14400, 5400, 0, 2),
+  ('00000000-0000-4000-b000-000000000001', 'Leather Belt',    'LB-BLK-M', 'Accessories','M',  'Black', 14400, 5400, 6, 2),
   -- Riverside Flea Market
-  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-S', 'T-Shirts',  'S',  'Black', 3500, 900, 6,  3),
-  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-M', 'T-Shirts',  'M',  'Black', 3500, 900, 8,  3),
-  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-L', 'T-Shirts',  'L',  'Black', 3500, 900, 3,  3),
-  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-WHT-M', 'T-Shirts',  'M',  'White', 3500, 900, 10, 3),
-  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-LT-M',  'Outerwear', 'M',  'Light wash', 8500, 3000, 4, 2),
-  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-LT-L',  'Outerwear', 'L',  'Light wash', 8500, 3000, 2, 2),
-  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-DK-M',  'Outerwear', 'M',  'Dark wash',  8500, 3000, 5, 2),
-  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-OAT-M', 'Knitwear',  'M',  'Oatmeal', 6400, 2400, 7, 3),
-  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-OAT-L', 'Knitwear',  'L',  'Oatmeal', 6400, 2400, 2, 3),
-  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-GRN-M', 'Knitwear',  'M',  'Forest',  6400, 2400, 6, 3),
-  ('00000000-0000-4000-b000-000000000002', 'Bucket Hat',      'BH-KHK',   'Accessories','One size','Khaki', 2400, 700, 12, 4),
-  ('00000000-0000-4000-b000-000000000002', 'Bucket Hat',      'BH-BLK',   'Accessories','One size','Black', 2400, 700, 3,  4),
-  ('00000000-0000-4000-b000-000000000002', 'Patch Pack',      'PP-MIX',   'Accessories','One size','Mixed', 1200, 300, 25, 8),
+  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-S', 'T-Shirts',  'S',  'Black', 10500, 2700, 6, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-M', 'T-Shirts',  'M',  'Black', 10500, 2700, 8, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-BLK-L', 'T-Shirts',  'L',  'Black', 10500, 2700, 3, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Vintage Band Tee','VT-WHT-M', 'T-Shirts',  'M',  'White', 10500, 2700, 10, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-LT-M',  'Outerwear', 'M',  'Light wash', 25500, 9000, 4, 2),
+  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-LT-L',  'Outerwear', 'L',  'Light wash', 25500, 9000, 2, 2),
+  ('00000000-0000-4000-b000-000000000002', 'Denim Jacket',    'DJ-DK-M',  'Outerwear', 'M',  'Dark wash', 25500, 9000, 5, 2),
+  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-OAT-M', 'Knitwear',  'M',  'Oatmeal', 19200, 7200, 7, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-OAT-L', 'Knitwear',  'L',  'Oatmeal', 19200, 7200, 2, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Crewneck Sweater','CS-GRN-M', 'Knitwear',  'M',  'Forest', 19200, 7200, 6, 3),
+  ('00000000-0000-4000-b000-000000000002', 'Bucket Hat',      'BH-KHK',   'Accessories','One size','Khaki', 7200, 2100, 12, 4),
+  ('00000000-0000-4000-b000-000000000002', 'Bucket Hat',      'BH-BLK',   'Accessories','One size','Black', 7200, 2100, 3, 4),
+  ('00000000-0000-4000-b000-000000000002', 'Patch Pack',      'PP-MIX',   'Accessories','One size','Mixed', 3600, 900, 25, 8),
   -- Winter Night Market (still in setup mode)
-  ('00000000-0000-4000-b000-000000000003', 'Puffer Vest',     'PV-BLK-M', 'Outerwear', 'M',  'Black', 9800, 3800, 8, 3),
-  ('00000000-0000-4000-b000-000000000003', 'Puffer Vest',     'PV-BLK-L', 'Outerwear', 'L',  'Black', 9800, 3800, 6, 3),
-  ('00000000-0000-4000-b000-000000000003', 'Fleece Pullover', 'FP-CRM-M', 'Outerwear', 'M',  'Cream', 7400, 2600, 5, 3),
-  ('00000000-0000-4000-b000-000000000003', 'Fleece Pullover', 'FP-CRM-S', 'Outerwear', 'S',  'Cream', 7400, 2600, 0, 3),
-  ('00000000-0000-4000-b000-000000000003', 'Knit Scarf',      'KS-RED',   'Accessories','One size','Red',  3600, 1200, 14, 5),
-  ('00000000-0000-4000-b000-000000000003', 'Knit Mittens',    'KM-GRY',   'Accessories','One size','Grey', 2600, 800, 2,  4);
+  ('00000000-0000-4000-b000-000000000003', 'Puffer Vest',     'PV-BLK-M', 'Outerwear', 'M',  'Black', 29400, 11400, 8, 3),
+  ('00000000-0000-4000-b000-000000000003', 'Puffer Vest',     'PV-BLK-L', 'Outerwear', 'L',  'Black', 29400, 11400, 6, 3),
+  ('00000000-0000-4000-b000-000000000003', 'Fleece Pullover', 'FP-CRM-M', 'Outerwear', 'M',  'Cream', 22200, 7800, 5, 3),
+  ('00000000-0000-4000-b000-000000000003', 'Fleece Pullover', 'FP-CRM-S', 'Outerwear', 'S',  'Cream', 22200, 7800, 0, 3),
+  ('00000000-0000-4000-b000-000000000003', 'Knit Scarf',      'KS-RED',   'Accessories','One size','Red', 10800, 3600, 14, 5),
+  ('00000000-0000-4000-b000-000000000003', 'Knit Mittens',    'KM-GRY',   'Accessories','One size','Grey', 7800, 2400, 2, 4);
 
 -- ---------------------------------------------------------------------------
 -- Sales: made through sell_item() so stock, sales and movements agree, then
@@ -176,7 +176,7 @@ begin
     'Customer changed their mind right away');
   perform set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-a000-000000000003","role":"authenticated"}', true);
   perform public.request_approval('edit_item', (select id from public.items where sku = 'PP-MIX'),
-    'Price tag says $10, not $12', '{"price_cents": 1000}'::jsonb);
+    'Price tag says ₪30, not ₪36', '{"price_cents": 3000}'::jsonb);
   perform set_config('request.jwt.claims', '', true);
 end $$;
 
@@ -201,4 +201,4 @@ select biz, s, p, ci, co from seed_ids, (values
 ) as t(s, p, ci, co);
 
 -- Rate changed after older shifts: proves payroll uses snapshots.
-update public.employee_pay set hourly_rate_cents = 1900 where profile_id = '00000000-0000-4000-a000-000000000002';
+update public.employee_pay set hourly_rate_cents = 4800 where profile_id = '00000000-0000-4000-a000-000000000002';

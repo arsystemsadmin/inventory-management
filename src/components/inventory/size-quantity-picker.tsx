@@ -22,10 +22,10 @@ export function SizeQuantityPicker({ rows, onChange }: { rows: SizeRow[]; onChan
   const toggle = (size: string) =>
     onChange(selected.has(size.toLowerCase())
       ? rows.filter((r) => r.size.toLowerCase() !== size.toLowerCase())
-      : sorted([...rows, { size, qty: "" }]));
+      : sorted([...rows, { size, qty: "1" }]));
   const addCustom = () => {
     const size = custom.trim().slice(0, 40);
-    if (size && !selected.has(size.toLowerCase())) onChange(sorted([...rows, { size, qty: "" }]));
+    if (size && !selected.has(size.toLowerCase())) onChange(sorted([...rows, { size, qty: "1" }]));
     setCustom("");
   };
   const setQty = (size: string, qty: string) =>

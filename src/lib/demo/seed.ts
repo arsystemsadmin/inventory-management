@@ -49,47 +49,47 @@ export function seedSampleData(s: DemoState, ownerId: string, employeePasswordHa
     stores.forEach((st) => s.members.push({ store_id: st.id, profile_id: id, business_id: biz }));
     return { id, email };
   };
-  const maya = mkEmployee("Maya Santos", "maya", 1800, [main, flea]);
-  const leo = mkEmployee("Leo Park", "leo", 1650, [flea, winter]);
+  const maya = mkEmployee("Maya Santos", "maya", 4500, [main, flea]);
+  const leo = mkEmployee("Leo Park", "leo", 4500, [flea, winter]);
 
   type Row = [string, string, string, string, string | null, string, number, number, number, number];
   const rows: [DemoStore, Row[]][] = [
     [main, [
-      ["Linen Shirt", "LS-WHT-S", "Shirts", "S", "White", "", 5800, 2200, 12, 4],
-      ["Linen Shirt", "LS-WHT-M", "Shirts", "M", "White", "", 5800, 2200, 6, 4],
-      ["Linen Shirt", "LS-NVY-M", "Shirts", "M", "Navy", "", 5800, 2200, 4, 4],
-      ["Linen Shirt", "LS-NVY-L", "Shirts", "L", "Navy", "", 5800, 2200, 9, 4],
-      ["Selvedge Jeans", "SJ-IND-30", "Pants", "30", "Indigo", "", 12800, 5200, 7, 3],
-      ["Selvedge Jeans", "SJ-IND-32", "Pants", "32", "Indigo", "", 12800, 5200, 2, 3],
-      ["Selvedge Jeans", "SJ-IND-34", "Pants", "34", "Indigo", "", 12800, 5200, 5, 3],
-      ["Wool Beanie", "WB-CHR", "Accessories", "One size", "Charcoal", "", 2800, 900, 20, 6],
-      ["Wool Beanie", "WB-RST", "Accessories", "One size", "Rust", "", 2800, 900, 1, 6],
-      ["Canvas Tote", "CT-NAT", "Accessories", "One size", "Natural", "", 3200, 1100, 15, 5],
-      ["Leather Belt", "LB-BRN-M", "Accessories", "M", "Brown", "", 4800, 1800, 0, 2],
-      ["Leather Belt", "LB-BLK-M", "Accessories", "M", "Black", "", 4800, 1800, 6, 2],
+      ["Linen Shirt", "LS-WHT-S", "Shirts", "S", "White", "", 17400, 6600, 12, 4],
+      ["Linen Shirt", "LS-WHT-M", "Shirts", "M", "White", "", 17400, 6600, 6, 4],
+      ["Linen Shirt", "LS-NVY-M", "Shirts", "M", "Navy", "", 17400, 6600, 4, 4],
+      ["Linen Shirt", "LS-NVY-L", "Shirts", "L", "Navy", "", 17400, 6600, 9, 4],
+      ["Selvedge Jeans", "SJ-IND-30", "Pants", "30", "Indigo", "", 38400, 15600, 7, 3],
+      ["Selvedge Jeans", "SJ-IND-32", "Pants", "32", "Indigo", "", 38400, 15600, 2, 3],
+      ["Selvedge Jeans", "SJ-IND-34", "Pants", "34", "Indigo", "", 38400, 15600, 5, 3],
+      ["Wool Beanie", "WB-CHR", "Accessories", "One size", "Charcoal", "", 8400, 2700, 20, 6],
+      ["Wool Beanie", "WB-RST", "Accessories", "One size", "Rust", "", 8400, 2700, 1, 6],
+      ["Canvas Tote", "CT-NAT", "Accessories", "One size", "Natural", "", 9600, 3300, 15, 5],
+      ["Leather Belt", "LB-BRN-M", "Accessories", "M", "Brown", "", 14400, 5400, 0, 2],
+      ["Leather Belt", "LB-BLK-M", "Accessories", "M", "Black", "", 14400, 5400, 6, 2],
     ]],
     [flea, [
-      ["Vintage Band Tee", "VT-BLK-S", "T-Shirts", "S", "Black", "", 3500, 900, 6, 3],
-      ["Vintage Band Tee", "VT-BLK-M", "T-Shirts", "M", "Black", "", 3500, 900, 8, 3],
-      ["Vintage Band Tee", "VT-BLK-L", "T-Shirts", "L", "Black", "", 3500, 900, 3, 3],
-      ["Vintage Band Tee", "VT-WHT-M", "T-Shirts", "M", "White", "", 3500, 900, 10, 3],
-      ["Denim Jacket", "DJ-LT-M", "Outerwear", "M", "Light wash", "", 8500, 3000, 4, 2],
-      ["Denim Jacket", "DJ-LT-L", "Outerwear", "L", "Light wash", "", 8500, 3000, 2, 2],
-      ["Denim Jacket", "DJ-DK-M", "Outerwear", "M", "Dark wash", "", 8500, 3000, 5, 2],
-      ["Crewneck Sweater", "CS-OAT-M", "Knitwear", "M", "Oatmeal", "", 6400, 2400, 7, 3],
-      ["Crewneck Sweater", "CS-OAT-L", "Knitwear", "L", "Oatmeal", "", 6400, 2400, 2, 3],
-      ["Crewneck Sweater", "CS-GRN-M", "Knitwear", "M", "Forest", "", 6400, 2400, 6, 3],
-      ["Bucket Hat", "BH-KHK", "Accessories", "One size", "Khaki", "", 2400, 700, 12, 4],
-      ["Bucket Hat", "BH-BLK", "Accessories", "One size", "Black", "", 2400, 700, 3, 4],
-      ["Patch Pack", "PP-MIX", "Accessories", "One size", "Mixed", "", 1200, 300, 25, 8],
+      ["Vintage Band Tee", "VT-BLK-S", "T-Shirts", "S", "Black", "", 10500, 2700, 6, 3],
+      ["Vintage Band Tee", "VT-BLK-M", "T-Shirts", "M", "Black", "", 10500, 2700, 8, 3],
+      ["Vintage Band Tee", "VT-BLK-L", "T-Shirts", "L", "Black", "", 10500, 2700, 3, 3],
+      ["Vintage Band Tee", "VT-WHT-M", "T-Shirts", "M", "White", "", 10500, 2700, 10, 3],
+      ["Denim Jacket", "DJ-LT-M", "Outerwear", "M", "Light wash", "", 25500, 9000, 4, 2],
+      ["Denim Jacket", "DJ-LT-L", "Outerwear", "L", "Light wash", "", 25500, 9000, 2, 2],
+      ["Denim Jacket", "DJ-DK-M", "Outerwear", "M", "Dark wash", "", 25500, 9000, 5, 2],
+      ["Crewneck Sweater", "CS-OAT-M", "Knitwear", "M", "Oatmeal", "", 19200, 7200, 7, 3],
+      ["Crewneck Sweater", "CS-OAT-L", "Knitwear", "L", "Oatmeal", "", 19200, 7200, 2, 3],
+      ["Crewneck Sweater", "CS-GRN-M", "Knitwear", "M", "Forest", "", 19200, 7200, 6, 3],
+      ["Bucket Hat", "BH-KHK", "Accessories", "One size", "Khaki", "", 7200, 2100, 12, 4],
+      ["Bucket Hat", "BH-BLK", "Accessories", "One size", "Black", "", 7200, 2100, 3, 4],
+      ["Patch Pack", "PP-MIX", "Accessories", "One size", "Mixed", "", 3600, 900, 25, 8],
     ]],
     [winter, [
-      ["Puffer Vest", "PV-BLK-M", "Outerwear", "M", "Black", "", 9800, 3800, 8, 3],
-      ["Puffer Vest", "PV-BLK-L", "Outerwear", "L", "Black", "", 9800, 3800, 6, 3],
-      ["Fleece Pullover", "FP-CRM-M", "Outerwear", "M", "Cream", "", 7400, 2600, 5, 3],
-      ["Fleece Pullover", "FP-CRM-S", "Outerwear", "S", "Cream", "", 7400, 2600, 0, 3],
-      ["Knit Scarf", "KS-RED", "Accessories", "One size", "Red", "", 3600, 1200, 14, 5],
-      ["Knit Mittens", "KM-GRY", "Accessories", "One size", "Grey", "", 2600, 800, 2, 4],
+      ["Puffer Vest", "PV-BLK-M", "Outerwear", "M", "Black", "", 29400, 11400, 8, 3],
+      ["Puffer Vest", "PV-BLK-L", "Outerwear", "L", "Black", "", 29400, 11400, 6, 3],
+      ["Fleece Pullover", "FP-CRM-M", "Outerwear", "M", "Cream", "", 22200, 7800, 5, 3],
+      ["Fleece Pullover", "FP-CRM-S", "Outerwear", "S", "Cream", "", 22200, 7800, 0, 3],
+      ["Knit Scarf", "KS-RED", "Accessories", "One size", "Red", "", 10800, 3600, 14, 5],
+      ["Knit Mittens", "KM-GRY", "Accessories", "One size", "Grey", "", 7800, 2400, 2, 4],
     ]],
   ];
   const bySku = new Map<string, string>();
@@ -121,7 +121,7 @@ export function seedSampleData(s: DemoState, ownerId: string, employeePasswordHa
 
   requestApproval(s, maya.id, "void_sale", s.sales.find((x) => x.item_id === bySku.get("CS-GRN-M"))!.id,
     "Customer changed their mind right away");
-  requestApproval(s, leo.id, "edit_item", bySku.get("PP-MIX")!, "Price tag says $10, not $12", { price_cents: 1000 });
+  requestApproval(s, leo.id, "edit_item", bySku.get("PP-MIX")!, "Price tag says ₪30, not ₪36", { price_cents: 3000 });
 
   const at = (dayOffset: number, hour: number) => {
     const d = new Date(); d.setHours(hour, 0, 0, 0); d.setDate(d.getDate() + dayOffset);
@@ -130,12 +130,12 @@ export function seedSampleData(s: DemoState, ownerId: string, employeePasswordHa
   const shift = (who: string, st: DemoStore, start: string, end: string | null, rate: number) =>
     s.shifts.push({ id: newId(), business_id: biz, store_id: st.id, profile_id: who, clock_in: start, clock_out: end,
       hourly_rate_cents_snapshot: rate, note: null, edited_by: null });
-  shift(maya.id, main, at(-5, 9), at(-5, 17), 1800);
-  shift(maya.id, main, at(-4, 10), at(-4, 16), 1800);
-  shift(maya.id, flea, at(-2, 8), at(-2, 18), 1800);
-  shift(leo.id, flea, at(-2, 8), at(-2, 18), 1650);
-  shift(leo.id, flea, at(-1, 8), null, 1650); // forgot to clock out -> flagged on payroll
-  s.pay.find((p) => p.profile_id === maya.id)!.hourly_rate_cents = 1900; // later raise; past shifts keep $18
+  shift(maya.id, main, at(-5, 9), at(-5, 17), 4500);
+  shift(maya.id, main, at(-4, 10), at(-4, 16), 4500);
+  shift(maya.id, flea, at(-2, 8), at(-2, 18), 4500);
+  shift(leo.id, flea, at(-2, 8), at(-2, 18), 4500);
+  shift(leo.id, flea, at(-1, 8), null, 4500); // forgot to clock out -> flagged on payroll
+  s.pay.find((p) => p.profile_id === maya.id)!.hourly_rate_cents = 4800; // later raise; past shifts keep the old rate
   clockIn(s, maya.id, flea.id);
   s.shifts[s.shifts.length - 1].clock_in = iso(3 * H + 10 * 60_000);
   void addStock; void winter;

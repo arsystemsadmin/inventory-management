@@ -61,7 +61,7 @@ const HOW = [
   { n: 3, t: "Finish setup to lock it", d: "From now on, changes and removals go to you for approval.", ui: <span className="flex items-center gap-1.5 rounded-lg bg-violet-500/90 px-3 py-2 text-xs font-semibold text-white"><Lock className="size-3.5" /> Setup finished</span> },
   { n: 4, t: "Sell in two taps", d: "Pick the size and color, set how many, confirm. Stock updates instantly.", ui: <span className="rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white">Confirm sale · 2 × M · Dark wash</span> },
   { n: 5, t: "Warnings before you run out", d: "Low, critical and out-of-stock items show up everywhere you look.", ui: <span className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-900">Bucket Hat (Black) is critically low</span> },
-  { n: 6, t: "You stay in charge", d: "Approve edits and voids, and see hours and wages owed as shifts run.", ui: <span className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs text-[var(--ink)]"><Bell className="size-3.5 text-[var(--blue)]" /> New sale · 2 × Denim Jacket · $170</span> },
+  { n: 6, t: "You stay in charge", d: "Approve edits and voids, and see hours and wages owed as shifts run.", ui: <span className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs text-[var(--ink)]"><Bell className="size-3.5 text-[var(--blue)]" /> New sale · 2 × Denim Jacket · ₪360</span> },
 ];
 
 const FEATURES = [

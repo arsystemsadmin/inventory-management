@@ -12,8 +12,9 @@ import { STOCK_STATUSES, type Item, type Role, type StockStatus } from "@/lib/ty
 import { SellDialog } from "./sell-dialog";
 import { ItemFormDialog } from "./item-form-dialog";
 import { ItemActionsDialog } from "./item-actions-dialog";
+import { ItemThumb } from "./item-thumb";
 
-export type InventoryStore = { id: string; name: string; inventory_locked_at: string | null; status: string };
+export type InventoryStore = { id: string; business_id: string; name: string; inventory_locked_at: string | null; status: string };
 
 export function InventoryView({
   items, stores, role, fixedStoreId, initialStatus,
@@ -141,6 +142,7 @@ export function InventoryView({
         <ul className="divide-y rounded-lg border bg-card">
           {filtered.map((item) => (
             <li key={item.id} className="flex items-center gap-3 px-3 py-3">
+              <ItemThumb path={item.image_path} alt={item.name} />
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                   <span className="font-medium">{item.name}</span>

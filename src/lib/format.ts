@@ -1,12 +1,15 @@
 import type { StockStatus } from "./types";
 
+// Israeli shekels. Amounts are stored as integer agorot (1/100 shekel).
+const money = new Intl.NumberFormat("en-IL", { style: "currency", currency: "ILS", currencyDisplay: "narrowSymbol" });
+
 export function formatMoney(cents: number | null | undefined) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format((cents ?? 0) / 100);
+  return money.format((cents ?? 0) / 100);
 }
 
-/** "12.50" -> 1250. Returns NaN for junk. */
+/** "12.50" / "₪12.50" -> 1250 agorot. Returns NaN for junk. */
 export function parseMoneyToCents(input: string): number {
-  const cleaned = input.replace(/[$,\s]/g, "");
+  const cleaned = input.replace(/[₪$,\s]/g, "");
   if (!/^\d+(\.\d{0,2})?$/.test(cleaned)) return NaN;
   const [whole, frac = ""] = cleaned.split(".");
   return Number(whole) * 100 + Number(frac.padEnd(2, "0"));

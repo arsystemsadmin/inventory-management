@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { AlertTriangle, ClipboardCheck, Clock, DollarSign, Package, Wallet } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, Clock, Package, Wallet } from "lucide-react";
+import { ShekelSign } from "@/components/icons/shekel-sign";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LocalTime } from "@/components/local-time";
@@ -27,7 +28,7 @@ export function DashboardView({
   const weekCents = summary.reduce((n, s) => n + Number(s.week_cents), 0);
   const laborNow = openShifts.reduce((n, s) => n + Number(s.amount_cents), 0);
 
-  const tile = (label: string, value: string, sub: React.ReactNode, Icon: typeof DollarSign, href?: string) => {
+  const tile = (label: string, value: string, sub: React.ReactNode, Icon: React.ComponentType<{ className?: string }>, href?: string) => {
     const body = (
       <Card className="gap-1 py-4 h-full">
         <CardContent className="px-4">
@@ -51,8 +52,8 @@ export function DashboardView({
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
-        {tile("Sales today", formatMoney(todayCents), `${todayUnits} items sold`, DollarSign, "/sales?range=today")}
-        {tile("This week", formatMoney(weekCents), "all stores", DollarSign, "/sales?range=7d")}
+        {tile("Sales today", formatMoney(todayCents), `${todayUnits} items sold`, ShekelSign, "/sales?range=today")}
+        {tile("This week", formatMoney(weekCents), "all stores", ShekelSign, "/sales?range=7d")}
         {tile("On shift now", String(openShifts.length), openShifts.length ? `${formatMoney(laborNow)} accrued` : "nobody clocked in", Clock)}
         {tile("Wages this week", formatMoney(weekPayrollCents), "owed so far, incl. open shifts", Wallet, "/payroll")}
         {tile("Stock alerts", String(alerts.length), `${alerts.filter((a) => a.stock_status === "OUT").length} out of stock`, AlertTriangle, "/inventory?status=ALERTS")}

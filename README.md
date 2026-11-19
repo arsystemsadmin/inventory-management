@@ -35,8 +35,8 @@ All passwords are `password123`.
 | Email | Role | Stores |
 |---|---|---|
 | `owner@popup.test` | Owner (Olivia Owner) | all |
-| `maya@popup.test` | Employee (Maya Santos, $19/h now; older shifts snapshotted at $18) | Main Street Shop, Riverside Flea Market |
-| `leo@popup.test` | Employee (Leo Park, $16.50/h) | Riverside Flea Market, Winter Night Market |
+| `maya@popup.test` | Employee (Maya Santos, ₪48/h now; older shifts keep ₪45) | Main Street Shop, Riverside Flea Market |
+| `leo@popup.test` | Employee (Leo Park, ₪45/h) | Riverside Flea Market, Winter Night Market |
 
 The seed contains 1 business, 3 stores (1 permanent, 1 active pop-up, 1 upcoming pop-up still in *setup mode*),
 31 item variants (several LOW, CRITICAL or OUT), about 20 sales over the last 6 days (one already voided),
@@ -127,13 +127,13 @@ give exactly 5 successes, 7 `OUT_OF_STOCK`, a final quantity of 0, and 5 movemen
 | `employee_pay` | Hourly rate, in its own table so RLS can scope it separately (RLS is row-level, not column-level) |
 | `stores` | `popup` or `permanent`, dates, status, `inventory_locked_at` (NULL means setup mode) |
 | `store_members` | Employee ↔ store assignments |
-| `items` | One row per sellable **variant** (name + size + color) with its own quantity and low-stock threshold |
+| `items` | One row per sellable **variant** (name + size + color) with its own quantity, low-stock threshold and optional photo (`image_path`, Storage bucket `item-images`) |
 | `sales` | Created only by `sell_item()`. Snapshots `item_name`, `size` and `color`. Voided, never deleted. |
 | `inventory_movements` | Append-only audit of every quantity change (initial, restock, edit, sale, void), written by trigger |
 | `time_entries` | Shifts with `hourly_rate_cents_snapshot` copied at clock-in, so rate changes never rewrite past pay |
 | `approval_requests` | Employee requests (`archive_item`, `edit_item`, `void_sale`) that the owner approves or rejects |
 
-Money is integer cents everywhere. Cross-table references use **composite foreign keys that include
+Money is stored as integer agorot (1/100 shekel) everywhere and shown in ₪. Cross-table references use **composite foreign keys that include
 `business_id`**, so the schema itself makes cross-tenant links impossible, independent of RLS.
 
 **Changes from the original plan, and why:**

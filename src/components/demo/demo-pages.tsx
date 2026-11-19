@@ -44,7 +44,7 @@ function withPay(s: DemoState, u: DemoUser, now: number): ShiftWithPay[] {
 const names = (s: DemoState, u: DemoUser) => Object.fromEntries(visiblePeople(s, u).map((p) => [p.id, p.full_name]));
 const inventoryStores = (s: DemoState, u: DemoUser) =>
   visibleStores(s, u).sort((a, b) => a.name.localeCompare(b.name))
-    .map(({ id, name, inventory_locked_at, status }) => ({ id, name, inventory_locked_at, status }));
+    .map(({ id, business_id, name, inventory_locked_at, status }) => ({ id, business_id, name, inventory_locked_at, status }));
 const localYmd = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const ymdToLocal = (ymd: string) => { const [y, m, d] = ymd.split("-").map(Number); return new Date(y, m - 1, d); };

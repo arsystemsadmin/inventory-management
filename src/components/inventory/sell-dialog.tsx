@@ -7,6 +7,7 @@ import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StockBadge } from "@/components/stock-badge";
+import { ItemThumb } from "./item-thumb";
 import { cn } from "@/lib/utils";
 import { formatMoney, STOCK_ORDER, variantLabel } from "@/lib/format";
 import type { Item } from "@/lib/types";
@@ -72,9 +73,12 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
   return (
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Sell {selected.name}</DialogTitle>
-          <DialogDescription>{formatMoney(selected.price_cents)} each</DialogDescription>
+        <DialogHeader className="flex-row items-center gap-3">
+          <ItemThumb path={selected.image_path} alt={selected.name} className="size-16" />
+          <div className="grid gap-1.5">
+            <DialogTitle>Sell {selected.name}</DialogTitle>
+            <DialogDescription>{formatMoney(selected.price_cents)} each</DialogDescription>
+          </div>
         </DialogHeader>
 
         {sizes.some(Boolean) && (

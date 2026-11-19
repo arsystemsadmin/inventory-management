@@ -7,7 +7,9 @@ import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult, SellResult } from "@/lib/types";
 
-import { itemFields, newItemSchema, newItemsSchema, qty, uuid } from "@/lib/validation";
+import { itemFields, newItemSchema, newItemsSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
+
+const badImage = (p: string | null | undefined) => !!p && !STORAGE_IMAGE_PATH.test(p);
 
 function revalidateInventory() {
   revalidatePath("/inventory");
@@ -39,6 +41,7 @@ export async function sellItem(input: { itemId: string; quantity: number }): Pro
 export async function createItem(input: unknown): Promise<ActionResult> {
   const parsed = newItemSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (badImage(parsed.data.image_path)) return { ok: false, error: "Invalid photo." };
   const supabase = await createClient();
   // business_id is filled by trigger from the store; RLS checks membership.
   const { error } = await supabase.from("items").insert(parsed.data);
@@ -51,6 +54,7 @@ export async function createItem(input: unknown): Promise<ActionResult> {
 export async function createItems(input: unknown): Promise<ActionResult<number>> {
   const parsed = newItemsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  if (parsed.data.some((r) => badImage(r.image_path))) return { ok: false, error: "Invalid photo." };
   const supabase = await createClient();
   const { error } = await supabase.from("items").insert(parsed.data);
   if (error) return { ok: false, error: friendlyError(error) };
@@ -62,12 +66,25 @@ export async function saveItemEdit(input: { itemId: string; changes: unknown; re
   const id = uuid.safeParse(input.itemId);
   const changes = itemFields.partial().safeParse(input.changes);
   if (!id.success || !changes.success) return { ok: false, error: changes.error?.issues[0].message ?? "Invalid item" };
-  const diff = Object.fromEntries(Object.entries(changes.data).filter(([, v]) => v !== undefined));
-  if (Object.keys(diff).length === 0) return { ok: false, error: "Nothing changed." };
+  const { image_path, ...rest } = changes.data;
+  const diff = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
+  const imageChanged = "image_path" in (input.changes as object);
+  if (Object.keys(diff).length === 0 && !imageChanged) return { ok: false, error: "Nothing changed." };
+  if (imageChanged && badImage(image_path)) return { ok: false, error: "Invalid photo." };
 
   const supabase = await createClient();
   const { data: item } = await supabase.from("items").select("store_id").eq("id", id.data).single();
   if (!item) return { ok: false, error: "Item not found." };
+
+  // Photos never need approval (they don't change stock or price).
+  if (imageChanged) {
+    const { error } = await supabase.from("items").update({ image_path: image_path ?? null }).eq("id", id.data);
+    if (error) return { ok: false, error: friendlyError(error) };
+    if (Object.keys(diff).length === 0) {
+      revalidateInventory();
+      return { ok: true, message: image_path ? "Photo updated" : "Photo removed" };
+    }
+  }
 
   if (await canEditDirectly(item.store_id)) {
     const { error } = await supabase.from("items").update(diff).eq("id", id.data);

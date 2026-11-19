@@ -38,6 +38,7 @@ export type Item = {
   quantity: number;
   low_stock_threshold: number;
   archived: boolean;
+  image_path: string | null;
   updated_at: string;
   stock_status: StockStatus;
 };

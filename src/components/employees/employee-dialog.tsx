@@ -77,8 +77,8 @@ export function EmployeeDialog({
             </>
           )}
           <div className="grid gap-1.5">
-            <Label htmlFor="e-rate">Hourly rate ($)</Label>
-            <Input id="e-rate" inputMode="decimal" value={f.rate} onChange={set("rate")} placeholder="18.00" required />
+            <Label htmlFor="e-rate">Hourly rate (₪)</Label>
+            <Input id="e-rate" inputMode="decimal" value={f.rate} onChange={set("rate")} placeholder="40.00" required />
             {employee && <p className="text-xs text-muted-foreground">Applies to new shifts. Past shifts keep the rate they were worked at.</p>}
           </div>
           <div className="grid gap-1">

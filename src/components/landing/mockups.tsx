@@ -3,9 +3,9 @@ import { AlertTriangle, Boxes, ClipboardCheck, LayoutDashboard, Minus, Package, 
 /** Static illustrations of the real screens (pure HTML, no data). */
 
 const STORES = [
-  { name: "Main Street Shop", tag: "Active", today: "$106", week: "$556" },
-  { name: "Riverside Flea Market", tag: "Active", today: "$361", week: "$809" },
-  { name: "Winter Night Market", tag: "Upcoming", today: "$0", week: "$0" },
+  { name: "Main Street Shop", tag: "Active", today: "₪1,060", week: "₪5,560" },
+  { name: "Riverside Flea Market", tag: "Active", today: "₪3,610", week: "₪8,090" },
+  { name: "Winter Night Market", tag: "Upcoming", today: "₪0", week: "₪0" },
 ];
 const ALERTS = [
   { name: "Leather Belt · M · Brown", qty: 0, s: "Out" },
@@ -45,7 +45,7 @@ export function DashboardMock() {
           <div className="text-lg font-bold">Dashboard</div>
           <div className="mb-3 text-xs text-[var(--muted)]"><span className="mr-1 inline-block size-1.5 rounded-full bg-emerald-500" />Live across all your stores</div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {[["Sales today", "$467"], ["This week", "$1,365"], ["On shift", "2 · $447"], ["Stock alerts", "11"]].map(([k, v]) => (
+            {[["Sales today", "₪4,670"], ["This week", "₪13,650"], ["On shift", "2 · ₪1,240"], ["Stock alerts", "11"]].map(([k, v]) => (
               <div key={k} className="rounded-lg border border-[var(--line)] p-2.5">
                 <div className="text-[10px] text-[var(--muted)]">{k}</div>
                 <div className="text-base font-bold">{v}</div>
@@ -85,7 +85,7 @@ export function PhoneSellMock() {
         <div className="bg-[#f6f8fc] px-4 pb-3 pt-4 text-[11px] text-[var(--muted)]">Riverside Flea Market</div>
         <div className="grid gap-2.5 rounded-t-2xl bg-white px-4 py-3">
           <div className="text-sm font-bold">Sell Denim Jacket</div>
-          <div className="text-[11px] text-[var(--muted)]">$85.00 each</div>
+          <div className="text-[11px] text-[var(--muted)]">₪180.00 each</div>
           <div className="text-[11px] font-semibold">Size</div>
           <div className="flex gap-1.5">
             <span className="rounded-md bg-[var(--ink)] px-2.5 py-1 text-[11px] font-semibold text-white">M</span>
@@ -100,7 +100,7 @@ export function PhoneSellMock() {
             <span className="grid size-7 place-items-center rounded-md border border-[var(--line)]"><Minus className="size-3" /></span>
             <span className="grid h-7 w-9 place-items-center rounded-md border border-[var(--line)] text-sm font-bold">2</span>
             <span className="grid size-7 place-items-center rounded-md border border-[var(--line)]"><Plus className="size-3" /></span>
-            <span className="ml-auto text-sm font-bold">$170.00</span>
+            <span className="ml-auto text-sm font-bold">₪360.00</span>
           </div>
           <div className="rounded-lg bg-emerald-600 py-2 text-center text-[12px] font-semibold text-white">Confirm sale · 2 × M · Dark wash</div>
         </div>

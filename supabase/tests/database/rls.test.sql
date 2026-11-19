@@ -2,7 +2,7 @@
 -- Self-contained: builds two tenants inside a transaction and rolls back.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(57);
+select plan(60);
 
 -- ---------------------------------------------------------------------------
 -- Impersonation helpers (temp schema, gone after the session)
@@ -94,8 +94,19 @@ select is((select role from public.profiles where id = 'a0000000-0000-0000-0000-
   'employee', 'server-created user becomes employee of given business');
 select isnt((select business_id from public.profiles where id = 'c0000000-0000-0000-0000-0000000000c0'),
   (select biz_a from ids), 'user_metadata cannot be used to join another business');
-select is((select role from public.profiles where id = 'c0000000-0000-0000-0000-0000000000c0'),
-  'owner', '...it just gets its own new business');
+select is((select count(*) from public.profiles where id = 'c0000000-0000-0000-0000-0000000000c0'),
+  0::bigint, '...and a signup without business_name gets no profile at all');
+
+-- Supabase Auth admin.createUser(): INSERT without app_metadata, then UPDATE adds it.
+select pg_temp.mk_user('d0000000-0000-0000-0000-0000000000d0', 'late@test.dev', '{"provider":"email"}', '{"full_name":"Late Meta"}');
+select is((select count(*) from public.profiles where id = 'd0000000-0000-0000-0000-0000000000d0'),
+  0::bigint, 'admin-created user has no profile before app_metadata is written');
+update auth.users set raw_app_meta_data = raw_app_meta_data || jsonb_build_object('business_id', (select biz_a from ids), 'role', 'employee')
+  where id = 'd0000000-0000-0000-0000-0000000000d0';
+select results_eq($$select business_id, role from public.profiles where id = 'd0000000-0000-0000-0000-0000000000d0'$$,
+  $$select biz_a, 'employee'::text from ids$$, 'app_metadata update creates the employee profile in that business');
+select is((select count(*) from public.businesses where name like 'Late Meta%'), 0::bigint,
+  'no stray business is created for the employee');
 
 -- ---------------------------------------------------------------------------
 -- Employee EA1 (member of A1 only; A1 inventory is locked)

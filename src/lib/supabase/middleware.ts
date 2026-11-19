@@ -1,10 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { supabaseConfigured } from "./config";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const path = request.nextUrl.pathname;
+  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
+
+  // Preview mode: no backend configured yet. Only the public pages are reachable.
+  if (!supabaseConfigured) {
+    if (isPublic) return response;
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,9 +35,6 @@ export async function updateSession(request: NextRequest) {
 
   // getUser() validates the JWT with Supabase Auth (don't trust getSession() here).
   const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
-  const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
-
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

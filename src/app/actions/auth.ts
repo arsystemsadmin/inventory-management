@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { NOT_CONNECTED_MESSAGE, supabaseConfigured } from "@/lib/supabase/config";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
@@ -18,6 +19,7 @@ function safeNext(next: string | undefined) {
 }
 
 export async function login(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  if (!supabaseConfigured) return { error: NOT_CONNECTED_MESSAGE };
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
@@ -40,6 +42,7 @@ const signupSchema = z.object({
 });
 
 export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  if (!supabaseConfigured) return { error: NOT_CONNECTED_MESSAGE };
   const parsed = signupSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 

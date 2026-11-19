@@ -24,6 +24,9 @@ export const newItemSchema = itemFields.extend({
   quantity: z.coerce.number().int().min(0).max(100000),
 });
 
+/** Several variants at once (e.g. one product in many sizes). */
+export const newItemsSchema = z.array(newItemSchema).min(1, "Add at least one size").max(60, "Too many sizes at once");
+
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
 
 export const storeSchema = z

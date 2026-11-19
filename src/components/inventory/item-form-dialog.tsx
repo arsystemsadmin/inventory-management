@@ -11,6 +11,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { centsToInput, parseMoneyToCents } from "@/lib/format";
 import type { Item } from "@/lib/types";
+import { SizeQuantityPicker, type SizeRow } from "./size-quantity-picker";
 
 type StoreOpt = { id: string; name: string };
 
@@ -30,14 +31,16 @@ export function ItemFormDialog({
   const [f, setF] = useState(empty);
   const [storeId, setStoreId] = useState(defaultStoreId ?? stores[0]?.id ?? "");
   const [reason, setReason] = useState("");
+  const [sizes, setSizes] = useState<SizeRow[]>([]);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const nameRef = useRef<HTMLInputElement>(null);
-  const sizeRef = useRef<HTMLInputElement>(null);
+  const colorRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
     setReason("");
+    setSizes([]);
     if (item) {
       setStoreId(item.store_id);
       setF({
@@ -79,13 +82,24 @@ export function ItemFormDialog({
         onClose();
         return;
       }
-      const res = await actions.createItem({ ...fields, store_id: storeId, quantity: Number(f.quantity || 0) });
+      // One item per selected size (each with its own quantity), or a single
+      // item without a size when none are picked.
+      const sku = f.sku.trim();
+      const skuFor = (size: string) => (sku ? `${sku}-${size.replace(/\s+/g, "").toUpperCase()}`.slice(0, 64) : "");
+      const rows = sizes.length
+        ? sizes.map((r) => ({ ...fields, size: r.size, sku: skuFor(r.size), store_id: storeId, quantity: Number(r.qty || 0) }))
+        : [{ ...fields, size: "", store_id: storeId, quantity: Number(f.quantity || 0) }];
+      const res = await actions.createItems(rows);
       if (!res.ok) { toast.error(res.error); return; }
-      toast.success(`Added ${f.name}${f.size || f.color ? ` (${[f.size, f.color].filter(Boolean).join(" · ")})` : ""}`);
+      const color = f.color ? ` · ${f.color}` : "";
+      toast.success(sizes.length
+        ? `Added ${f.name}${color} in ${sizes.length} size${sizes.length === 1 ? "" : "s"} (${sizes.map((r) => r.size).join(", ")})`
+        : `Added ${f.name}${color}`);
       if (addAnother) {
-        // Keep product details; clear the variant-specific fields for the next size/color.
-        setF((s) => ({ ...s, sku: "", size: "", color: s.color, quantity: "" }));
-        sizeRef.current?.focus();
+        // Same product in another color: keep details and sizes, reset color and quantities.
+        setF((s) => ({ ...s, sku: "", color: "", quantity: "" }));
+        setSizes((rs) => rs.map((r) => ({ ...r, qty: "" })));
+        colorRef.current?.focus();
       } else {
         onClose();
       }
@@ -100,7 +114,7 @@ export function ItemFormDialog({
           <DialogDescription>
             {approval
               ? "Setup is finished for this store, so the owner must approve changes."
-              : item ? "Changes apply immediately." : "Each size/color combination is its own item with its own stock."}
+              : item ? "Changes apply immediately." : "Pick every size you have and set how many of each. Each size gets its own stock."}
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); submit(false); }}>
@@ -116,16 +130,29 @@ export function ItemFormDialog({
             <Label htmlFor="name">Name</Label>
             <Input id="name" ref={nameRef} value={f.name} onChange={set("name")} required maxLength={200} placeholder="e.g. Linen Shirt" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="size">Size</Label>
-              <Input id="size" ref={sizeRef} value={f.size} onChange={set("size")} maxLength={40} placeholder="S, M, 32…" />
+          {item ? (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label htmlFor="size">Size</Label>
+                <Input id="size" value={f.size} onChange={set("size")} maxLength={40} placeholder="S, M, 32…" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="color">Color</Label>
+                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder="Black" />
+              </div>
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="color">Color</Label>
-              <Input id="color" value={f.color} onChange={set("color")} maxLength={40} placeholder="Black" />
-            </div>
-          </div>
+          ) : (
+            <>
+              <div className="grid gap-1.5">
+                <Label htmlFor="color">Color</Label>
+                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder="Black" />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Sizes <span className="font-normal text-muted-foreground">(tap each size you have)</span></Label>
+                <SizeQuantityPicker rows={sizes} onChange={setSizes} />
+              </div>
+            </>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label htmlFor="price">Price ($)</Label>
@@ -137,7 +164,7 @@ export function ItemFormDialog({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {!item && (
+            {!item && sizes.length === 0 && (
               <div className="grid gap-1.5">
                 <Label htmlFor="quantity">Quantity</Label>
                 <Input id="quantity" inputMode="numeric" value={f.quantity} onChange={set("quantity")} placeholder="0" />
@@ -156,7 +183,7 @@ export function ItemFormDialog({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="sku">SKU</Label>
-              <Input id="sku" value={f.sku} onChange={set("sku")} maxLength={64} />
+              <Input id="sku" value={f.sku} onChange={set("sku")} maxLength={58} placeholder={sizes.length ? "Size is added, e.g. LS-NVY-M" : ""} />
             </div>
           </div>
           {approval && (
@@ -168,7 +195,7 @@ export function ItemFormDialog({
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-1">
             {!item && (
               <Button type="button" variant="outline" size="lg" disabled={pending} onClick={() => submit(true)}>
-                Save &amp; add another size/color
+                Save &amp; add another color
               </Button>
             )}
             <Button type="submit" size="lg" disabled={pending}>

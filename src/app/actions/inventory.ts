@@ -7,7 +7,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult, SellResult } from "@/lib/types";
 
-import { itemFields, newItemSchema, qty, uuid } from "@/lib/validation";
+import { itemFields, newItemSchema, newItemsSchema, qty, uuid } from "@/lib/validation";
 
 function revalidateInventory() {
   revalidatePath("/inventory");
@@ -45,6 +45,17 @@ export async function createItem(input: unknown): Promise<ActionResult> {
   if (error) return { ok: false, error: friendlyError(error) };
   revalidateInventory();
   return { ok: true, message: "Item added" };
+}
+
+/** Creates several variants (e.g. one per size) in a single insert, so it's all-or-nothing. */
+export async function createItems(input: unknown): Promise<ActionResult<number>> {
+  const parsed = newItemsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const supabase = await createClient();
+  const { error } = await supabase.from("items").insert(parsed.data);
+  if (error) return { ok: false, error: friendlyError(error) };
+  revalidateInventory();
+  return { ok: true, data: parsed.data.length, message: `Added ${parsed.data.length} item${parsed.data.length === 1 ? "" : "s"}` };
 }
 
 export async function saveItemEdit(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult> {

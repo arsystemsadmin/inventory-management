@@ -5,7 +5,7 @@ import { friendlyError } from "@/lib/errors";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
 import {
-  createEmployeeSchema, itemFields, newItemSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
+  createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
 } from "@/lib/validation";
 import * as L from "./logic";
 import { commit, getState, getUserId, hashPassword } from "./store";
@@ -38,6 +38,13 @@ export const demoActions: AppActions = {
     if (!p.success) return invalid(p.error);
     const r = run(() => commit((s) => { L.createItem(s, getUserId(), p.data); }), "Item added");
     return r.ok ? { ok: true, message: r.message } : r;
+  },
+  async createItems(input) {
+    const p = newItemsSchema.safeParse(input);
+    if (!p.success) return invalid(p.error);
+    // One commit: if any variant fails (e.g. duplicate SKU) nothing is saved.
+    return run(() => commit((s) => { p.data.forEach((row) => L.createItem(s, getUserId(), row)); return p.data.length; }),
+      `Added ${p.data.length} item${p.data.length === 1 ? "" : "s"}`);
   },
   async saveItemEdit({ itemId, changes, reason }) {
     const p = itemFields.partial().safeParse(changes);

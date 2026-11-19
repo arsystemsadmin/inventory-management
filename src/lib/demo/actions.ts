@@ -49,17 +49,23 @@ export const demoActions: AppActions = {
   async saveItemEdit({ itemId, changes, reason }) {
     const p = itemFields.partial().safeParse(changes);
     if (!p.success) return invalid(p.error);
-    const { image_path, ...rest } = p.data;
+    const { image_path, variant_image_path, ...rest } = p.data;
     const diff = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
-    const imageChanged = "image_path" in (changes as object);
+    const raw = changes as object;
+    const photo: { image_path?: string | null; variant_image_path?: string | null } = {};
+    if ("image_path" in raw) photo.image_path = image_path ?? null;
+    if ("variant_image_path" in raw) photo.variant_image_path = variant_image_path ?? null;
+    const imageChanged = Object.keys(photo).length > 0;
     if (!Object.keys(diff).length && !imageChanged) return { ok: false, error: "Nothing changed." };
     const u = me();
     const item = getState().items.find((i) => i.id === itemId);
     if (!u || !item) return { ok: false, error: "Item not found." };
     if (imageChanged) {
-      const r = run(() => commit((s) => L.setItemImage(s, u.id, itemId, image_path ?? null)));
+      const r = run(() => commit((s) => L.setItemImage(s, u.id, itemId, photo)));
       if (!r.ok) return r;
-      if (!Object.keys(diff).length) return { ok: true, data: "applied" as const, message: image_path ? "Photo updated" : "Photo removed" };
+      if (!Object.keys(diff).length) {
+        return { ok: true, data: "applied" as const, message: Object.values(photo).some(Boolean) ? "Photo updated" : "Photo removed" };
+      }
     }
     if (L.canEditDirectly(getState(), u, item.store_id)) {
       const r = run(() => commit((s) => L.editItem(s, u.id, itemId, diff)), "Item updated");

@@ -114,7 +114,7 @@ export function ItemFormDialog({
       const sku = f.sku.trim();
       const skuFor = (size: string) => (sku ? `${sku}-${size.replace(/\s+/g, "").toUpperCase()}`.slice(0, 64) : "");
       const rows = sizes.length
-        ? sizes.map((r) => ({ ...shared, size: r.size, sku: skuFor(r.size), quantity: Number(r.qty || 0) }))
+        ? sizes.map((r) => ({ ...shared, size: r.size, sku: skuFor(r.size), quantity: Number(r.qty || 0), variant_image_path: r.photo ?? null }))
         : [{ ...shared, size: "", sku, quantity: Number(f.quantity || 0) }];
       const res = await actions.createItems(rows);
       if (!res.ok) { toast.error(res.error); return; }
@@ -125,7 +125,7 @@ export function ItemFormDialog({
       if (addAnother) {
         // Same product in another color: keep details and sizes, reset color and quantities.
         setF((s) => ({ ...s, sku: "", color: "", quantity: "1" }));
-        setSizes((rs) => rs.map((r) => ({ ...r, qty: "1" })));
+        setSizes((rs) => rs.map((r) => ({ ...r, qty: "1", photo: null })));
         colorRef.current?.focus();
       } else {
         onClose();
@@ -187,7 +187,7 @@ export function ItemFormDialog({
               </div>
               <div className="grid gap-1.5">
                 <Label>Sizes <span className="font-normal text-muted-foreground">(tap each size you have)</span></Label>
-                <SizeQuantityPicker rows={sizes} onChange={setSizes} />
+                <SizeQuantityPicker rows={sizes} onChange={setSizes} businessId={businessId} storeId={storeId} />
               </div>
             </>
           )}

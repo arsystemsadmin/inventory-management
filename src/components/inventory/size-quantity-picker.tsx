@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SizePhotoButton } from "./photo-field";
 
-export type SizeRow = { size: string; qty: string };
+export type SizeRow = { size: string; qty: string; photo?: string | null };
 
 const SIZES = ["XS", "S", "M", "L", "XL"];
 const ORDER = SIZES;
@@ -14,7 +15,11 @@ const rank = (s: string) => { const i = ORDER.indexOf(s); return i === -1 ? ORDE
  * Tap each size to add it (nothing is pre-selected), then set a quantity for
  * each. Selected sizes stay in order XS, S, M, L, XL, then any custom sizes.
  */
-export function SizeQuantityPicker({ rows, onChange }: { rows: SizeRow[]; onChange: (rows: SizeRow[]) => void }) {
+export function SizeQuantityPicker({
+  rows, onChange, businessId, storeId,
+}: {
+  rows: SizeRow[]; onChange: (rows: SizeRow[]) => void; businessId?: string; storeId?: string;
+}) {
   const [custom, setCustom] = useState("");
   const selected = new Set(rows.map((r) => r.size.toLowerCase()));
 
@@ -70,12 +75,19 @@ export function SizeQuantityPicker({ rows, onChange }: { rows: SizeRow[]; onChan
       {rows.length > 0 && (
         <div className="rounded-lg border">
           <div className="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
-            <span>Quantity per size</span>
+            <span>Photo (optional) and quantity per size</span>
             <span>{rows.length} size{rows.length === 1 ? "" : "s"} · {total} total</span>
           </div>
           <ul className="divide-y">
             {rows.map((r) => (
               <li key={r.size} className="flex items-center gap-2 px-3 py-2">
+                <SizePhotoButton
+                  value={r.photo}
+                  label={`size ${r.size}`}
+                  businessId={businessId}
+                  storeId={storeId}
+                  onChange={(photo) => onChange(rows.map((x) => (x.size === r.size ? { ...x, photo } : x)))}
+                />
                 <span className="min-w-0 flex-1 truncate font-medium">{r.size}</span>
                 <button type="button" aria-label={`Fewer ${r.size}`} onClick={() => bump(r.size, -1)}
                   className="grid size-10 place-items-center rounded-md border hover:bg-muted"><Minus className="size-4" /></button>

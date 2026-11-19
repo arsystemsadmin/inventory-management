@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { AlertTriangle, MoreHorizontal, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,9 @@ import { ItemFormDialog } from "./item-form-dialog";
 import { ItemActionsDialog } from "./item-actions-dialog";
 import { ItemThumb } from "./item-thumb";
 import { ProductEditDialog } from "./product-edit-dialog";
+import { QuantityDialog } from "./quantity-dialog";
+import { SizePhotoButton } from "./photo-field";
+import { useActions } from "@/lib/actions-context";
 
 export type InventoryStore = { id: string; business_id: string; name: string; inventory_locked_at: string | null; status: string };
 
@@ -43,6 +47,8 @@ export function InventoryView({
   const [addingTo, setAddingTo] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adding, setAdding] = useState(false);
+  const [settingQty, setSettingQty] = useState<Item | null>(null);
+  const actions = useActions();
 
   const isOwner = role === "owner";
   const storeById = useMemo(() => new Map(stores.map((s) => [s.id, s])), [stores]);
@@ -81,6 +87,27 @@ export function InventoryView({
   }, [scoped, q, category, status]);
 
   const totalProducts = useMemo(() => groupProducts(scoped).length, [scoped]);
+
+  // Group a product's (visible) variations by size, keeping size order.
+  const bySize = (variants: Item[]) => {
+    const groups: { size: string | null; variants: Item[] }[] = [];
+    for (const v of variants) {
+      const last = groups[groups.length - 1];
+      if (last && (last.size ?? "").toLowerCase() === (v.size ?? "").toLowerCase()) last.variants.push(v);
+      else groups.push({ size: v.size, variants: [v] });
+    }
+    return groups;
+  };
+
+  // A size photo is shared by every color of that size.
+  const setSizePhoto = async (p: Product, size: string | null, path: string | null) => {
+    const targets = p.variants.filter((v) => (v.size ?? "").toLowerCase() === (size ?? "").toLowerCase());
+    for (const v of targets) {
+      const res = await actions.saveItemEdit({ itemId: v.id, changes: { variant_image_path: path } });
+      if (!res.ok) { toast.error(res.error); return; }
+    }
+    toast.success(path ? `Photo saved for size ${size ?? "(no size)"}` : `Photo removed for size ${size ?? "(no size)"}`);
+  };
 
   const startSale = (p: Product) => {
     const active = items.filter((i) => i.store_id === p.store_id && !i.archived && i.name === p.name);
@@ -184,24 +211,60 @@ export function InventoryView({
                   )}
                 </div>
 
-                <ul className="divide-y border-t bg-muted/20">
-                  {variants.map((v) => (
-                    <li key={v.id} className="flex items-center gap-2 py-1.5 pl-3 pr-1">
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
-                        {v.size && <span className="rounded bg-background px-1.5 py-0.5 font-semibold ring-1 ring-border">{v.size}</span>}
-                        {v.color && <span className="rounded bg-background px-1.5 py-0.5 ring-1 ring-border">{v.color}</span>}
-                        {!v.size && !v.color && <span className="text-muted-foreground">Standard</span>}
-                        {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
-                      </div>
-                      <span className={cn("w-16 text-right text-sm tabular-nums", v.stock_status !== "OK" && "font-semibold text-orange-700", v.quantity === 0 && "text-red-700")}>
-                        {v.quantity} left
-                      </span>
-                      <StockBadge status={v.stock_status} className="w-16 justify-center" />
-                      <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${p.name} ${v.size ?? ""} ${v.color ?? ""}`} onClick={() => setActing(v)}>
-                        <MoreHorizontal />
-                      </Button>
-                    </li>
-                  ))}
+                <ul className="divide-y border-t">
+                  {bySize(variants).map((g) => {
+                    const sizePhoto = p.variants.find((v) => (v.size ?? "").toLowerCase() === (g.size ?? "").toLowerCase() && v.variant_image_path)?.variant_image_path;
+                    const total = g.variants.reduce((n, v) => n + v.quantity, 0);
+                    return (
+                      <li key={g.size ?? "none"} className="bg-muted/20">
+                        <div className="flex items-center gap-2.5 px-3 pt-2 pb-1">
+                          {!showArchived ? (
+                            <SizePhotoButton
+                              value={sizePhoto}
+                              label={`size ${g.size ?? "(no size)"}`}
+                              businessId={p.variants[0].business_id}
+                              storeId={p.store_id}
+                              onChange={(path) => setSizePhoto(p, g.size, path)}
+                              className="size-9"
+                            />
+                          ) : null}
+                          <span className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.size ?? "No size"}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {g.variants.length} color{g.variants.length === 1 ? "" : "s"} · {total} in stock
+                          </span>
+                        </div>
+                        <ul className="pb-1">
+                          {g.variants.map((v) => (
+                            <li key={v.id} className="flex items-center gap-2 py-1 pl-14 pr-1">
+                              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
+                                <span className="truncate font-medium">{v.color ?? "No color"}</span>
+                                {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
+                              </div>
+                              {showArchived ? (
+                                <span className="w-20 text-right text-sm tabular-nums">{v.quantity} left</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setSettingQty(v)}
+                                  aria-label={`Set quantity for ${g.size ?? ""} ${v.color ?? ""}`}
+                                  className={cn(
+                                    "h-9 min-w-20 rounded-md border bg-background px-2 text-sm font-semibold tabular-nums hover:bg-muted",
+                                    v.stock_status !== "OK" && "text-orange-700", v.quantity === 0 && "text-red-700",
+                                  )}
+                                >
+                                  {v.quantity} left
+                                </button>
+                              )}
+                              <StockBadge status={v.stock_status} className="w-16 justify-center" />
+                              <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${p.name} ${g.size ?? ""} ${v.color ?? ""}`} onClick={() => setActing(v)}>
+                                <MoreHorizontal />
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 {!showArchived && !closed && (
@@ -233,6 +296,11 @@ export function InventoryView({
         defaultStoreId={fixedStoreId || storeId || undefined}
         needsApproval={needsApproval}
         categories={categories}
+      />
+      <QuantityDialog
+        item={settingQty}
+        onClose={() => setSettingQty(null)}
+        needsApproval={settingQty ? needsApproval(settingQty.store_id) : false}
       />
       <ProductEditDialog
         product={editingProduct}

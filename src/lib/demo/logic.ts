@@ -133,6 +133,7 @@ export function sellItem(s: DemoState, uid: string | null, itemId: string, qty: 
 
 type ItemFields = {
   image_path?: string | null;
+  variant_image_path?: string | null;
   name: string; sku: string | null; category: string | null; size: string | null; color: string | null;
   price_cents: number; cost_cents: number; low_stock_threshold: number;
 };
@@ -158,7 +159,7 @@ export function createItem(s: DemoState, uid: string | null, input: ItemFields &
   checkVariant(s, input.store_id, input.name, input.size, input.color);
   const store = s.stores.find((x) => x.id === input.store_id)!;
   const item: DemoItem = {
-    ...input, image_path: input.image_path ?? null, id: newId(), business_id: store.business_id, store_id: store.id, archived: false,
+    ...input, image_path: input.image_path ?? null, variant_image_path: input.variant_image_path ?? null, id: newId(), business_id: store.business_id, store_id: store.id, archived: false,
     created_at: nowIso(), updated_at: nowIso(), created_by: u.id, updated_by: u.id,
   };
   s.items.push(item);
@@ -196,10 +197,12 @@ function applyEdit(s: DemoState, u: DemoUser, item: DemoItem, changes: Partial<I
 }
 
 /** Photos never need approval: they don't change stock or price. */
-export function setItemImage(s: DemoState, uid: string | null, itemId: string, path: string | null) {
+export function setItemImage(
+  s: DemoState, uid: string | null, itemId: string, photo: { image_path?: string | null; variant_image_path?: string | null },
+) {
   const u = requireUser(s, uid);
   const item = findItem(s, u, itemId);
-  item.image_path = path;
+  Object.assign(item, photo);
   item.updated_at = nowIso();
 }
 

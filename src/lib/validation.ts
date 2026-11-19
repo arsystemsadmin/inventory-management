@@ -19,6 +19,7 @@ export const itemFields = z.object({
   low_stock_threshold: z.coerce.number().int().min(0).max(100000),
   // Storage path (database mode) or a small data URL (browser demo mode).
   image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
+  variant_image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
 });
 
 /** Storage paths look like <business uuid>/<store uuid>/<file uuid>.jpg */

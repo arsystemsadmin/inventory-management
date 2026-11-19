@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <>
       <AppShellView
-        businessName={business?.name ?? "Binventory"}
+        businessName={business?.name ?? "Agora"}
         profile={profile}
         pendingApprovals={pending ?? 0}
         signOut={

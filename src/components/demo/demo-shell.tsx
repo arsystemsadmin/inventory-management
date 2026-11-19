@@ -70,7 +70,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
     <ActionsProvider value={demoActions}>
       <Ctx.Provider value={{ state: snap.state, user, now: snap.now }}>
         <AppShellView
-          businessName={business?.name ?? "Binventory"}
+          businessName={business?.name ?? "Agora"}
           profile={user}
           pendingApprovals={pending}
           signOut={

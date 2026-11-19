@@ -6,19 +6,19 @@ import {
 import { DashboardMock, PhoneSellMock } from "@/components/landing/mockups";
 
 export const metadata = {
-  title: "Binventory · Inventory for pop-up stores by AR Systems",
+  title: "Agora · Inventory for pop-up stores by AR Systems",
   description:
-    "Binventory keeps every item at every market counted. Staff sell in two taps from their phones, you see stock and sales live from anywhere. Inventory for pop-up stores by AR Systems.",
+    "Agora keeps every item at every market counted. Staff sell in two taps from their phones, you see stock and sales live from anywhere. Inventory for pop-up stores by AR Systems.",
 };
 
-const NAV = [["Why Binventory", "#why"], ["How it works", "#how"], ["Features", "#features"], ["Coming next", "#next"], ["FAQ", "#faq"]];
+const NAV = [["Why Agora", "#why"], ["How it works", "#how"], ["Features", "#features"], ["Coming next", "#next"], ["FAQ", "#faq"]];
 
 function Logo() {
   return (
     <Link href="/" className="flex items-center gap-2.5">
       <span className="grid size-9 place-items-center rounded-xl bg-[var(--blue)] text-white shadow-sm"><Boxes className="size-5" /></span>
       <span className="leading-tight">
-        <span className="block text-[17px] font-bold">Binventory</span>
+        <span className="block text-[17px] font-bold">Agora</span>
         <span className="block text-[11px] text-[var(--muted)]">Inventory for pop-ups<br className="hidden sm:block" /><span className="sm:hidden"> </span>by AR Systems</span>
       </span>
     </Link>
@@ -128,7 +128,7 @@ export default function LandingPage() {
             <span className="mt-1 block text-[1.05em] font-normal"><span className="serif mark">Sold in two taps.</span></span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base text-[var(--muted)] sm:text-lg">
-            Binventory keeps the stock for each of your pop-ups and shops in one place. Your team sells from their phones,
+            Agora keeps the stock for each of your pop-ups and shops in one place. Your team sells from their phones,
             stock updates the moment something sells, and you see every store live, so you can focus on the customers
             at your table.
           </p>
@@ -175,8 +175,8 @@ export default function LandingPage() {
 
       {/* Why */}
       <section id="why" className="mx-auto max-w-6xl scroll-mt-20 px-4 pt-24">
-        <Heading eyebrow="Why Binventory" title="Less counting." accent="More selling."
-          sub="Tally sheets, guesswork and end-of-day counting eat into the time you should spend selling. Binventory keeps track for you." />
+        <Heading eyebrow="Why Agora" title="Less counting." accent="More selling."
+          sub="Tally sheets, guesswork and end-of-day counting eat into the time you should spend selling. Agora keeps track for you." />
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {WHY.map(([I, t, d]) => (
             <div key={t as string} className="rounded-2xl border border-[var(--line)] bg-white p-5">
@@ -229,7 +229,7 @@ export default function LandingPage() {
           <Heading
             eyebrow={<><span className="mr-2 rounded-full bg-[var(--ink)] px-2 py-0.5 text-[10px] font-bold text-white">V2</span>In development</>}
             title="What we're" accent="building next."
-            sub="The next version of Binventory makes the stall even faster and gives you a clearer picture of what sells." />
+            sub="The next version of Agora makes the stall even faster and gives you a clearer picture of what sells." />
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {NEXT.map(([I, e, t, d]) => (
               <div key={t as string} className="rounded-2xl border border-[var(--line)] bg-white p-5">
@@ -284,7 +284,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-10 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between">
-        <span>Binventory · Inventory for pop-up stores by AR Systems</span>
+        <span>Agora · Inventory for pop-up stores by AR Systems</span>
         <span className="flex gap-5">
           <a href="#features" className="text-[var(--blue)] hover:underline">Features</a>
           <a href="mailto:info@arsystems.dev" className="text-[var(--blue)] hover:underline">info@arsystems.dev</a>

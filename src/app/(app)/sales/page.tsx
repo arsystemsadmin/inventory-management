@@ -6,7 +6,7 @@ import { DemoSalesPage } from "@/components/demo/demo-pages";
 import { SalesView, parseSalesRange, salesRangeStart } from "@/components/views/sales-view";
 import type { Sale } from "@/lib/types";
 
-export const metadata = { title: "Sales · Binventory" };
+export const metadata = { title: "Sales · Agora" };
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ store?: string; range?: string }> }) {
   const sp = await searchParams;

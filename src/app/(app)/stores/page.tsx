@@ -6,7 +6,7 @@ import { DemoStoresPage } from "@/components/demo/demo-pages";
 import { StoresView, type StoreTodaySummary } from "@/components/views/stores-view";
 import type { Store } from "@/lib/types";
 
-export const metadata = { title: "Stores · Binventory" };
+export const metadata = { title: "Stores · Agora" };
 
 export default async function StoresPage() {
   if (isDemoMode) return <DemoStoresPage />;

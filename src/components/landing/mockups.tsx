@@ -30,7 +30,7 @@ export function DashboardMock() {
         <aside className="hidden w-44 shrink-0 border-r border-[var(--line)] p-3 md:block">
           <div className="mb-4 flex items-center gap-2">
             <span className="grid size-7 place-items-center rounded-lg bg-[var(--blue)] text-white"><Boxes className="size-4" /></span>
-            <span className="text-sm font-bold">Binventory</span>
+            <span className="text-sm font-bold">Agora</span>
           </div>
           {[["Dashboard", LayoutDashboard, true], ["Stores", Store], ["Inventory", Package], ["Sales", Receipt], ["Approvals", ClipboardCheck], ["Employees", Users], ["Payroll", Wallet]].map(([label, Icon, active]) => {
             const I = Icon as typeof Store;

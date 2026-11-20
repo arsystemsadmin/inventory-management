@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, MoreHorizontal, Pencil, Plus, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, MoreHorizontal, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -48,6 +48,12 @@ export function InventoryView({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adding, setAdding] = useState(false);
   const [settingQty, setSettingQty] = useState<Item | null>(null);
+  // Products start collapsed; tap a card to see its sizes and colors.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggle = (key: string) =>
+    setExpanded((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
+  // While searching or filtering by stock, show what matched.
+  const autoOpen = q.trim() !== "" || status !== "";
   const actions = useActions();
 
   const isOwner = role === "owner";
@@ -194,9 +200,23 @@ export function InventoryView({
             const store = storeById.get(p.store_id);
             const closed = store?.status === "closed";
             const price = p.minPrice === p.maxPrice ? formatMoney(p.minPrice) : `${formatMoney(p.minPrice)}–${formatMoney(p.maxPrice)}`;
+            const isOpen = autoOpen || expanded.has(p.key);
+            // Collapsed summary: one chip per size (red = sold out, amber = running low).
+            const sizeSummary = bySize(p.variants).map((g) => ({
+              label: g.size ?? "One size",
+              qty: g.variants.reduce((n, v) => n + v.quantity, 0),
+              warn: g.variants.some((v) => v.stock_status !== "OK"),
+            }));
             return (
               <li key={p.key} className="overflow-hidden rounded-xl border bg-card">
                 <div className="flex items-center gap-3 p-3">
+                  <button
+                    type="button"
+                    onClick={() => toggle(p.key)}
+                    aria-expanded={isOpen}
+                    aria-label={`${isOpen ? "Hide" : "Show"} sizes and colors for ${p.name}`}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
                   <ItemThumb path={p.image_path} alt={p.name} className="size-14" />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -211,7 +231,21 @@ export function InventoryView({
                       <span className="font-semibold">{price}</span>
                       <span className="ml-2 text-muted-foreground">{p.quantity} in stock</span>
                     </div>
+                    {!isOpen && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {sizeSummary.map((sz) => (
+                          <span key={sz.label} className={cn(
+                            "rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-border",
+                            sz.qty === 0 ? "bg-red-50 text-red-700 line-through" : sz.warn ? "bg-amber-50 text-amber-800" : "bg-background",
+                          )}>
+                            {sz.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
+                  <ChevronDown className={cn("size-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} aria-hidden />
+                  </button>
                   {!showArchived && (
                     <Button size="lg" variant="success" className="min-w-20" disabled={p.quantity === 0 || closed} onClick={() => startSale(p)}>
                       Sell
@@ -219,6 +253,7 @@ export function InventoryView({
                   )}
                 </div>
 
+                {isOpen && (<>
                 <ul className="divide-y border-t">
                   {bySize(variants).map((g) => {
                     const sizePhoto = p.variants.find((v) => (v.size ?? "").toLowerCase() === (g.size ?? "").toLowerCase() && v.variant_image_path)?.variant_image_path;
@@ -291,6 +326,7 @@ export function InventoryView({
                     <Button variant="ghost" size="sm" onClick={() => setEditingProduct(p)}><Pencil /> Edit product</Button>
                   </div>
                 )}
+                </>)}
               </li>
             );
           })}

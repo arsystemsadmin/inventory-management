@@ -73,6 +73,11 @@ deploy, because `arsystems.dev` is in the same account.
 **From your machine:** `npx wrangler login`, then `npm run cf:deploy`. Run `npm run cf:preview` to test the Worker
 locally first.
 
+**Production database:** `.env.production` holds the hosted project's public URL and publishable key, which are
+safe to commit. The secret key must be set in Cloudflare as a runtime **secret** named `SUPABASE_SERVICE_ROLE_KEY`
+(Worker → Settings → Variables and Secrets). Without it, everything works except creating and deactivating employees.
+To build in demo mode instead, remove `.env.production`.
+
 **Demo mode (no database yet):** if the Supabase variables aren't set, the whole app runs in the browser instead.
 Sign-up, sign-in and every feature work, with the same rules and permissions as the database version. Data is
 saved in that browser's local storage, so it survives refreshes but isn't shared across browsers or devices.

@@ -8,7 +8,8 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const path = request.nextUrl.pathname;
   const isAuthPage = AUTH_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
-  const isPublic = isAuthPage || path === "/";
+  // /auth/callback must be reachable before a session exists (email links).
+  const isPublic = isAuthPage || path === "/" || path === "/auth/callback";
 
   // Demo mode (no backend configured): auth happens in the browser.
   if (!supabaseConfigured) return response;

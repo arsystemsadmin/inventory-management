@@ -47,7 +47,8 @@ export async function createItem(input: unknown): Promise<ActionResult> {
   const supabase = await createClient();
   // business_id is filled by trigger from the store; RLS checks membership.
   const { variation_image_path, ...row } = parsed.data;
-  const { error } = await supabase.from("items").insert(variation_image_path ? { ...row, variation_image_path } : row);
+  const insertRow: Record<string, unknown> = variation_image_path ? { ...row, variation_image_path } : row;
+  const { error } = await supabase.from("items").insert(insertRow);
   if (error) return { ok: false, error: friendlyError(error) };
   revalidateInventory();
   return { ok: true, message: "Item added" };
@@ -63,7 +64,7 @@ export async function createItems(input: unknown): Promise<ActionResult<number>>
   const supabase = await createClient();
   // Only send the variation photo when set, so inserts work even before the
   // variation_image_path column exists (migration 20261120000010).
-  const rows = parsed.data.map(({ variation_image_path, ...r }) => (variation_image_path ? { ...r, variation_image_path } : r));
+  const rows: Record<string, unknown>[] = parsed.data.map(({ variation_image_path, ...r }) => (variation_image_path ? { ...r, variation_image_path } : r));
   const { error } = await supabase.from("items").insert(rows);
   if (error) return { ok: false, error: friendlyError(error) };
   revalidateInventory();

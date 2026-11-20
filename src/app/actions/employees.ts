@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { ADMIN_KEY_MISSING, createAdminClient } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
@@ -18,16 +18,26 @@ export async function createEmployee(input: unknown): Promise<ActionResult> {
 
   // Service role ONLY for the auth admin call. business_id goes in
   // app_metadata (not user-editable); the DB trigger creates the profile.
-  const admin = createAdminClient();
-  const { data, error } = await admin.auth.admin.createUser({
-    email: v.email,
-    password: v.password,
-    email_confirm: true,
-    app_metadata: { business_id: owner.business_id, role: "employee" },
-    user_metadata: { full_name: v.full_name },
-  });
-  if (error || !data.user) {
-    return { ok: false, error: error?.message.includes("already") ? "A user with this email already exists." : "Could not create the user." };
+  const admin = await createAdminClient();
+  if (!admin) return { ok: false, error: ADMIN_KEY_MISSING };
+  let data, error;
+  try {
+    ({ data, error } = await admin.auth.admin.createUser({
+      email: v.email,
+      password: v.password,
+      email_confirm: true,
+      app_metadata: { business_id: owner.business_id, role: "employee" },
+      user_metadata: { full_name: v.full_name },
+    }));
+  } catch (e) {
+    console.error("createUser failed", e);
+    return { ok: false, error: "Couldn't reach the sign-in service. Please try again." };
+  }
+  if (error || !data?.user) {
+    if (error?.message.toLowerCase().includes("already")) return { ok: false, error: "A user with this email already exists." };
+    console.error("createUser error", error);
+    // Owner-only screen: show the reason (e.g. an invalid secret key) so it can be fixed.
+    return { ok: false, error: `Could not create the user${error?.message ? `: ${error.message}` : "."}` };
   }
 
   // Everything else as the owner, through RLS.
@@ -38,7 +48,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult> {
   // (RLS: the owner can only read their own business's profiles).
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", id).maybeSingle();
   if (!profile || profile.role !== "employee") {
-    await admin.auth.admin.deleteUser(id);
+    await admin.auth.admin.deleteUser(id).catch(() => undefined);
     return { ok: false, error: "Could not set up the employee profile. Nothing was saved." };
   }
   const { error: payErr } = await supabase.from("employee_pay")
@@ -97,9 +107,15 @@ export async function setEmployeeActive(profileId: string, active: boolean): Pro
   if (!data?.length) return { ok: false, error: "Employee not found." };
 
   // Deactivated users get no data via RLS already; also block sign-in.
-  const admin = createAdminClient();
-  const { error: banErr } = await admin.auth.admin.updateUserById(profileId, { ban_duration: active ? "none" : "876000h" });
-  if (banErr) return { ok: false, error: "Saved, but could not update sign-in access." };
+  const admin = await createAdminClient();
+  if (!admin) return { ok: false, error: `Saved, but sign-in access wasn't changed. ${ADMIN_KEY_MISSING}` };
+  const { error: banErr } = await admin.auth.admin
+    .updateUserById(profileId, { ban_duration: active ? "none" : "876000h" })
+    .catch((e: unknown) => ({ error: e instanceof Error ? e : new Error(String(e)) }));
+  if (banErr) {
+    console.error("ban update failed", banErr);
+    return { ok: false, error: `Saved, but could not update sign-in access: ${banErr.message}` };
+  }
   revalidatePath("/employees");
   return { ok: true, message: active ? "Employee reactivated" : "Employee deactivated" };
 }

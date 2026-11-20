@@ -6,6 +6,9 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
+  // Keep variables set in the Cloudflare dashboard when deploying from Git
+  // (otherwise each deploy resets plain-text variables to what is listed here).
+  "keep_vars": true,
   // Cloudflare creates the DNS record and certificate for this hostname on
   // deploy, as long as the arsystems.dev zone is in the same account.
   "routes": [{ "pattern": "binventory.arsystems.dev", "custom_domain": true }]

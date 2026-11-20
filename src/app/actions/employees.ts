@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { ADMIN_KEY_MISSING, createAdminClient } from "@/lib/supabase/admin";
+import { adminKeyMissingMessage, createAdminClient } from "@/lib/supabase/admin";
 import { requireOwner } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
@@ -19,7 +19,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult> {
   // Service role ONLY for the auth admin call. business_id goes in
   // app_metadata (not user-editable); the DB trigger creates the profile.
   const admin = await createAdminClient();
-  if (!admin) return { ok: false, error: ADMIN_KEY_MISSING };
+  if (!admin) return { ok: false, error: await adminKeyMissingMessage() };
   let data, error;
   try {
     ({ data, error } = await admin.auth.admin.createUser({
@@ -108,7 +108,7 @@ export async function setEmployeeActive(profileId: string, active: boolean): Pro
 
   // Deactivated users get no data via RLS already; also block sign-in.
   const admin = await createAdminClient();
-  if (!admin) return { ok: false, error: `Saved, but sign-in access wasn't changed. ${ADMIN_KEY_MISSING}` };
+  if (!admin) return { ok: false, error: `Saved, but sign-in access wasn't changed. ${await adminKeyMissingMessage()}` };
   const { error: banErr } = await admin.auth.admin
     .updateUserById(profileId, { ban_duration: active ? "none" : "876000h" })
     .catch((e: unknown) => ({ error: e instanceof Error ? e : new Error(String(e)) }));

@@ -1,22 +1,41 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * Reads the secret (service-role) key. On Cloudflare Workers, secrets are
- * usually mirrored into process.env by OpenNext; fall back to the Worker's
- * env bindings in case they aren't.
- */
-async function serviceRoleKey(): Promise<string | undefined> {
-  const fromProcess = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (fromProcess) return fromProcess;
+const KEY_NAMES = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"];
+
+async function workerEnv(): Promise<Record<string, unknown>> {
   try {
     const { getCloudflareContext } = await import("@opennextjs/cloudflare");
     const { env } = await getCloudflareContext({ async: true });
-    const v = (env as unknown as Record<string, unknown>).SUPABASE_SERVICE_ROLE_KEY;
-    return typeof v === "string" && v ? v : undefined;
+    return env as unknown as Record<string, unknown>;
   } catch {
-    return undefined; // not running on Workers (local dev)
+    return {}; // not running on Workers (local dev)
   }
+}
+
+/**
+ * Reads the secret (service-role) key. On Cloudflare Workers, secrets are
+ * usually mirrored into process.env by OpenNext; fall back to the Worker's
+ * env bindings in case they aren't. Accepts either name Supabase uses.
+ */
+async function serviceRoleKey(): Promise<string | undefined> {
+  for (const name of KEY_NAMES) {
+    const v = process.env[name];
+    if (v) return v;
+  }
+  const env = await workerEnv();
+  for (const name of KEY_NAMES) {
+    const v = env[name];
+    if (typeof v === "string" && v) return v;
+  }
+  return undefined;
+}
+
+/** Names (never values) of Supabase-related settings the running app can see, for diagnosing setup. */
+export async function visibleSupabaseSettingNames(): Promise<string[]> {
+  const env = await workerEnv();
+  const names = new Set([...Object.keys(process.env), ...Object.keys(env)].filter((n) => /supabase/i.test(n)));
+  return [...names].sort();
 }
 
 /**
@@ -33,5 +52,10 @@ export async function createAdminClient() {
   });
 }
 
-export const ADMIN_KEY_MISSING =
-  "Employee accounts can't be managed yet: the server's secret key isn't set. In Cloudflare, add a runtime Secret named SUPABASE_SERVICE_ROLE_KEY (your Supabase sb_secret_… key), then redeploy.";
+export async function adminKeyMissingMessage() {
+  const seen = await visibleSupabaseSettingNames();
+  return "Employee accounts can't be managed yet: the running app can't see the secret key. " +
+    "In Cloudflare: Worker → Settings → Variables and Secrets (not the Build section), add a Secret named " +
+    "SUPABASE_SERVICE_ROLE_KEY with your Supabase sb_secret_… key, then redeploy. " +
+    `Settings the app can see right now: ${seen.length ? seen.join(", ") : "none"}.`;
+}

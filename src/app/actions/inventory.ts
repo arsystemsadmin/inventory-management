@@ -41,7 +41,9 @@ export async function sellItem(input: { itemId: string; quantity: number }): Pro
 export async function createItem(input: unknown): Promise<ActionResult> {
   const parsed = newItemSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  if (badImage(parsed.data.image_path) || badImage(parsed.data.variant_image_path)) return { ok: false, error: "Invalid photo." };
+  if (badImage(parsed.data.image_path) || badImage(parsed.data.variant_image_path) || badImage(parsed.data.variation_image_path)) {
+    return { ok: false, error: "Invalid photo." };
+  }
   const supabase = await createClient();
   // business_id is filled by trigger from the store; RLS checks membership.
   const { error } = await supabase.from("items").insert(parsed.data);
@@ -54,7 +56,9 @@ export async function createItem(input: unknown): Promise<ActionResult> {
 export async function createItems(input: unknown): Promise<ActionResult<number>> {
   const parsed = newItemsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
-  if (parsed.data.some((r) => badImage(r.image_path) || badImage(r.variant_image_path))) return { ok: false, error: "Invalid photo." };
+  if (parsed.data.some((r) => badImage(r.image_path) || badImage(r.variant_image_path) || badImage(r.variation_image_path))) {
+    return { ok: false, error: "Invalid photo." };
+  }
   const supabase = await createClient();
   const { error } = await supabase.from("items").insert(parsed.data);
   if (error) return { ok: false, error: friendlyError(error) };
@@ -66,15 +70,18 @@ export async function saveItemEdit(input: { itemId: string; changes: unknown; re
   const id = uuid.safeParse(input.itemId);
   const changes = itemFields.partial().safeParse(input.changes);
   if (!id.success || !changes.success) return { ok: false, error: changes.error?.issues[0].message ?? "Invalid item" };
-  const { image_path, variant_image_path, ...rest } = changes.data;
+  const { image_path, variant_image_path, variation_image_path, ...rest } = changes.data;
   const diff = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
   const raw = input.changes as object;
-  const photo: { image_path?: string | null; variant_image_path?: string | null } = {};
+  const photo: { image_path?: string | null; variant_image_path?: string | null; variation_image_path?: string | null } = {};
   if ("image_path" in raw) photo.image_path = image_path ?? null;
   if ("variant_image_path" in raw) photo.variant_image_path = variant_image_path ?? null;
+  if ("variation_image_path" in raw) photo.variation_image_path = variation_image_path ?? null;
   const imageChanged = Object.keys(photo).length > 0;
   if (Object.keys(diff).length === 0 && !imageChanged) return { ok: false, error: "Nothing changed." };
-  if (badImage(photo.image_path) || badImage(photo.variant_image_path)) return { ok: false, error: "Invalid photo." };
+  if (badImage(photo.image_path) || badImage(photo.variant_image_path) || badImage(photo.variation_image_path)) {
+    return { ok: false, error: "Invalid photo." };
+  }
 
   const supabase = await createClient();
   const { data: item } = await supabase.from("items").select("store_id").eq("id", id.data).single();

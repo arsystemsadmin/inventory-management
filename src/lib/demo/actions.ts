@@ -49,12 +49,13 @@ export const demoActions: AppActions = {
   async saveItemEdit({ itemId, changes, reason }) {
     const p = itemFields.partial().safeParse(changes);
     if (!p.success) return invalid(p.error);
-    const { image_path, variant_image_path, ...rest } = p.data;
+    const { image_path, variant_image_path, variation_image_path, ...rest } = p.data;
     const diff = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined));
     const raw = changes as object;
-    const photo: { image_path?: string | null; variant_image_path?: string | null } = {};
+    const photo: { image_path?: string | null; variant_image_path?: string | null; variation_image_path?: string | null } = {};
     if ("image_path" in raw) photo.image_path = image_path ?? null;
     if ("variant_image_path" in raw) photo.variant_image_path = variant_image_path ?? null;
+    if ("variation_image_path" in raw) photo.variation_image_path = variation_image_path ?? null;
     const imageChanged = Object.keys(photo).length > 0;
     if (!Object.keys(diff).length && !imageChanged) return { ok: false, error: "Nothing changed." };
     const u = me();

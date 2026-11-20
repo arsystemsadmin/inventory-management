@@ -39,7 +39,8 @@ export type Item = {
   low_stock_threshold: number;
   archived: boolean;
   image_path: string | null; // product photo
-  variant_image_path: string | null; // photo for this size
+  variant_image_path: string | null; // photo for this size (shared by its colors)
+  variation_image_path: string | null; // photo for this exact size + color
   updated_at: string;
   stock_status: StockStatus;
 };

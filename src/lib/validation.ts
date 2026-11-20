@@ -20,6 +20,7 @@ export const itemFields = z.object({
   // Storage path (database mode) or a small data URL (browser demo mode).
   image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
   variant_image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
+  variation_image_path: z.string().max(300_000).nullable().optional().transform((v) => v || null),
 });
 
 /** Storage paths look like <business uuid>/<store uuid>/<file uuid>.jpg */

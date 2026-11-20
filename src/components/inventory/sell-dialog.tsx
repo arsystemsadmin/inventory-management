@@ -74,7 +74,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
     <Dialog open={!!item} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader className="flex-row items-center gap-3">
-          <ItemThumb path={selected.variant_image_path ?? selected.image_path ?? variants.find((v) => v.image_path)?.image_path}
+          <ItemThumb path={selected.variation_image_path ?? selected.variant_image_path ?? selected.image_path ?? variants.find((v) => v.image_path)?.image_path}
             alt={selected.name} className="size-16" />
           <div className="grid gap-1.5">
             <DialogTitle>Sell {selected.name}</DialogTitle>

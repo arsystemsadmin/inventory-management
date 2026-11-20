@@ -109,6 +109,14 @@ export function InventoryView({
     toast.success(path ? `Photo saved for size ${size ?? "(no size)"}` : `Photo removed for size ${size ?? "(no size)"}`);
   };
 
+  // A variation photo belongs to one size + color only.
+  const setVariationPhoto = async (v: Item, path: string | null) => {
+    const res = await actions.saveItemEdit({ itemId: v.id, changes: { variation_image_path: path } });
+    if (!res.ok) { toast.error(res.error); return; }
+    const label = [v.size, v.color].filter(Boolean).join(" · ") || "this variation";
+    toast.success(path ? `Photo saved for ${label}` : `Photo removed for ${label}`);
+  };
+
   const startSale = (p: Product) => {
     const active = items.filter((i) => i.store_id === p.store_id && !i.archived && i.name === p.name);
     const first = [...active].sort((a, b) => Number(b.quantity > 0) - Number(a.quantity > 0))[0];
@@ -235,7 +243,17 @@ export function InventoryView({
                         </div>
                         <ul className="pb-1">
                           {g.variants.map((v) => (
-                            <li key={v.id} className="flex items-center gap-2 py-1 pl-14 pr-1">
+                            <li key={v.id} className="flex items-center gap-2 py-1 pl-3 pr-1 sm:pl-14">
+                              {!showArchived && (
+                                <SizePhotoButton
+                                  value={v.variation_image_path}
+                                  label={[g.size, v.color].filter(Boolean).join(" ") || "this variation"}
+                                  businessId={v.business_id}
+                                  storeId={v.store_id}
+                                  onChange={(path) => setVariationPhoto(v, path)}
+                                  className="size-9"
+                                />
+                              )}
                               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
                                 <span className="truncate font-medium">{v.color ?? "No color"}</span>
                                 {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}

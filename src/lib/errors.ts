@@ -24,7 +24,13 @@ export function friendlyError(err: PgLikeError, tr: Translate): string {
   if (err) rawErrorSink?.(err);
   if (!err) return tr("errors.generic");
   const msg = err.message ?? "";
+  // Duplicates: say which rule was hit, in words the user understands.
   if (msg.includes("items_variant_unique")) return tr("errors.VARIANT_EXISTS");
+  if (msg.includes("items_store_sku_unique")) return tr("errors.SKU_EXISTS");
+  if (msg.includes("time_entries_one_open_shift")) return tr("errors.openShiftExists");
+  if (msg.includes("approval_one_pending")) return tr("errors.REQUEST_ALREADY_PENDING");
+  if (msg.includes("store_members_pkey")) return tr("errors.ALREADY_ASSIGNED");
+  if (msg.includes("profiles_one_owner_per_business")) return tr("errors.forbidden");
   for (const code of CODES) {
     if (msg.includes(code)) return tr(`errors.${code}`);
   }

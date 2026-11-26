@@ -6,6 +6,7 @@ import { setRawErrorSink } from "@/lib/errors";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { supabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { getTr } from "@/i18n/server";
 
 /**
  * Developer-only error log (table public.error_log, unreadable by app users).
@@ -87,7 +88,11 @@ export async function logError(entry: {
   }
 }
 
-/** Wraps a server action so failures are logged. Pass logInput: false for actions with sensitive input. */
+/**
+ * Wraps a server action so failures are logged and unexpected exceptions are
+ * turned into a normal `{ ok: false, error }` result. Pass logInput: false for
+ * actions with sensitive input.
+ */
 export function logged<A extends unknown[], R>(
   action: string, fn: (...args: A) => Promise<R>, opts: { logInput?: boolean } = {},
 ): (...args: A) => Promise<R> {
@@ -107,7 +112,10 @@ export function logged<A extends unknown[], R>(
         action, message: e instanceof Error ? e.message : String(e), code: "EXCEPTION",
         details: { input, raw: redact(store.raw), stack: e instanceof Error ? e.stack?.slice(0, 4000) : undefined },
       });
-      throw e;
+      // Answer with a normal error result so the screen shows a message instead of crashing.
+      let message = "Something went wrong. Please try again.";
+      try { message = (await getTr())("errors.generic"); } catch { /* keep English */ }
+      return { ok: false, error: message } as R;
     }
   };
 }

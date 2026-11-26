@@ -4,6 +4,9 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signup } from "@/app/actions/auth";
+import { safeAction } from "@/lib/safe-call";
+
+const safeSignup = safeAction("signup", signup);
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,7 +21,7 @@ export default function SignupPage() {
   const t = useT();
   const [state, action, pending] = useActionState(
     async (prev: { error?: string; message?: string } | undefined, form: FormData): Promise<{ error?: string; message?: string } | undefined> => {
-      if (!isDemoMode) return signup(prev, form);
+      if (!isDemoMode) return safeSignup(prev, form);
       const res = await demoSignup(form);
       if (!res.error) router.replace("/app");
       return res;

@@ -221,7 +221,11 @@ const en = {
     employeeDeactivated: "Employee deactivated", employeeReactivated: "Employee reactivated",
   },
   errors: {
-    generic: "Something went wrong. Please try again.", duplicate: "That already exists (duplicate SKU or entry).",
+    generic: "Something went wrong. Please try again.",
+    offline: "No internet connection. Check your signal and try again — nothing was changed.",
+    server: "The server had a problem and nothing was changed. Please try again in a moment.",
+    SKU_EXISTS: "Another item in this store already uses that SKU. Use a different SKU or leave it empty.",
+    ALREADY_ASSIGNED: "That employee is already assigned to this store.", duplicate: "That already exists (duplicate SKU or entry).",
     forbidden: "You don't have permission to do that.", invalidValues: "Some values are not allowed. Check the form.",
     invalidInput: "Invalid input", none: "none",
     OUT_OF_STOCK: "Out of stock — someone may have just sold the last one.",

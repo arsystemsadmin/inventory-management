@@ -4,6 +4,9 @@ import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login } from "@/app/actions/auth";
+import { safeAction } from "@/lib/safe-call";
+
+const safeLogin = safeAction("login", login);
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,7 +22,7 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
   const t = useT();
   const [state, action, pending] = useActionState(
     async (prev: { error?: string } | undefined, form: FormData) => {
-      if (!isDemoMode) return login(prev, form);
+      if (!isDemoMode) return safeLogin(prev, form);
       const res = await demoLogin(form);
       if (!res.error) router.replace(safeNext(next));
       return res;

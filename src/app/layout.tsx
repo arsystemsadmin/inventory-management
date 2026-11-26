@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorNet } from "@/components/error-net";
 import { I18nProvider } from "@/i18n/client";
 import { getLang, getT } from "@/i18n/server";
 import { dirOf } from "@/i18n/settings";
@@ -25,6 +26,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <I18nProvider lang={lang}>
           {children}
           <Toaster />
+          <ErrorNet />
         </I18nProvider>
       </body>
     </html>

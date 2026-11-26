@@ -57,6 +57,9 @@ export function LiveRefresh({
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) supabase.realtime.setAuth(data.session.access_token);
       channel.subscribe();
+    }).catch(() => {
+      // Live updates are a nice-to-have: if they can't start, the page still works
+      // (it also refreshes when the phone wakes up).
     });
 
     const interval = intervalMs ? setInterval(() => router.refresh(), intervalMs) : null;

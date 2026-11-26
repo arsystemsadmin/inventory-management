@@ -6,9 +6,13 @@ import { createStore, finishSetup, reopenSetup, setStoreMembers, updateStore } f
 import { decideApproval, requestVoid, voidSale } from "@/app/actions/sales";
 import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
 import { clockIn, clockOut, deleteTimeEntry, saveTimeEntry } from "@/app/actions/time";
+import { safeActions } from "@/lib/safe-call";
 
-/** Default: server actions backed by Supabase. Demo mode swaps in browser implementations. */
-export const serverActions = {
+/**
+ * Default: server actions backed by Supabase. Demo mode swaps in browser
+ * implementations. Every action is wrapped so it can never throw into the UI.
+ */
+const rawServerActions = {
   sellItem, createItem, createItems, saveItemEdit, saveProductEdit, addStock, removeStock, removeItem, restoreItem,
   createStore, updateStore, finishSetup, reopenSetup, setStoreMembers,
   voidSale, requestVoid, decideApproval,
@@ -16,7 +20,8 @@ export const serverActions = {
   clockIn, clockOut, saveTimeEntry, deleteTimeEntry,
 };
 
-export type AppActions = typeof serverActions;
+export type AppActions = typeof rawServerActions;
+export const serverActions: AppActions = safeActions(rawServerActions);
 
 const ActionsContext = createContext<AppActions>(serverActions);
 export const ActionsProvider = ActionsContext.Provider;

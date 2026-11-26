@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { friendlyError } from "@/lib/errors";
+import { safeActions } from "@/lib/safe-call";
 import { variantLabel } from "@/lib/format";
 import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
@@ -29,7 +30,7 @@ const invalid = (e: z.ZodError) => ({ ok: false as const, error: tr(e.issues[0]?
 const me = () => L.currentUser(getState(), getUserId());
 
 /** Same signatures as the server actions; runs the browser rules against localStorage. */
-export const demoActions: AppActions = {
+const rawDemoActions: AppActions = {
   async sellItem(input) {
     const p = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
     if (!p.success) return invalid(p.error);
@@ -92,7 +93,7 @@ export const demoActions: AppActions = {
     if (!ids.length) return { ok: false, error: tr("errors.productNotFound") };
     let requested = false;
     for (const itemId of ids) {
-      const res = await demoActions.saveItemEdit({ itemId, changes, reason });
+      const res = await rawDemoActions.saveItemEdit({ itemId, changes, reason });
       if (!res.ok) return res;
       if (res.data === "requested") requested = true;
     }
@@ -203,3 +204,6 @@ export const demoActions: AppActions = {
     return r.ok ? { ok: true, message: r.message } : r;
   },
 };
+
+/** Same safety as the server actions: never throws into the UI. */
+export const demoActions: AppActions = safeActions(rawDemoActions);

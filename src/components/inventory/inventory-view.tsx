@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, MoreHorizontal, Pencil, Plus, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, MoreHorizontal, PackagePlus, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { StockBadge } from "@/components/stock-badge";
 import { cn } from "@/lib/utils";
-import { formatMoney, STOCK_ORDER } from "@/lib/format";
+import { formatMoney, STOCK_ORDER, variantLabel } from "@/lib/format";
 import { groupProducts, type Product } from "@/lib/products";
 import { STOCK_STATUSES, type Item, type Role, type StockStatus } from "@/lib/types";
 import { SellDialog } from "./sell-dialog";
@@ -39,7 +39,9 @@ export function InventoryView({
 }) {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
-  const [status, setStatus] = useState<StockStatus | "ALERTS" | "">(initialStatus ?? "");
+  const [status, setStatus] = useState<StockStatus | "ALERTS" | "">(initialStatus === "ALERTS" ? "" : initialStatus ?? "");
+  // Products = the full inventory; Restock = only what's out or running low.
+  const [view, setView] = useState<"products" | "restock">(initialStatus === "ALERTS" ? "restock" : "products");
   const [storeId, setStoreId] = useState(fixedStoreId ?? "");
   const [showArchived, setShowArchived] = useState(false);
   const [selling, setSelling] = useState<{ item: Item; variants: Item[] } | null>(null);
@@ -96,6 +98,28 @@ export function InventoryView({
 
   const totalProducts = useMemo(() => groupProducts(scoped).length, [scoped]);
 
+  // Restock list: every variation that's out, critical or low (never removed
+  // items), grouped by product, worst first. Store, category and search apply.
+  const restock = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    const active = items.filter((i) => (storeId ? i.store_id === storeId : true) && !i.archived);
+    return groupProducts(active)
+      .filter((p) => !category || p.category === category)
+      .map((p) => {
+        const productMatch = !needle || [p.name, p.category].some((v) => v?.toLowerCase().includes(needle));
+        const variants = p.variants
+          .filter((v) => v.stock_status !== "OK" &&
+            (productMatch || [v.sku, v.size, v.color].some((x) => x?.toLowerCase().includes(needle))))
+          .sort((a, b) => STOCK_ORDER[a.stock_status] - STOCK_ORDER[b.stock_status] || a.quantity - b.quantity);
+        return { product: p, variants };
+      })
+      .filter((x) => x.variants.length > 0)
+      .sort((a, b) => STOCK_ORDER[a.variants[0].stock_status] - STOCK_ORDER[b.variants[0].stock_status]
+        || b.variants.filter((v) => v.quantity <= 0).length - a.variants.filter((v) => v.quantity <= 0).length
+        || a.product.name.localeCompare(b.product.name));
+  }, [items, storeId, category, q]);
+  const restockCount = restock.reduce((n, r) => n + r.variants.length, 0);
+
   // Group a product's (visible) variations by size, keeping size order.
   const bySize = (variants: Item[]) => {
     const groups: { size: string | null; variants: Item[] }[] = [];
@@ -136,7 +160,7 @@ export function InventoryView({
       {alerts > 0 && !showArchived && (
         <button
           type="button"
-          onClick={() => setStatus(status === "ALERTS" ? "" : "ALERTS")}
+          onClick={() => { setStatus(""); setView(view === "restock" ? "products" : "restock"); }}
           className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-start text-sm text-amber-900"
         >
           <AlertTriangle className="size-5 shrink-0 text-amber-600" />
@@ -144,7 +168,7 @@ export function InventoryView({
             <b>{t("inventory.needRestocking", { count: alerts })}</b>
             {" — "}{t("inventory.alertBreakdown", { out: counts.OUT, critical: counts.CRITICAL, low: counts.LOW })}
           </span>
-          <span className="underline shrink-0">{status === "ALERTS" ? t("inventory.showAll") : t("inventory.show")}</span>
+          <span className="underline shrink-0">{view === "restock" ? t("inventory.showAll") : t("inventory.show")}</span>
         </button>
       )}
 
@@ -170,6 +194,77 @@ export function InventoryView({
         )}
       </div>
 
+      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+        {(["products", "restock"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={cn(
+              "flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+              view === v ? "bg-background shadow-sm" : "text-muted-foreground",
+            )}
+          >
+            {v === "products" ? t("inventory.productsTab") : t("inventory.restockTab")}
+            {v === "restock" && restockCount > 0 && (
+              <span className="rounded-full bg-red-600 px-1.5 text-xs font-semibold text-white">{restockCount}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {view === "restock" ? (
+        restock.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
+            {q.trim() || category ? t("inventory.noMatch") : t("inventory.restockEmpty")}
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            <p className="text-sm text-muted-foreground">{t("inventory.restockNote")}</p>
+            <ul className="grid gap-3">
+              {restock.map(({ product: p, variants }) => {
+                const store = storeById.get(p.store_id);
+                const closed = store?.status === "closed";
+                return (
+                  <li key={p.key} className="overflow-hidden rounded-xl border bg-card">
+                    <div className="flex items-center gap-3 border-b p-3">
+                      <ItemThumb path={p.image_path} alt={p.name} className="size-12" />
+                      <div className="min-w-0 flex-1">
+                        <bdi className="block truncate font-semibold">{p.name}</bdi>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {[!fixedStoreId && stores.length > 1 ? store?.name : null, p.category].filter(Boolean).join(" · ")}
+                        </span>
+                      </div>
+                      <span className="shrink-0 text-xs text-muted-foreground">{t("inventory.toRestock", { count: variants.length })}</span>
+                    </div>
+                    <ul className="divide-y">
+                      {variants.map((v) => (
+                        <li key={v.id} className={cn("flex items-center gap-3 px-3 py-2.5", v.quantity <= 0 && "bg-red-50/60 dark:bg-red-950/20")}>
+                          <ItemThumb path={v.variation_image_path ?? v.variant_image_path ?? p.image_path} alt={p.name} className="size-10" />
+                          <div className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{variantLabel(v.size, v.color) || t("common.standard")}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {t("inventory.leftOf", { count: v.quantity, threshold: v.low_stock_threshold })}
+                            </span>
+                          </div>
+                          <StockBadge status={v.stock_status} />
+                          {!closed && (
+                            <Button size="sm" variant="outline" onClick={() => setSettingQty(v)}>
+                              <PackagePlus /> {t("inventory.addStock")}
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )
+      ) : (<>
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {(["", ...STOCK_STATUSES] as const).map((s) => (
           <button
@@ -344,6 +439,7 @@ export function InventoryView({
           })}
         </ul>
       )}
+      </>)}
 
       <SellDialog item={selling?.item ?? null} variants={selling?.variants ?? []} onClose={() => setSelling(null)} />
       <ItemActionsDialog

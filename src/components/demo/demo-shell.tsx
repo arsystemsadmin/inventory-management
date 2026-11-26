@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { AppShellView } from "@/components/views/app-shell";
 import { ActionsProvider } from "@/lib/actions-context";
 import { demoActions } from "@/lib/demo/actions";
-import { currentUser, isOwner, visibleApprovals, visibleSales, visibleStores } from "@/lib/demo/logic";
+import { currentUser, isOwner, visibleApprovals, visibleItems, visibleSales, visibleStores } from "@/lib/demo/logic";
+import { QuickSell } from "@/components/quick-sell";
 import { setSessionUser, tick, useDemo, type DemoState, type DemoUser } from "@/lib/demo/store";
 import { formatMoney, isolate, variantLabel } from "@/lib/format";
 import { PAY_REFRESH_MS } from "@/lib/time";
@@ -81,6 +82,14 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
           businessName={business?.name ?? "Binventory"}
           profile={user}
           pendingApprovals={pending}
+          floating={
+            <QuickSell
+              load={async () => ({
+                items: visibleItems(snap.state, user).filter((i) => !i.archived),
+                stores: visibleStores(snap.state, user).map(({ id, name, status }) => ({ id, name, status })),
+              })}
+            />
+          }
           signOut={
             <Button variant="ghost" size="icon" aria-label={tClient("common.signOut")}
               onClick={() => { signingOut = true; setSessionUser(null); router.replace("/login"); }}>

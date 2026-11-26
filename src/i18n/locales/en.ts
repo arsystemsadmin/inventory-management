@@ -80,6 +80,18 @@ const en = {
     soldOutCount_one: "{{count}} sold out", soldOutCount_other: "{{count}} sold out",
     sizePhotoSaved: "Photo saved for size {{size}}", sizePhotoRemoved: "Photo removed for size {{size}}",
     photoSaved: "Photo saved for {{label}}", photoRemoved: "Photo removed for {{label}}",
+    productsTab: "Products", restockTab: "Restock",
+    restockNote: "Everything that's out or running low, worst first. Tap “Add stock” after restocking.",
+    restockEmpty: "Nothing needs restocking right now. 🎉",
+    toRestock_one: "{{count}} to restock", toRestock_other: "{{count}} to restock",
+    leftOf_one: "{{count}} left · alert at {{threshold}}", leftOf_other: "{{count}} left · alert at {{threshold}}",
+    addStock: "Add stock",
+  },
+  quickSell: {
+    button: "Sell", title: "Quick sale", note: "Pick a product, then choose size, color and quantity.",
+    loadFailed: "Couldn't load the products. Check your connection and try again.",
+    noStores: "No open stores to sell from yet.", searchPlaceholder: "Search product, size, color…",
+    noProducts: "No products match.",
   },
   sell: {
     title: "Sell {{name}}", sold: "Sold {{label}}", inStock_one: "{{count}} in stock", inStock_other: "{{count}} in stock",

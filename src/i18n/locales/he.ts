@@ -87,6 +87,18 @@ const he = {
     ...pl("soldOutCount", "{{count}} אזל", "{{count}} אזלו", "{{count}} אזלו"),
     sizePhotoSaved: "התמונה נשמרה למידה {{size}}", sizePhotoRemoved: "התמונה הוסרה ממידה {{size}}",
     photoSaved: "התמונה נשמרה ל-{{label}}", photoRemoved: "התמונה הוסרה מ-{{label}}",
+    productsTab: "מוצרים", restockTab: "חידוש מלאי",
+    restockNote: "כל מה שאזל או עומד להיגמר, מהדחוף ביותר. הקישו על ״הוספת מלאי״ אחרי החידוש.",
+    restockEmpty: "אין כרגע מה לחדש. 🎉",
+    ...pl("toRestock", "אחד לחידוש", "{{count}} לחידוש", "{{count}} לחידוש"),
+    ...pl("leftOf", "נשאר {{count}} · התראה ב-{{threshold}}", "נשארו {{count}} · התראה ב-{{threshold}}", "נשארו {{count}} · התראה ב-{{threshold}}"),
+    addStock: "הוספת מלאי",
+  },
+  quickSell: {
+    button: "מכירה", title: "מכירה מהירה", note: "בחרו מוצר, ואז מידה, צבע וכמות.",
+    loadFailed: "לא הצלחנו לטעון את המוצרים. בדקו את החיבור ונסו שוב.",
+    noStores: "אין עדיין חנויות פתוחות למכירה.", searchPlaceholder: "חיפוש מוצר, מידה, צבע…",
+    noProducts: "אין מוצרים תואמים.",
   },
   sell: {
     title: "מכירת {{name}}", sold: "נמכר: {{label}}",

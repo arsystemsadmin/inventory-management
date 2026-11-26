@@ -9,13 +9,15 @@ import { useT } from "@/i18n/client";
 
 /** Header + navigation shared by the Supabase and browser-demo layouts. */
 export function AppShellView({
-  businessName, profile, pendingApprovals, signOut, banner, children,
+  businessName, profile, pendingApprovals, signOut, banner, floating, children,
 }: {
   businessName: string;
   profile: Pick<Profile, "full_name" | "role">;
   pendingApprovals: number;
   signOut: React.ReactNode;
   banner?: React.ReactNode;
+  /** Floating controls shown on every page (the quick Sell button). */
+  floating?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const t = useT();
@@ -38,7 +40,8 @@ export function AppShellView({
         </div>
       </header>
       {banner}
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-24 md:pb-8">{children}</main>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-40 md:pb-24">{children}</main>
+      {floating}
       <AppNav variant="mobile" role={profile.role} pendingApprovals={pendingApprovals} />
     </div>
   );

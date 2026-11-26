@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoShell } from "@/components/demo/demo-shell";
 import { AppShellView } from "@/components/views/app-shell";
+import { QuickSell, loadFromDatabase } from "@/components/quick-sell";
 import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         businessName={business?.name ?? "Binventory"}
         profile={profile}
         pendingApprovals={pending ?? 0}
+        floating={<QuickSell load={loadFromDatabase} />}
         signOut={
           <form action={logout}>
             <Button variant="ghost" size="icon" aria-label={t("common.signOut")}><LogOut /></Button>

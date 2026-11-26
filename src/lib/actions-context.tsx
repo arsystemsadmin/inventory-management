@@ -6,6 +6,7 @@ import { createStore, finishSetup, reopenSetup, setStoreMembers, updateStore } f
 import { decideApproval, requestVoid, voidSale } from "@/app/actions/sales";
 import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
 import { clockIn, clockOut, deleteTimeEntry, saveTimeEntry } from "@/app/actions/time";
+import { updateMySettings } from "@/app/actions/settings";
 import { safeActions } from "@/lib/safe-call";
 
 /**
@@ -18,6 +19,7 @@ const rawServerActions = {
   voidSale, requestVoid, decideApproval,
   createEmployee, updateEmployee, setEmployeeActive,
   clockIn, clockOut, saveTimeEntry, deleteTimeEntry,
+  updateMySettings,
 };
 
 export type AppActions = typeof rawServerActions;

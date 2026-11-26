@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { requireProfile } from "@/lib/auth";
+import { ACTIVE_STORE_COOKIE } from "@/lib/active-store-cookie";
 import { createClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/mode";
 import { LiveRefresh } from "@/components/live-refresh";
@@ -15,7 +17,9 @@ export async function generateMetadata() {
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ store?: string; range?: string }> }) {
   const sp = await searchParams;
-  const store = sp.store && /^[0-9a-f-]{36}$/i.test(sp.store) ? sp.store : undefined;
+  // No store in the link: use the store you're working in (an explicit "All stores" sends store=).
+  const raw = sp.store ?? (await cookies()).get(ACTIVE_STORE_COOKIE)?.value;
+  const store = raw && /^[0-9a-f-]{36}$/i.test(raw) ? raw : undefined;
   if (isDemoMode) return <DemoSalesPage store={store} range={sp.range} />;
   const profile = await requireProfile();
   const range = parseSalesRange(sp.range);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, ChevronDown, MoreHorizontal, PackagePlus, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { ProductEditDialog } from "./product-edit-dialog";
 import { QuantityDialog } from "./quantity-dialog";
 import { SizePhotoButton } from "./photo-field";
 import { useActions } from "@/lib/actions-context";
+import { useActiveStore } from "@/lib/active-store";
 import { useT } from "@/i18n/client";
 
 export type InventoryStore = { id: string; business_id: string; name: string; inventory_locked_at: string | null; status: string };
@@ -42,7 +43,11 @@ export function InventoryView({
   const [status, setStatus] = useState<StockStatus | "ALERTS" | "">(initialStatus === "ALERTS" ? "" : initialStatus ?? "");
   // Products = the full inventory; Restock = only what's out or running low.
   const [view, setView] = useState<"products" | "restock">(initialStatus === "ALERTS" ? "restock" : "products");
-  const [storeId, setStoreId] = useState(fixedStoreId ?? "");
+  // Opens on the store you're working in; switching stores in the top bar follows.
+  const { activeStoreId } = useActiveStore();
+  const startStore = fixedStoreId ?? (stores.some((s) => s.id === activeStoreId) ? activeStoreId : "");
+  const [storeId, setStoreId] = useState(startStore);
+  useEffect(() => { if (!fixedStoreId) setStoreId(startStore); }, [startStore, fixedStoreId]);
   const [showArchived, setShowArchived] = useState(false);
   const [selling, setSelling] = useState<{ item: Item; variants: Item[] } | null>(null);
   const [acting, setActing] = useState<Item | null>(null);

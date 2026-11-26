@@ -14,6 +14,11 @@ import { SalesView } from "@/components/views/sales-view";
 import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import { StoreDetailView } from "@/components/views/store-detail-view";
 import { StoresView } from "@/components/views/stores-view";
+import { SettingsView } from "@/components/views/settings-view";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { setSessionUser } from "@/lib/demo/store";
+import { tClient } from "@/i18n/client";
 import {
   isOwner, periodStart, shiftPay, visibleApprovals, visibleItems, visiblePay, visiblePeople, visibleSales, visibleShifts, visibleStores,
 } from "@/lib/demo/logic";
@@ -225,6 +230,23 @@ function PayrollInner({ fromParam, toParam }: { fromParam?: string; toParam?: st
       from={from} to={to} rows={rows} entries={entries} asOf={new Date(now).toISOString()}
       people={people.filter((p) => p.role === "employee").map((p) => ({ id: p.id, full_name: p.full_name, rate_cents: rate(p.id) }))}
       stores={inventoryStores(state, user).map(({ id, name }) => ({ id, name }))}
+    />
+  );
+}
+
+export function DemoSettingsPage() {
+  const { state, user } = useDemoSession();
+  const router = useRouter();
+  const business = state.businesses.find((b) => b.id === user.business_id);
+  return (
+    <SettingsView
+      profile={user}
+      businessName={business?.name ?? ""}
+      signOut={
+        <Button variant="outline" size="lg" onClick={() => { setSessionUser(null); router.replace("/login"); }}>
+          <LogOut /> {tClient("common.signOut")}
+        </Button>
+      }
     />
   );
 }

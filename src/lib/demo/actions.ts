@@ -8,7 +8,7 @@ import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
 import {
-  createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
+  settingsSchema, createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
 } from "@/lib/validation";
 import * as L from "./logic";
 import { commit, getState, getUserId, hashPassword } from "./store";
@@ -183,6 +183,13 @@ const rawDemoActions: AppActions = {
   },
   async setEmployeeActive(id, active) {
     const r = run(() => commit((s) => L.setEmployeeActive(s, getUserId(), id, active)), active ? tr("toasts.employeeReactivated") : tr("toasts.employeeDeactivated"));
+    return r.ok ? { ok: true, message: r.message } : r;
+  },
+
+  async updateMySettings(input) {
+    const p = settingsSchema.safeParse(input);
+    if (!p.success) return invalid(p.error);
+    const r = run(() => commit((s) => L.updateMySettings(s, getUserId(), p.data)), tr("toasts.settingsSaved"));
     return r.ok ? { ok: true, message: r.message } : r;
   },
 

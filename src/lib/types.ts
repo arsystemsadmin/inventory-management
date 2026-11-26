@@ -9,6 +9,8 @@ export type Profile = {
   email: string;
   role: Role;
   active: boolean;
+  /** Store opened by default (null = all stores). Optional until migration 14 runs. */
+  default_store_id?: string | null;
 };
 
 export type Store = {

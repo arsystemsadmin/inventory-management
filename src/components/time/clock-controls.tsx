@@ -1,5 +1,6 @@
 "use client";
 
+import { useActiveStore } from "@/lib/active-store";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useActions } from "@/lib/actions-context";
@@ -8,7 +9,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { useT } from "@/i18n/client";
 
 export function ClockControls({ isOpen, stores }: { isOpen: boolean; stores: { id: string; name: string }[] }) {
-  const [storeId, setStoreId] = useState(stores[0]?.id ?? "");
+  const { activeStoreId } = useActiveStore();
+  const [storeId, setStoreId] = useState(stores.some((s) => s.id === activeStoreId) ? activeStoreId : stores[0]?.id ?? "");
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const t = useT();

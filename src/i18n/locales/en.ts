@@ -12,7 +12,7 @@ const en = {
   meta: { description: "Inventory for pop-up and permanent stores" },
   nav: {
     dashboard: "Dashboard", stores: "Stores", myStores: "My stores", inventory: "Inventory", sales: "Sales",
-    approvals: "Approvals", requests: "Requests", employees: "Employees", payroll: "Payroll", clock: "Clock",
+    approvals: "Approvals", requests: "Requests", employees: "Employees", payroll: "Payroll", clock: "Clock", settings: "Settings",
   },
   stock: { OUT: "Out", CRITICAL: "Critical", LOW: "Low", OK: "OK" },
   common: {
@@ -222,7 +222,21 @@ const en = {
     title: "Something went wrong", body: "That didn't work. Your data is safe. Try again, or go back to the app.",
     code: "Error code: {{code}}", backToApp: "Back to the app",
   },
+  settings: {
+    profile: "Your profile", fullName: "Full name", email: "Email", role: "Role",
+    emailNote: "Your sign-in email. Ask the owner if it needs to change.",
+    stores: "Stores", storesNote: "Choose the store you're working in. Inventory, sales, the Sell button and clock-in open on it.",
+    activeStore: "Active store", activeStoreNote: "Changes right away, on this device. You can also switch from the top bar.",
+    defaultStore: "Default store", defaultStoreNote: "Opened automatically whenever you sign in on a new device. Saved to your account.",
+    noDefault: "None",
+    allYourStores: "All your stores", storesYouWorkIn: "Stores you work in", defaultTag: "default", closedTag: "closed",
+    workingIn: "You're working in {{store}}.",
+    noStoresOwner: "No stores yet. Create one from the Stores tab.",
+    noStoresEmployee: "You're not assigned to a store yet. Ask the owner to add you.",
+    business: "Business", businessName: "Business name", preferences: "Preferences",
+  },
   toasts: {
+    settingsSaved: "Settings saved",
     newSale: "New sale: {{label}}", itemAdded: "Item added",
     itemsAdded_one: "Added {{count}} item", itemsAdded_other: "Added {{count}} items",
     addedSomeSkipped_one: "Added {{count}} variation · already existed: {{list}} (use Add stock)",
@@ -244,6 +258,7 @@ const en = {
   },
   errors: {
     generic: "Something went wrong. Please try again.",
+    STORE_NOT_ACCESSIBLE: "You don't have access to that store.",
     removeTooMany_one: "You can't remove more than what's in stock — only {{count}} left.",
     removeTooMany_other: "You can't remove more than what's in stock — only {{count}} left.",
     approvalStockChanged: "The stock changed since this was requested (it may have been sold), so there isn't enough left to remove. Reject the request or ask for a new one.",

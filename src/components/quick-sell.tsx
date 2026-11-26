@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/format";
 import { groupProducts, type Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useActiveStore } from "@/lib/active-store";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -45,6 +46,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
   const [storeId, setStoreId] = useState("");
   const [q, setQ] = useState("");
   const [selling, setSelling] = useState<{ item: Item; variants: Item[] } | null>(null);
+  const { activeStoreId } = useActiveStore();
 
   const openPicker = async () => {
     setOpen(true);
@@ -56,7 +58,8 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
       let remembered = "";
       try { remembered = window.localStorage.getItem(STORE_KEY) ?? ""; } catch { /* ignore */ }
       setData({ ...d, stores: openStores });
-      setStoreId(openStores.some((s) => s.id === remembered) ? remembered : openStores[0]?.id ?? "");
+      const preferred = [activeStoreId, remembered].find((id) => id && openStores.some((s) => s.id === id));
+      setStoreId(preferred ?? openStores[0]?.id ?? "");
     } catch {
       toast.error(t("quickSell.loadFailed"));
       setOpen(false);

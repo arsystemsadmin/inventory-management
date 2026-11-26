@@ -1,5 +1,8 @@
 import { LogOut } from "lucide-react";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { ActiveStoreProvider } from "@/lib/active-store";
+import { ACTIVE_STORE_COOKIE } from "@/lib/active-store-cookie";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/mode";
@@ -22,13 +25,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     const { count } = await supabase.from("stores").select("id", { count: "exact", head: true });
     if (!count) redirect("/onboarding");
   }
-  const [{ data: business }, { count: pending }] = await Promise.all([
+  const [{ data: business }, { count: pending }, { data: stores }, jar] = await Promise.all([
     supabase.from("businesses").select("name").single(),
     supabase.from("approval_requests").select("id", { count: "exact", head: true }).eq("status", "pending"),
+    // RLS: owners see every store, employees only the ones they belong to.
+    supabase.from("stores").select("id, name, status").order("name"),
+    cookies(),
   ]);
 
   return (
-    <>
+    <ActiveStoreProvider
+      stores={stores ?? []}
+      defaultStoreId={profile.default_store_id ?? null}
+      initialCookie={jar.get(ACTIVE_STORE_COOKIE)?.value}
+    >
       <AppShellView
         businessName={business?.name ?? "Binventory"}
         profile={profile}
@@ -43,7 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </AppShellView>
       {/* Keeps the approvals badge current for everyone. */}
-      <LiveRefresh tables={["approval_requests"]} />
-    </>
+      <LiveRefresh tables={["approval_requests", "stores"]} />
+    </ActiveStoreProvider>
   );
 }

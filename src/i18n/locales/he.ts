@@ -17,7 +17,7 @@ const he = {
   meta: { description: "ניהול מלאי לחנויות פופ-אפ וחנויות קבועות" },
   nav: {
     dashboard: "לוח בקרה", stores: "חנויות", myStores: "החנויות שלי", inventory: "מלאי", sales: "מכירות",
-    approvals: "אישורים", requests: "בקשות", employees: "עובדים", payroll: "שכר", clock: "שעון נוכחות",
+    approvals: "אישורים", requests: "בקשות", employees: "עובדים", payroll: "שכר", clock: "שעון נוכחות", settings: "הגדרות",
   },
   stock: { OUT: "אזל", CRITICAL: "קריטי", LOW: "נמוך", OK: "תקין" },
   common: {
@@ -232,7 +232,21 @@ const he = {
     title: "משהו השתבש", body: "זה לא עבד. הנתונים שלך בטוחים. נסו שוב, או חזרו לאפליקציה.",
     code: "קוד שגיאה: {{code}}", backToApp: "חזרה לאפליקציה",
   },
+  settings: {
+    profile: "הפרופיל שלך", fullName: "שם מלא", email: "אימייל", role: "תפקיד",
+    emailNote: "האימייל להתחברות. אם צריך לשנות אותו, פנו לבעלים.",
+    stores: "חנויות", storesNote: "בחרו את החנות שבה אתם עובדים. המלאי, המכירות, כפתור המכירה והנוכחות ייפתחו עליה.",
+    activeStore: "חנות פעילה", activeStoreNote: "משתנה מיד, במכשיר הזה. אפשר להחליף גם מהסרגל העליון.",
+    defaultStore: "חנות ברירת מחדל", defaultStoreNote: "נפתחת אוטומטית כשמתחברים ממכשיר חדש. נשמרת בחשבון.",
+    noDefault: "ללא",
+    allYourStores: "כל החנויות שלך", storesYouWorkIn: "החנויות שבהן את/ה עובד/ת", defaultTag: "ברירת מחדל", closedTag: "סגורה",
+    workingIn: "את/ה עובד/ת כעת ב-{{store}}.",
+    noStoresOwner: "אין עדיין חנויות. אפשר ליצור אחת בלשונית החנויות.",
+    noStoresEmployee: "עדיין לא שויכת לחנות. בקשו מהבעלים להוסיף אותך.",
+    business: "העסק", businessName: "שם העסק", preferences: "העדפות",
+  },
   toasts: {
+    settingsSaved: "ההגדרות נשמרו",
     newSale: "מכירה חדשה: {{label}}", itemAdded: "הפריט נוסף",
     ...pl("itemsAdded", "נוסף פריט אחד", "נוספו {{count}} פריטים", "נוספו {{count}} פריטים"),
     ...pl("addedSomeSkipped", "נוספה וריאציה אחת · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)", "נוספו {{count}} וריאציות · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)", "נוספו {{count}} וריאציות · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)"),
@@ -252,6 +266,7 @@ const he = {
     employeeDeactivated: "העובד/ת הושבת/ה", employeeReactivated: "העובד/ת הופעל/ה מחדש",
   },
   errors: {
+    STORE_NOT_ACCESSIBLE: "אין לך גישה לחנות הזו.",
     generic: "משהו השתבש. נסו שוב.",
     ...pl("removeTooMany", "אי אפשר להוריד יותר ממה שיש במלאי — נשאר רק {{count}}.", "אי אפשר להוריד יותר ממה שיש במלאי — נשארו רק {{count}}.", "אי אפשר להוריד יותר ממה שיש במלאי — נשארו רק {{count}}."),
     approvalStockChanged: "המלאי השתנה מאז הבקשה (ייתכן שנמכר), ולכן אין מספיק להורדה. דחו את הבקשה או בקשו בקשה חדשה.",

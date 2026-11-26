@@ -10,6 +10,7 @@ import { ActionsProvider } from "@/lib/actions-context";
 import { demoActions } from "@/lib/demo/actions";
 import { currentUser, isOwner, visibleApprovals, visibleItems, visibleSales, visibleStores } from "@/lib/demo/logic";
 import { QuickSell } from "@/components/quick-sell";
+import { ActiveStoreProvider } from "@/lib/active-store";
 import { setSessionUser, tick, useDemo, type DemoState, type DemoUser } from "@/lib/demo/store";
 import { formatMoney, isolate, variantLabel } from "@/lib/format";
 import { PAY_REFRESH_MS } from "@/lib/time";
@@ -78,6 +79,10 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
   return (
     <ActionsProvider value={demoActions}>
       <Ctx.Provider value={{ state: snap.state, user, now: snap.now }}>
+        <ActiveStoreProvider
+          stores={visibleStores(snap.state, user).sort((a, b) => a.name.localeCompare(b.name)).map(({ id, name, status }) => ({ id, name, status }))}
+          defaultStoreId={user.default_store_id ?? null}
+        >
         <AppShellView
           businessName={business?.name ?? "Binventory"}
           profile={user}
@@ -104,6 +109,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
         >
           {children}
         </AppShellView>
+        </ActiveStoreProvider>
         <SaleToasts state={snap.state} user={user} />
       </Ctx.Provider>
     </ActionsProvider>

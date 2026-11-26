@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Boxes } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { StoreSwitcher } from "@/components/store-switcher";
 import type { Profile } from "@/lib/types";
 import { useT } from "@/i18n/client";
 
@@ -27,14 +28,15 @@ export function AppShellView({
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
           <Link href="/app" className="flex items-center gap-2 font-semibold shrink-0">
             <Boxes className="size-5" />
-            <span className="truncate max-w-[10rem] sm:max-w-none">{businessName}</span>
+            <span className="truncate max-w-[7rem] sm:max-w-none">{businessName}</span>
           </Link>
           <AppNav variant="desktop" role={profile.role} pendingApprovals={pendingApprovals} />
           <div className="ms-auto flex items-center gap-2 text-sm">
             <span className="hidden sm:inline md:hidden xl:inline whitespace-nowrap text-muted-foreground">
               {profile.full_name} · {profile.role === "owner" ? t("common.owner") : t("common.employee")}
             </span>
-            <LanguageSwitcher />
+            <StoreSwitcher />
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             {signOut}
           </div>
         </div>

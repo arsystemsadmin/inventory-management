@@ -109,3 +109,9 @@ export const signupSchema = z.object({
   email: z.string().trim().email("validation.email"),
   password: z.string().min(8, "validation.passwordLength").max(72),
 });
+
+export const settingsSchema = z.object({
+  full_name: z.string().trim().min(1, "form.required").max(200),
+  default_store_id: uuid.nullable(),
+  business_name: z.string().trim().min(1, "form.required").max(200).optional(),
+});

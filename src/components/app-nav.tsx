@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Store, Package, Receipt, ClipboardCheck, Users, Wallet, Clock,
+  LayoutDashboard, Store, Package, Receipt, ClipboardCheck, Users, Wallet, Clock, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/i18n/client";
@@ -17,6 +17,7 @@ const OWNER = [
   { href: "/approvals", label: "nav.approvals", icon: ClipboardCheck },
   { href: "/employees", label: "nav.employees", icon: Users },
   { href: "/payroll", label: "nav.payroll", icon: Wallet },
+  { href: "/settings", label: "nav.settings", icon: Settings },
 ] as const;
 const EMPLOYEE = [
   { href: "/stores", label: "nav.myStores", icon: Store },
@@ -24,6 +25,7 @@ const EMPLOYEE = [
   { href: "/sales", label: "nav.sales", icon: Receipt },
   { href: "/clock", label: "nav.clock", icon: Clock },
   { href: "/approvals", label: "nav.requests", icon: ClipboardCheck },
+  { href: "/settings", label: "nav.settings", icon: Settings },
 ] as const;
 
 export function AppNav({ role, pendingApprovals, variant }: { role: Role; pendingApprovals: number; variant: "desktop" | "mobile" }) {

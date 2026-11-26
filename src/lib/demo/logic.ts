@@ -370,6 +370,19 @@ export function updateEmployee(
     .concat(v.store_ids.filter((id) => canAccessStore(s, u, id)).map((store_id) => ({ store_id, profile_id: p.id, business_id: u.business_id })));
 }
 
+export function updateMySettings(
+  s: DemoState, uid: string | null, v: { full_name: string; default_store_id: string | null; business_name?: string },
+) {
+  const u = requireUser(s, uid);
+  if (v.default_store_id && !canAccessStore(s, u, v.default_store_id)) fail("STORE_NOT_ACCESSIBLE");
+  u.full_name = v.full_name;
+  u.default_store_id = v.default_store_id;
+  if (u.role === "owner" && v.business_name) {
+    const b = s.businesses.find((x) => x.id === u.business_id);
+    if (b) b.name = v.business_name;
+  }
+}
+
 export function setEmployeeActive(s: DemoState, uid: string | null, profileId: string, active: boolean) {
   const u = requireOwner(s, uid);
   const p = s.users.find((x) => x.id === profileId && x.business_id === u.business_id && x.role === "employee") ?? fail("NOT_FOUND");

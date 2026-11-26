@@ -17,9 +17,11 @@ const rank = (s: string) => { const i = ORDER.indexOf(s); return i === -1 ? ORDE
  * each. Selected sizes stay in order XS, S, M, L, XL, then any custom sizes.
  */
 export function SizeQuantityPicker({
-  rows, onChange, businessId, storeId,
+  rows, onChange, businessId, storeId, defaultPhoto,
 }: {
   rows: SizeRow[]; onChange: (rows: SizeRow[]) => void; businessId?: string; storeId?: string;
+  /** The product photo: what each size shows until it gets its own. */
+  defaultPhoto?: string | null;
 }) {
   const [custom, setCustom] = useState("");
   const t = useT();
@@ -85,6 +87,7 @@ export function SizeQuantityPicker({
               <li key={r.size} className="flex items-center gap-2 px-3 py-2">
                 <SizePhotoButton
                   value={r.photo}
+                  fallback={defaultPhoto}
                   label={t("picker.sizeLabel", { size: r.size })}
                   businessId={businessId}
                   storeId={storeId}

@@ -293,6 +293,7 @@ export function InventoryView({
                               {!showArchived && (
                                 <SizePhotoButton
                                   value={v.variation_image_path}
+                                  fallback={sizePhoto ?? p.image_path}
                                   label={[g.size, v.color].filter(Boolean).join(" ") || t("inventory.thisVariation")}
                                   businessId={v.business_id}
                                   storeId={v.store_id}

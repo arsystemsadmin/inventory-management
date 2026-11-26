@@ -59,9 +59,11 @@ export function PhotoField({
 
 /** Compact photo button for one size: tap to add/change, small ✕ to remove. */
 export function SizePhotoButton({
-  value, onChange, businessId, storeId, label, className,
+  value, fallback, onChange, businessId, storeId, label, className,
 }: {
   value: string | null | undefined;
+  /** Photo shown (faded) when this one has none of its own, e.g. the product photo. */
+  fallback?: string | null;
   onChange: (path: string | null) => void | Promise<void>;
   businessId?: string;
   storeId?: string;
@@ -71,6 +73,7 @@ export function SizePhotoButton({
   const [uploading, setUploading] = useState(false);
   const t = useT();
   const url = itemImageUrl(value);
+  const inheritedUrl = url ? null : itemImageUrl(fallback);
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,6 +96,9 @@ export function SizePhotoButton({
           : url ? (
             // eslint-disable-next-line @next/next/no-img-element -- user photos; no image optimizer on Workers
             <img src={url} alt={t("photo.photoOf", { label })} className="size-full object-cover" />
+          ) : inheritedUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- user photos; no image optimizer on Workers
+            <img src={inheritedUrl} alt="" className="size-full object-cover opacity-50" />
           ) : <ImageIcon className="size-4 text-muted-foreground" />}
         <input type="file" accept="image/*" className="sr-only" onChange={onPick} disabled={uploading}
           aria-label={url ? t("photo.changeFor", { label }) : t("photo.addFor", { label })} />

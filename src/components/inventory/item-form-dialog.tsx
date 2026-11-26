@@ -134,7 +134,10 @@ export function ItemFormDialog({
       const sku = f.sku.trim();
       const skuFor = (size: string) => (sku ? `${sku}-${size.replace(/\s+/g, "").toUpperCase()}`.slice(0, 64) : "");
       const rows = sizes.length
-        ? sizes.map((r) => ({ ...shared, size: r.size, sku: skuFor(r.size), quantity: Number(r.qty || 0), variant_image_path: r.photo ?? null }))
+        // A photo picked for a row belongs to that exact variation (this size in this color);
+        // rows without one simply show the product photo.
+        ? sizes.map((r) => ({ ...shared, size: r.size, sku: skuFor(r.size), quantity: Number(r.qty || 0),
+            variation_image_path: r.photo && r.photo !== imagePath ? r.photo : null }))
         : [{ ...shared, size: "", sku, quantity: Number(f.quantity || 0) }];
       const res = await actions.createItems(rows);
       if (!res.ok) { toast.error(res.error); return; }
@@ -145,7 +148,8 @@ export function ItemFormDialog({
         ? t("form.addedSizes", { name: `${f.name}${color}`, count: sizes.length, sizes: sizes.map((r) => r.size).join(", ") })
         : t("form.added", { name: `${f.name}${color}` }));
       if (addAnother) {
-        // Same product in another color: keep details and sizes, reset color and quantities.
+        // Same product in another color: keep details and sizes, reset color, quantities and
+        // photos (each size goes back to showing the product photo, or none).
         setF((s) => ({ ...s, sku: "", color: "", quantity: "1" }));
         setSizes((rs) => rs.map((r) => ({ ...r, qty: "1", photo: null })));
         colorRef.current?.focus();
@@ -213,7 +217,7 @@ export function ItemFormDialog({
               </div>
               <div className="grid gap-1.5">
                 <Label>{t("form.sizes")}{req} <span className="font-normal text-muted-foreground">{t("form.sizesHint")}</span></Label>
-                <SizeQuantityPicker rows={sizes} onChange={setSizes} businessId={businessId} storeId={storeId} />
+                <SizeQuantityPicker rows={sizes} onChange={setSizes} businessId={businessId} storeId={storeId} defaultPhoto={imagePath} />
                 {errorFor("sizes")}
               </div>
             </>

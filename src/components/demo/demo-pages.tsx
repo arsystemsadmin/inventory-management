@@ -128,11 +128,11 @@ export function DemoSalesPage({ store, range: rangeParam }: { store?: string; ra
   const since = salesRangeStart(range, new Date(now)).toISOString();
   const sales = visibleSales(state, user)
     .filter((s) => s.created_at >= since && (!store || s.store_id === store))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 300);
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
   const pending = visibleApprovals(state, user).filter((r) => r.kind === "void_sale" && r.status === "pending").map((r) => r.sale_id!);
   return (
     <SalesView sales={sales} stores={inventoryStores(state, user)} peopleNames={names(state, user)}
-      pendingVoidIds={pending} isOwner={isOwner(user)} range={range} store={store} />
+      pendingVoidIds={pending} isOwner={isOwner(user)} range={range} store={store} asOf={new Date(now).toISOString()} />
   );
 }
 

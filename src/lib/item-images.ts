@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/mode";
 import { tClient as tr } from "@/i18n/client";
+import { reportClientError } from "@/app/actions/report";
 
 const BUCKET = "item-images";
 
@@ -68,9 +69,17 @@ export async function uploadItemImage(
     const { error } = await createClient().storage.from(BUCKET).upload(path, blob, {
       contentType: "image/jpeg", cacheControl: "31536000", upsert: false,
     });
-    if (error) return { ok: false, error: tr("photo.uploadFailed") };
+    if (error) {
+      void reportClientError({ action: "photo-upload", message: error.message, path: window.location.pathname,
+        details: { size: blob.size, storeId } }).catch(() => undefined);
+      return { ok: false, error: tr("photo.uploadFailed") };
+    }
     return { ok: true, path };
   } catch (e) {
+    if (!isDemoMode) {
+      void reportClientError({ action: "photo-process", message: e instanceof Error ? e.message : String(e),
+        path: window.location.pathname, details: { type: file.type, size: file.size } }).catch(() => undefined);
+    }
     return { ok: false, error: e instanceof Error ? e.message : tr("photo.useFailed") };
   }
 }

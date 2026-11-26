@@ -10,8 +10,9 @@ import type { ActionResult } from "@/lib/types";
 
 import { createEmployeeSchema as createSchema, updateEmployeeSchema } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
-export async function createEmployee(input: unknown): Promise<ActionResult> {
+async function createEmployeeImpl(input: unknown): Promise<ActionResult> {
   const tr = await getTr();
   const owner = await requireOwner();
   const parsed = createSchema.safeParse(input);
@@ -65,7 +66,7 @@ export async function createEmployee(input: unknown): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.employeeCreated", { name: v.full_name, email: v.email }) };
 }
 
-export async function updateEmployee(input: unknown): Promise<ActionResult> {
+async function updateEmployeeImpl(input: unknown): Promise<ActionResult> {
   const tr = await getTr();
   const owner = await requireOwner();
   const parsed = updateEmployeeSchema.safeParse(input);
@@ -99,7 +100,7 @@ export async function updateEmployee(input: unknown): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.employeeUpdated") };
 }
 
-export async function setEmployeeActive(profileId: string, active: boolean): Promise<ActionResult> {
+async function setEmployeeActiveImpl(profileId: string, active: boolean): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   if (!z.string().uuid().safeParse(profileId).success) return { ok: false, error: tr("errors.invalidEmployee") };
@@ -123,3 +124,8 @@ export async function setEmployeeActive(profileId: string, active: boolean): Pro
   revalidatePath("/employees");
   return { ok: true, message: active ? tr("toasts.employeeReactivated") : tr("toasts.employeeDeactivated") };
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const createEmployee = logged("createEmployee", createEmployeeImpl, { logInput: false });
+export const updateEmployee = logged("updateEmployee", updateEmployeeImpl);
+export const setEmployeeActive = logged("setEmployeeActive", setEmployeeActiveImpl);

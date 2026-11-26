@@ -32,6 +32,13 @@ async function serviceRoleKey(): Promise<string | undefined> {
   return undefined;
 }
 
+/** A server-only setting (Worker variable or secret), e.g. DEV_EMAILS. */
+export async function readServerEnv(name: string): Promise<string | undefined> {
+  if (process.env[name]) return process.env[name];
+  const v = (await workerEnv())[name];
+  return typeof v === "string" && v ? v : undefined;
+}
+
 /** Names (never values) of Supabase-related settings the running app can see, for diagnosing setup. */
 export async function visibleSupabaseSettingNames(): Promise<string[]> {
   const env = await workerEnv();

@@ -92,6 +92,18 @@ Demo data is not migrated.
 
 ---
 
+## Developer error log
+
+Every failed action (and page crashes / photo-upload failures) is written to `public.error_log`:
+who (user, role, business), where (page), what (action, message shown, raw error code/details) and the device.
+Inputs are stored with passwords/secrets redacted, and nothing at all for sign-in, sign-up and employee creation.
+
+- The table has RLS on and **no policies**: owners and employees can't read or write it. Only the server writes, with the secret key.
+- Developers view it at **`/dev/errors`**: filter by account, business, action, period or text.
+- Access: set a runtime variable **`DEV_EMAILS`** on the Cloudflare Worker (comma-separated emails, e.g. `dev@example.com,other@example.com`). Anyone else gets a 404.
+
+---
+
 ## Tests
 
 ```bash

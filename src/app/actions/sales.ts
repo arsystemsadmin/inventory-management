@@ -7,6 +7,7 @@ import { requireOwner } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
 import type { ActionResult } from "@/lib/types";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
 function revalidateSales() {
   revalidatePath("/sales");
@@ -16,7 +17,7 @@ function revalidateSales() {
   revalidatePath("/approvals");
 }
 
-export async function voidSale(saleId: string): Promise<ActionResult> {
+async function voidSaleImpl(saleId: string): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   if (!z.string().uuid().safeParse(saleId).success) return { ok: false, error: tr("errors.invalidSale") };
@@ -27,7 +28,7 @@ export async function voidSale(saleId: string): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.saleVoided") };
 }
 
-export async function requestVoid(saleId: string, reason?: string): Promise<ActionResult> {
+async function requestVoidImpl(saleId: string, reason?: string): Promise<ActionResult> {
   const tr = await getTr();
   const parsed = z.object({ saleId: z.string().uuid(), reason: z.string().max(500).optional() }).safeParse({ saleId, reason });
   if (!parsed.success) return { ok: false, error: tr("errors.invalidSale") };
@@ -40,7 +41,7 @@ export async function requestVoid(saleId: string, reason?: string): Promise<Acti
   return { ok: true, message: tr("toasts.voidRequested") };
 }
 
-export async function decideApproval(requestId: string, approve: boolean, note?: string): Promise<ActionResult> {
+async function decideApprovalImpl(requestId: string, approve: boolean, note?: string): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   const parsed = z.object({ id: z.string().uuid(), note: z.string().max(500).optional() }).safeParse({ id: requestId, note });
@@ -53,3 +54,8 @@ export async function decideApproval(requestId: string, approve: boolean, note?:
   revalidateSales();
   return { ok: true, message: approve ? tr("toasts.approved") : tr("toasts.rejected") };
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const voidSale = logged("voidSale", voidSaleImpl);
+export const requestVoid = logged("requestVoid", requestVoidImpl);
+export const decideApproval = logged("decideApproval", decideApprovalImpl);

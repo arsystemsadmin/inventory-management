@@ -9,13 +9,14 @@ export type AuthFormState = { error?: string; message?: string } | undefined;
 
 import { loginSchema, signupSchema } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
 function safeNext(next: string | undefined) {
   // Only allow same-site relative paths (no "//evil.com" open redirects).
   return next && next.startsWith("/") && !next.startsWith("//") ? next : "/app";
 }
 
-export async function login(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+async function loginImpl(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const tr = await getTr();
   if (!supabaseConfigured) return { error: tr("demo.notConnected") };
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
@@ -32,7 +33,7 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
   redirect(safeNext(parsed.data.next));
 }
 
-export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+async function signupImpl(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const tr = await getTr();
   if (!supabaseConfigured) return { error: tr("demo.notConnected") };
   const parsed = signupSchema.safeParse(Object.fromEntries(formData));
@@ -63,3 +64,7 @@ export async function logout() {
   await supabase.auth.signOut();
   redirect("/login");
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const login = logged("login", loginImpl, { logInput: false });
+export const signup = logged("signup", signupImpl, { logInput: false });

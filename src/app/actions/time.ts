@@ -14,7 +14,7 @@ function revalidateTime() {
   revalidatePath("/employees");
 }
 
-export async function clockIn(storeId: string): Promise<ActionResult> {
+async function clockInImpl(storeId: string): Promise<ActionResult> {
   const tr = await getTr();
   if (!z.string().uuid().safeParse(storeId).success) return { ok: false, error: tr("errors.pickStore") };
   const supabase = await createClient();
@@ -24,7 +24,7 @@ export async function clockIn(storeId: string): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.clockedIn") };
 }
 
-export async function clockOut(): Promise<ActionResult> {
+async function clockOutImpl(): Promise<ActionResult> {
   const tr = await getTr();
   const supabase = await createClient();
   const { error } = await supabase.rpc("clock_out");
@@ -35,9 +35,10 @@ export async function clockOut(): Promise<ActionResult> {
 
 import { timeEntrySchema as entrySchema } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
 /** Owner adds or corrects a shift manually (RLS: owner-only writes). */
-export async function saveTimeEntry(input: unknown): Promise<ActionResult> {
+async function saveTimeEntryImpl(input: unknown): Promise<ActionResult> {
   const tr = await getTr();
   const owner = await requireOwner();
   const parsed = entrySchema.safeParse(input);
@@ -55,7 +56,7 @@ export async function saveTimeEntry(input: unknown): Promise<ActionResult> {
   return { ok: true, message: id ? tr("toasts.shiftUpdated") : tr("toasts.shiftAdded") };
 }
 
-export async function deleteTimeEntry(id: string): Promise<ActionResult> {
+async function deleteTimeEntryImpl(id: string): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   if (!z.string().uuid().safeParse(id).success) return { ok: false, error: tr("errors.invalidShift") };
@@ -65,3 +66,9 @@ export async function deleteTimeEntry(id: string): Promise<ActionResult> {
   revalidateTime();
   return { ok: true, message: tr("toasts.shiftDeleted") };
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const clockIn = logged("clockIn", clockInImpl);
+export const clockOut = logged("clockOut", clockOutImpl);
+export const saveTimeEntry = logged("saveTimeEntry", saveTimeEntryImpl);
+export const deleteTimeEntry = logged("deleteTimeEntry", deleteTimeEntryImpl);

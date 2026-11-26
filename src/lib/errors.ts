@@ -13,7 +13,15 @@ const CODES = [
 
 type PgLikeError = { message?: string; code?: string; details?: string | null } | null | undefined;
 
+// The server's error log registers a sink here to capture the raw (technical)
+// error behind each user-facing message. No-op in the browser.
+let rawErrorSink: ((err: unknown) => void) | null = null;
+export function setRawErrorSink(sink: (err: unknown) => void) {
+  rawErrorSink = sink;
+}
+
 export function friendlyError(err: PgLikeError, tr: Translate): string {
+  if (err) rawErrorSink?.(err);
   if (!err) return tr("errors.generic");
   const msg = err.message ?? "";
   if (msg.includes("items_variant_unique")) return tr("errors.VARIANT_EXISTS");

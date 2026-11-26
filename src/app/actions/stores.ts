@@ -9,8 +9,9 @@ import type { ActionResult } from "@/lib/types";
 
 import { storeSchema, storeToRow as toRow } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
-export async function createStore(input: unknown): Promise<ActionResult<string>> {
+async function createStoreImpl(input: unknown): Promise<ActionResult<string>> {
   const tr = await getTr();
   const owner = await requireOwner();
   const parsed = storeSchema.safeParse(input);
@@ -26,7 +27,7 @@ export async function createStore(input: unknown): Promise<ActionResult<string>>
   return { ok: true, data: data.id, message: tr("toasts.storeCreated") };
 }
 
-export async function updateStore(storeId: string, input: unknown): Promise<ActionResult> {
+async function updateStoreImpl(storeId: string, input: unknown): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   const parsed = storeSchema.safeParse(input);
@@ -40,7 +41,7 @@ export async function updateStore(storeId: string, input: unknown): Promise<Acti
   return { ok: true, message: tr("toasts.storeUpdated") };
 }
 
-export async function finishSetup(storeId: string): Promise<ActionResult> {
+async function finishSetupImpl(storeId: string): Promise<ActionResult> {
   const tr = await getTr();
   if (!z.string().uuid().safeParse(storeId).success) return { ok: false, error: tr("errors.invalidStore") };
   const supabase = await createClient();
@@ -50,7 +51,7 @@ export async function finishSetup(storeId: string): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.setupFinished") };
 }
 
-export async function reopenSetup(storeId: string): Promise<ActionResult> {
+async function reopenSetupImpl(storeId: string): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
   const supabase = await createClient();
@@ -61,7 +62,7 @@ export async function reopenSetup(storeId: string): Promise<ActionResult> {
   return { ok: true, message: tr("toasts.setupReopened") };
 }
 
-export async function setStoreMembers(storeId: string, profileIds: string[]): Promise<ActionResult> {
+async function setStoreMembersImpl(storeId: string, profileIds: string[]): Promise<ActionResult> {
   const tr = await getTr();
   const owner = await requireOwner();
   const parsed = z.object({ storeId: z.string().uuid(), ids: z.array(z.string().uuid()).max(500) })
@@ -86,3 +87,10 @@ export async function setStoreMembers(storeId: string, profileIds: string[]): Pr
   revalidatePath("/employees");
   return { ok: true, message: tr("toasts.staffUpdated") };
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const createStore = logged("createStore", createStoreImpl);
+export const updateStore = logged("updateStore", updateStoreImpl);
+export const finishSetup = logged("finishSetup", finishSetupImpl);
+export const reopenSetup = logged("reopenSetup", reopenSetupImpl);
+export const setStoreMembers = logged("setStoreMembers", setStoreMembersImpl);

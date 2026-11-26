@@ -3,11 +3,19 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { reportClientError } from "@/app/actions/report";
 import { useT } from "@/i18n/client";
 
 /** Friendly fallback instead of Next's raw "Application error" page. */
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
-  useEffect(() => { console.error(error); }, [error]);
+  useEffect(() => {
+    console.error(error);
+    // Record the crash in the developer error log (never shown to owners).
+    void reportClientError({
+      action: "page-crash", message: error.message || "Unknown error", digest: error.digest,
+      path: window.location.pathname,
+    }).catch(() => undefined);
+  }, [error]);
   const t = useT();
   return (
     <main className="mx-auto grid min-h-[60dvh] max-w-md place-items-center px-4 text-center">

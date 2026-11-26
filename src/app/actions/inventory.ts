@@ -9,6 +9,7 @@ import type { ActionResult, PaymentInput, SellResult } from "@/lib/types";
 
 import { itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
+import { logged } from "@/lib/error-log";
 
 const badImage = (p: string | null | undefined) => !!p && !STORAGE_IMAGE_PATH.test(p);
 
@@ -28,7 +29,7 @@ async function canEditDirectly(storeId: string) {
   return !!data && data.inventory_locked_at === null;
 }
 
-export async function sellItem(input: { itemId: string; quantity: number; payment?: PaymentInput }): Promise<ActionResult<SellResult>> {
+async function sellItemImpl(input: { itemId: string; quantity: number; payment?: PaymentInput }): Promise<ActionResult<SellResult>> {
   const tr = await getTr();
   const parsed = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -48,7 +49,7 @@ export async function sellItem(input: { itemId: string; quantity: number; paymen
   return { ok: true, data: data as SellResult };
 }
 
-export async function createItem(input: unknown): Promise<ActionResult> {
+async function createItemImpl(input: unknown): Promise<ActionResult> {
   const tr = await getTr();
   const parsed = newItemSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -66,7 +67,7 @@ export async function createItem(input: unknown): Promise<ActionResult> {
 }
 
 /** Creates several variants (e.g. one per size) in a single insert, so it's all-or-nothing. */
-export async function createItems(input: unknown): Promise<ActionResult<number>> {
+async function createItemsImpl(input: unknown): Promise<ActionResult<number>> {
   const tr = await getTr();
   const parsed = newItemsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -83,7 +84,7 @@ export async function createItems(input: unknown): Promise<ActionResult<number>>
   return { ok: true, data: parsed.data.length, message: `Added ${parsed.data.length} item${parsed.data.length === 1 ? "" : "s"}` };
 }
 
-export async function saveItemEdit(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult<"applied" | "requested">> {
+async function saveItemEditImpl(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult<"applied" | "requested">> {
   const tr = await getTr();
   const id = uuid.safeParse(input.itemId);
   const changes = itemFields.partial().safeParse(input.changes);
@@ -135,7 +136,7 @@ export async function saveItemEdit(input: { itemId: string; changes: unknown; re
  * price…) to every variation. Each variation goes through saveItemEdit, so
  * setup-lock approval rules apply exactly as for single edits.
  */
-export async function saveProductEdit(input: { storeId: string; name: string; changes: unknown; reason?: string }): Promise<ActionResult> {
+async function saveProductEditImpl(input: { storeId: string; name: string; changes: unknown; reason?: string }): Promise<ActionResult> {
   const tr = await getTr();
   const parsed = z.object({ storeId: uuid, name: z.string().trim().min(1).max(200) }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr("errors.invalidProduct") };
@@ -145,14 +146,14 @@ export async function saveProductEdit(input: { storeId: string; name: string; ch
   if (!ids.length) return { ok: false, error: tr("errors.productNotFound") };
   let requested = false;
   for (const itemId of ids) {
-    const res = await saveItemEdit({ itemId, changes: input.changes, reason: input.reason });
+    const res = await saveItemEditImpl({ itemId, changes: input.changes, reason: input.reason });
     if (!res.ok) return res;
     if (res.data === "requested") requested = true;
   }
   return { ok: true, message: requested ? tr("toasts.changesRequested") : tr("toasts.productUpdated") };
 }
 
-export async function addStock(input: { itemId: string; quantity: number }): Promise<ActionResult<number>> {
+async function addStockImpl(input: { itemId: string; quantity: number }): Promise<ActionResult<number>> {
   const tr = await getTr();
   const parsed = z.object({ itemId: uuid, quantity: qty }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -163,7 +164,7 @@ export async function addStock(input: { itemId: string; quantity: number }): Pro
   return { ok: true, data: data as number, message: tr("toasts.stockAdded", { count: parsed.data.quantity }) };
 }
 
-export async function removeStock(input: { itemId: string; quantity: number; reason?: string }): Promise<ActionResult> {
+async function removeStockImpl(input: { itemId: string; quantity: number; reason?: string }): Promise<ActionResult> {
   const tr = await getTr();
   const parsed = z.object({ itemId: uuid, quantity: qty, reason: z.string().max(500).optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -186,7 +187,7 @@ export async function removeStock(input: { itemId: string; quantity: number; rea
   return { ok: true, message: tr("toasts.removalRequested") };
 }
 
-export async function removeItem(input: { itemId: string; reason?: string }): Promise<ActionResult> {
+async function removeItemImpl(input: { itemId: string; reason?: string }): Promise<ActionResult> {
   const tr = await getTr();
   const parsed = z.object({ itemId: uuid, reason: z.string().max(500).optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr("errors.invalidItem") };
@@ -206,7 +207,7 @@ export async function removeItem(input: { itemId: string; reason?: string }): Pr
   return { ok: true, message: tr("toasts.archiveRequested") };
 }
 
-export async function restoreItem(itemId: string): Promise<ActionResult> {
+async function restoreItemImpl(itemId: string): Promise<ActionResult> {
   const tr = await getTr();
   if (!uuid.safeParse(itemId).success) return { ok: false, error: tr("errors.invalidItem") };
   const supabase = await createClient();
@@ -215,3 +216,14 @@ export async function restoreItem(itemId: string): Promise<ActionResult> {
   revalidateInventory();
   return { ok: true, message: tr("toasts.itemRestored") };
 }
+
+// Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const sellItem = logged("sellItem", sellItemImpl);
+export const createItem = logged("createItem", createItemImpl);
+export const createItems = logged("createItems", createItemsImpl);
+export const saveItemEdit = logged("saveItemEdit", saveItemEditImpl);
+export const saveProductEdit = logged("saveProductEdit", saveProductEditImpl);
+export const addStock = logged("addStock", addStockImpl);
+export const removeStock = logged("removeStock", removeStockImpl);
+export const removeItem = logged("removeItem", removeItemImpl);
+export const restoreItem = logged("restoreItem", restoreItemImpl);

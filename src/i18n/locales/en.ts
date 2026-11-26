@@ -91,6 +91,7 @@ const en = {
     removeExplainEmployee: "The owner will be asked to approve removing this variation from inventory.",
     removeExplainOwner: "This variation is hidden from inventory. Its sales history is kept and you can restore it later.",
     requestRemoval: "Request removal",
+    upTo_one: "You can remove up to {{count}}.", upTo_other: "You can remove up to {{count}}.",
   },
   form: {
     priceFormat: "Enter prices like 12.50", added: "Added {{name}}",
@@ -222,6 +223,9 @@ const en = {
   },
   errors: {
     generic: "Something went wrong. Please try again.",
+    removeTooMany_one: "You can't remove more than what's in stock — only {{count}} left.",
+    removeTooMany_other: "You can't remove more than what's in stock — only {{count}} left.",
+    approvalStockChanged: "The stock changed since this was requested (it may have been sold), so there isn't enough left to remove. Reject the request or ask for a new one.",
     offline: "No internet connection. Check your signal and try again — nothing was changed.",
     server: "The server had a problem and nothing was changed. Please try again in a moment.",
     SKU_EXISTS: "Another item in this store already uses that SKU. Use a different SKU or leave it empty.",

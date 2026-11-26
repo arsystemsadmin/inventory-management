@@ -193,11 +193,19 @@ async function removeStockImpl(input: { itemId: string; quantity: number; reason
   const parsed = z.object({ itemId: uuid, quantity: qty, reason: z.string().max(500).optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
   const supabase = await createClient();
-  const { data: item } = await supabase.from("items").select("store_id").eq("id", parsed.data.itemId).single();
+  const { data: item } = await supabase.from("items").select("store_id, quantity").eq("id", parsed.data.itemId).single();
   if (!item) return { ok: false, error: tr("errors.ITEM_NOT_FOUND") };
+  // Can't remove more than what's there (it may have just been sold).
+  if (parsed.data.quantity > item.quantity) {
+    return { ok: false, error: tr("errors.removeTooMany", { count: item.quantity }) };
+  }
 
   if (await canEditDirectly(item.store_id)) {
     const { error } = await supabase.rpc("remove_stock", { p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity });
+    if (error?.message?.includes("OUT_OF_STOCK")) {
+      const { data: now } = await supabase.from("items").select("quantity").eq("id", parsed.data.itemId).single();
+      return { ok: false, error: tr("errors.removeTooMany", { count: now?.quantity ?? 0 }) };
+    }
     if (error) return { ok: false, error: friendlyError(error, tr) };
     revalidateInventory();
     return { ok: true, message: tr("toasts.stockRemoved", { count: parsed.data.quantity }) };

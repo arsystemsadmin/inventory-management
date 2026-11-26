@@ -110,6 +110,7 @@ const rawDemoActions: AppActions = {
     const u = me();
     const item = getState().items.find((i) => i.id === p.data.itemId);
     if (!u || !item) return { ok: false, error: tr("errors.ITEM_NOT_FOUND") };
+    if (p.data.quantity > item.quantity) return { ok: false, error: tr("errors.removeTooMany", { count: item.quantity }) };
     const r = L.canEditDirectly(getState(), u, item.store_id)
       ? run(() => commit((s) => L.removeStock(s, u.id, p.data.itemId, p.data.quantity)), tr("toasts.stockRemoved", { count: p.data.quantity }))
       : run(() => commit((s) => { L.requestApproval(s, u.id, "edit_item", p.data.itemId, p.data.reason, { quantity_delta: -p.data.quantity }); }),
@@ -162,6 +163,7 @@ const rawDemoActions: AppActions = {
   },
   async decideApproval(id, approve, note) {
     const r = run(() => commit((s) => L.decideApproval(s, getUserId(), id, approve, note)), approve ? tr("toasts.approved") : tr("toasts.rejected"));
+    if (!r.ok && r.error === tr("errors.OUT_OF_STOCK")) return { ok: false, error: tr("errors.approvalStockChanged") };
     return r.ok ? { ok: true, message: r.message } : r;
   },
 

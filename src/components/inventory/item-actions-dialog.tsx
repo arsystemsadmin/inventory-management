@@ -44,6 +44,7 @@ export function ItemActionsDialog({
       onClose();
     });
   const n = Math.max(1, parseInt(qty, 10) || 1);
+  const tooMany = mode === "remove" && n > item.quantity;
   // Removing an item always needs approval for employees; stock removal only after setup.
   const deleteNeedsApproval = !isOwner;
 
@@ -68,7 +69,7 @@ export function ItemActionsDialog({
             ) : (
               <>
                 <Button size="lg" onClick={() => setMode("add")}><Plus /> {t("actions.addStock")}</Button>
-                <Button size="lg" variant="outline" onClick={() => setMode("remove")}>
+                <Button size="lg" variant="outline" disabled={item.quantity === 0} onClick={() => setMode("remove")}>
                   <Minus /> {t("actions.removeStock")}{needsApproval && ` ${t("actions.needsApproval")}`}
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => { onClose(); onEdit(item); }}>
@@ -94,7 +95,13 @@ export function ItemActionsDialog({
           >
             <div className="grid gap-1.5">
               <Label htmlFor="qty">{mode === "add" ? t("actions.howManyArrived") : t("actions.howManyRemove")}</Label>
-              <Input id="qty" inputMode="numeric" autoFocus value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} />
+              <Input id="qty" inputMode="numeric" autoFocus value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))}
+                aria-invalid={tooMany} />
+              {mode === "remove" && (
+                <p className={tooMany ? "text-xs font-medium text-destructive" : "text-xs text-muted-foreground"}>
+                  {tooMany ? t("errors.removeTooMany", { count: item.quantity }) : t("actions.upTo", { count: item.quantity })}
+                </p>
+              )}
             </div>
             {mode === "remove" && needsApproval && (
               <div className="grid gap-1.5">
@@ -104,7 +111,7 @@ export function ItemActionsDialog({
             )}
             <div className="flex gap-2">
               <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>{t("common.back")}</Button>
-              <Button type="submit" size="lg" className="flex-1" disabled={pending}>
+              <Button type="submit" size="lg" className="flex-1" disabled={pending || tooMany}>
                 {mode === "add" ? t("actions.addN", { count: n }) : needsApproval ? t("common.requestApproval") : t("actions.removeN", { count: n })}
               </Button>
             </div>

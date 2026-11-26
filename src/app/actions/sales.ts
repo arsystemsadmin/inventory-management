@@ -50,6 +50,8 @@ async function decideApprovalImpl(requestId: string, approve: boolean, note?: st
   const { error } = await supabase.rpc("decide_approval", {
     p_request_id: parsed.data.id, p_approve: approve, p_note: parsed.data.note ?? null,
   });
+  // The stock changed since the request (e.g. it sold): explain instead of "out of stock".
+  if (error?.message?.includes("OUT_OF_STOCK")) return { ok: false, error: tr("errors.approvalStockChanged") };
   if (error) return { ok: false, error: friendlyError(error, tr) };
   revalidateSales();
   return { ok: true, message: approve ? tr("toasts.approved") : tr("toasts.rejected") };

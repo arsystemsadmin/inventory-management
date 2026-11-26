@@ -6,7 +6,7 @@
  * them to the same messages.
  */
 import { stockStatus } from "@/lib/format";
-import type { Item, SellResult } from "@/lib/types";
+import type { Item, PaymentInput, SellResult } from "@/lib/types";
 import {
   newId, type DemoApproval, type DemoItem, type DemoShift, type DemoState, type DemoStore, type DemoUser,
 } from "./store";
@@ -108,7 +108,9 @@ function findItem(s: DemoState, u: DemoUser, id: string) {
   return item!;
 }
 
-export function sellItem(s: DemoState, uid: string | null, itemId: string, qty: number, at?: string): SellResult {
+export function sellItem(
+  s: DemoState, uid: string | null, itemId: string, qty: number, at?: string, payment: PaymentInput = { method: "cash" },
+): SellResult {
   const u = requireUser(s, uid);
   if (!Number.isInteger(qty) || qty <= 0 || qty > 10000) fail("INVALID_QUANTITY");
   const item = s.items.find((i) => i.id === itemId && i.business_id === u.business_id) ?? fail("ITEM_NOT_FOUND");
@@ -116,17 +118,27 @@ export function sellItem(s: DemoState, uid: string | null, itemId: string, qty: 
   if (item.archived) fail("ITEM_ARCHIVED");
   if (s.stores.find((x) => x.id === item.store_id)?.status === "closed") fail("STORE_CLOSED");
   if (item.quantity < qty) fail("OUT_OF_STOCK", `Requested ${qty}, only ${item.quantity} left`);
+  const total = qty * item.price_cents;
+  let cash = total, credit = 0;
+  if (payment.method === "credit") { cash = 0; credit = total; }
+  else if (payment.method === "split") {
+    // Same rule as the database: both parts > 0 and they add up to the total.
+    if (!payment.cash_cents || payment.cash_cents <= 0 || payment.cash_cents >= total) fail("INVALID_PAYMENT");
+    cash = payment.cash_cents!; credit = total - cash;
+  } else if (payment.method !== "cash") fail("INVALID_PAYMENT");
   const before = stockStatus(item.quantity, item.low_stock_threshold);
   const sale = {
     id: newId(), business_id: item.business_id, store_id: item.store_id, item_id: item.id, sold_by: u.id,
     item_name: item.name, size: item.size, color: item.color, quantity: qty, unit_price_cents: item.price_cents,
-    total_cents: qty * item.price_cents, created_at: at ?? nowIso(), voided_at: null, voided_by: null,
+    total_cents: total, created_at: at ?? nowIso(), voided_at: null, voided_by: null,
+    payment_method: payment.method, cash_cents: cash, credit_cents: credit,
   };
   s.sales.push(sale);
   moveStock(s, item, -qty, "sale", u.id, sale.id);
   return {
     sale_id: sale.id, item_id: item.id, item_name: item.name, size: item.size, color: item.color,
     quantity_sold: qty, total_cents: sale.total_cents, quantity_after: item.quantity,
+    payment_method: payment.method, cash_cents: cash, credit_cents: credit,
     status_before: before, status_after: stockStatus(item.quantity, item.low_stock_threshold),
   };
 }

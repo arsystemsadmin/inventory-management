@@ -23,7 +23,7 @@ export default async function StorePage({ params }: { params: Promise<{ id: stri
   const [{ items, stores }, { data: summary }, { data: recent }, members, employees] = await Promise.all([
     loadInventory(id),
     supabase.rpc("sales_summary"),
-    supabase.from("sales").select("id, item_name, size, color, quantity, total_cents, created_at, voided_at")
+    supabase.from("sales").select("*")
       .eq("store_id", id).order("created_at", { ascending: false }).limit(8),
     isOwner ? supabase.from("store_members").select("profile_id").eq("store_id", id) : Promise.resolve({ data: [] }),
     isOwner ? supabase.from("profiles").select("id, full_name, active").eq("role", "employee").order("full_name") : Promise.resolve({ data: [] }),

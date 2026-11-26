@@ -5,9 +5,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
-import type { ActionResult, SellResult } from "@/lib/types";
+import type { ActionResult, PaymentInput, SellResult } from "@/lib/types";
 
-import { itemFields, newItemSchema, newItemsSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
+import { itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
 
 const badImage = (p: string | null | undefined) => !!p && !STORAGE_IMAGE_PATH.test(p);
@@ -28,12 +28,20 @@ async function canEditDirectly(storeId: string) {
   return !!data && data.inventory_locked_at === null;
 }
 
-export async function sellItem(input: { itemId: string; quantity: number }): Promise<ActionResult<SellResult>> {
+export async function sellItem(input: { itemId: string; quantity: number; payment?: PaymentInput }): Promise<ActionResult<SellResult>> {
   const tr = await getTr();
-  const parsed = z.object({ itemId: uuid, quantity: qty }).safeParse(input);
+  const parsed = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
+  const payment = parsed.data.payment ?? { method: "cash" as const };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("sell_item", { p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity });
+  let { data, error } = await supabase.rpc("sell_item", {
+    p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity,
+    p_payment_method: payment.method, p_cash_cents: payment.method === "split" ? payment.cash_cents ?? null : null,
+  });
+  // Database not migrated yet (payment-method migration 20261126000011): record the sale the old way.
+  if (error?.code === "PGRST202") {
+    ({ data, error } = await supabase.rpc("sell_item", { p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity }));
+  }
   if (error) return { ok: false, error: friendlyError(error, tr) };
   revalidateInventory();
   revalidatePath("/sales");

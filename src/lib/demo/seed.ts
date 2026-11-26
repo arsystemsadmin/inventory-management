@@ -114,7 +114,15 @@ export function seedSampleData(s: DemoState, ownerId: string, employeePasswordHa
     [leo.id, "VT-BLK-S", 2, 3 * H], [maya.id, "DJ-LT-L", 1, 2.5 * H], [leo.id, "VT-WHT-M", 1, 1.5 * H],
     [maya.id, "CS-GRN-M", 1, 0.75 * H], [leo.id, "BH-BLK", 1, 0.33 * H], [maya.id, "VT-BLK-M", 1, 0.17 * H],
   ];
-  for (const [who, sku, qty, ago] of sales) sellItem(s, who, bySku.get(sku)!, qty, iso(ago));
+  sales.forEach(([who, sku, qty, ago], i) => {
+    const id = bySku.get(sku)!;
+    const total = qty * s.items.find((x) => x.id === id)!.price_cents;
+    // A realistic mix: mostly cash, some credit, a few split.
+    const payment = i % 5 === 2 ? { method: "credit" as const }
+      : i % 7 === 4 && total > 2000 ? { method: "split" as const, cash_cents: Math.round(total / 2 / 100) * 100 }
+      : { method: "cash" as const };
+    sellItem(s, who, id, qty, iso(ago), payment);
+  });
 
   const returned = sellItem(s, ownerId, bySku.get("DJ-DK-M")!, 1, iso(DAY + 4 * H));
   voidSale(s, ownerId, returned.sale_id);

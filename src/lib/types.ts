@@ -58,7 +58,16 @@ export type Sale = {
   total_cents: number;
   created_at: string;
   voided_at: string | null;
+  // Optional: sales recorded before payment methods existed count as cash.
+  payment_method?: PaymentMethod;
+  cash_cents?: number;
+  credit_cents?: number;
 };
+
+export type PaymentMethod = "cash" | "credit" | "split";
+export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "credit", "split"];
+/** What the seller picked; cash_cents only matters for a split. */
+export type PaymentInput = { method: PaymentMethod; cash_cents?: number };
 
 export type SellResult = {
   sale_id: string;
@@ -68,6 +77,9 @@ export type SellResult = {
   color: string | null;
   quantity_sold: number;
   total_cents: number;
+  payment_method?: PaymentMethod;
+  cash_cents?: number;
+  credit_cents?: number;
   quantity_after: number;
   status_before: StockStatus;
   status_after: StockStatus;

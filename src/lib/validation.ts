@@ -8,6 +8,11 @@ const optText = (max: number) =>
   z.string().trim().max(max).optional().nullable().transform((v) => (v ? v : null));
 const cents = z.coerce.number().int().min(0).max(100_000_000);
 
+export const paymentSchema = z.object({
+  method: z.enum(["cash", "credit", "split"]),
+  cash_cents: z.coerce.number().int().min(0).max(100_000_000).optional(),
+}).refine((p) => p.method !== "split" || (p.cash_cents ?? 0) > 0, { message: "errors.INVALID_PAYMENT" });
+
 export const itemFields = z.object({
   name: z.string().trim().min(1, "validation.nameRequired").max(200),
   sku: optText(64),

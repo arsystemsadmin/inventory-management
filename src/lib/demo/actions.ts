@@ -6,7 +6,7 @@ import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
 import {
-  createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
+  createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
 } from "@/lib/validation";
 import * as L from "./logic";
 import { commit, getState, getUserId, hashPassword } from "./store";
@@ -30,9 +30,9 @@ const me = () => L.currentUser(getState(), getUserId());
 /** Same signatures as the server actions; runs the browser rules against localStorage. */
 export const demoActions: AppActions = {
   async sellItem(input) {
-    const p = z.object({ itemId: uuid, quantity: qty }).safeParse(input);
+    const p = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
     if (!p.success) return invalid(p.error);
-    return run(() => commit((s) => L.sellItem(s, getUserId(), p.data.itemId, p.data.quantity)));
+    return run(() => commit((s) => L.sellItem(s, getUserId(), p.data.itemId, p.data.quantity, undefined, p.data.payment)));
   },
   async createItem(input) {
     const p = newItemSchema.safeParse(input);

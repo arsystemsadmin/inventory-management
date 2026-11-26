@@ -133,7 +133,7 @@ give exactly 5 successes, 7 `OUT_OF_STOCK`, a final quantity of 0, and 5 movemen
 | `stores` | `popup` or `permanent`, dates, status, `inventory_locked_at` (NULL means setup mode) |
 | `store_members` | Employee ↔ store assignments |
 | `items` | One row per sellable **variant** (name + size + color) with its own quantity, low-stock threshold and optional photo (`image_path`, Storage bucket `item-images`) |
-| `sales` | Created only by `sell_item()`. Snapshots `item_name`, `size` and `color`. Voided, never deleted. |
+| `sales` | Created only by `sell_item()`. Snapshots `item_name`, `size` and `color`, and records the payment method (`cash`, `credit` or `split`) with `cash_cents` + `credit_cents` = total. Voided, never deleted. |
 | `inventory_movements` | Append-only audit of every quantity change (initial, restock, edit, sale, void), written by trigger |
 | `time_entries` | Shifts with `hourly_rate_cents_snapshot` copied at clock-in, so rate changes never rewrite past pay |
 | `approval_requests` | Employee requests (`archive_item`, `edit_item`, `void_sale`) that the owner approves or rejects |
@@ -206,7 +206,7 @@ and the `items_with_status` view feed:
 | `/clock` | both | Clock in/out, own rate, earnings this shift and this week |
 | `/payroll` | owner | Date range; hours, rate and amount owed per employee from snapshot rates; open shifts flagged; add, edit or delete shifts |
 
-Every employee screen is built for phones: a bottom tab bar, bottom-sheet dialogs, 44px+ tap targets, and 16px
+The app is available in English and Hebrew (right-to-left), switchable from the header; text lives in `src/i18n/locales`. Every employee screen is built for phones: a bottom tab bar, bottom-sheet dialogs, 44px+ tap targets, and 16px
 inputs so iOS doesn't zoom.
 
 ### Out of scope, with hooks left in place

@@ -4,16 +4,18 @@ import Link from "next/link";
 import { CalendarDays, ChevronLeft, MapPin } from "lucide-react";
 import { InventoryView, type InventoryStore } from "@/components/inventory/inventory-view";
 import { LocalTime } from "@/components/local-time";
+import { PaymentBadge } from "@/components/sales/payment-badge";
 import { SetupBanner, StoreOwnerActions } from "@/components/stores/store-admin";
 import { StoreStatusBadge, StoreTypeBadge } from "@/components/stores/store-badges";
 import { formatMoney, formatStoreDate, variantLabel } from "@/lib/format";
-import type { Item, Role, Store } from "@/lib/types";
+import type { Item, PaymentMethod, Role, Store } from "@/lib/types";
 import type { StoreTodaySummary } from "./stores-view";
 import { useT, useLocale } from "@/i18n/client";
 
 export type RecentSale = {
   id: string; item_name: string; size: string | null; color: string | null; quantity: number;
   total_cents: number; created_at: string; voided_at: string | null;
+  payment_method?: PaymentMethod; cash_cents?: number; credit_cents?: number;
 };
 
 export function StoreDetailView({
@@ -64,7 +66,7 @@ export function StoreDetailView({
           <ul className="divide-y rounded-lg border text-sm">
             {recent.map((r) => (
               <li key={r.id} className={`flex items-center justify-between gap-2 px-3 py-2 ${r.voided_at ? "text-muted-foreground line-through" : ""}`}>
-                <span className="min-w-0 truncate">{r.quantity} × {r.item_name}{variantLabel(r.size, r.color) && ` (${variantLabel(r.size, r.color)})`}</span>
+                <span className="flex min-w-0 items-center gap-1.5"><span className="truncate">{r.quantity} × {r.item_name}{variantLabel(r.size, r.color) && ` (${variantLabel(r.size, r.color)})`}</span><PaymentBadge method={r.payment_method} cashCents={r.cash_cents} creditCents={r.credit_cents} /></span>
                 <span className="shrink-0">{formatMoney(r.total_cents)} · <LocalTime iso={r.created_at} /></span>
               </li>
             ))}

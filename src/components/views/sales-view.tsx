@@ -2,6 +2,7 @@
 
 import { LocalTime } from "@/components/local-time";
 import { SaleRowActions } from "@/components/sales/sale-row-actions";
+import { PaymentBadge } from "@/components/sales/payment-badge";
 import { formatMoney, variantLabel } from "@/lib/format";
 import type { Sale } from "@/lib/types";
 
@@ -20,6 +21,9 @@ export function SalesView({
   const valid = sales.filter((s) => !s.voided_at);
   const total = valid.reduce((n, s) => n + s.total_cents, 0);
   const units = valid.reduce((n, s) => n + s.quantity, 0);
+  // Older sales without payment details count as cash.
+  const cashTotal = valid.reduce((n, s) => n + (s.cash_cents ?? (s.payment_method === "credit" ? 0 : s.total_cents)), 0);
+  const creditTotal = valid.reduce((n, s) => n + (s.credit_cents ?? (s.payment_method === "credit" ? s.total_cents : 0)), 0);
   const qs = (patch: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     const merged = { store, range, ...patch };
@@ -52,6 +56,11 @@ export function SalesView({
         <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{t("sales.units")}</div><div className="text-lg font-semibold">{units}</div></div>
         <div className="rounded-lg border p-3"><div className="text-xs text-muted-foreground">{t("nav.sales")}</div><div className="text-lg font-semibold">{valid.length}</div></div>
       </div>
+      <div className="flex flex-wrap gap-2 text-sm">
+        <PaymentBadge method="cash" /> <b>{formatMoney(cashTotal)}</b>
+        <span className="text-muted-foreground">·</span>
+        <PaymentBadge method="credit" /> <b>{formatMoney(creditTotal)}</b>
+      </div>
 
       {sales.length === 0 ? (
         <p className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">{t("sales.empty")}</p>
@@ -68,6 +77,7 @@ export function SalesView({
                     <LocalTime iso={s.created_at} /> · {storeName.get(s.store_id)} · {peopleNames[s.sold_by] ?? "—"}
                     {s.voided_at && <span className="ms-1 font-medium text-red-700">· {t("sales.voided")}</span>}
                   </div>
+                  <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} showAmounts className="mt-1" />
                 </div>
                 <div className="text-end">
                   <div className="font-semibold">{formatMoney(s.total_cents)}</div>

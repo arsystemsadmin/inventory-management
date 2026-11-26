@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LocalTime } from "@/components/local-time";
 import { StockBadge } from "@/components/stock-badge";
+import { PaymentBadge } from "@/components/sales/payment-badge";
 import { StoreStatusBadge } from "@/components/stores/store-badges";
 import { formatMinutes, formatMoney, STOCK_ORDER, variantLabel } from "@/lib/format";
 import type { ShiftWithPay } from "@/lib/time";
@@ -148,7 +149,10 @@ export function DashboardView({
                       <div className="truncate font-medium">{s.quantity} × {s.item_name}{variantLabel(s.size, s.color) && ` (${variantLabel(s.size, s.color)})`}</div>
                       <div className="text-xs text-muted-foreground">{storeName.get(s.store_id)} · {peopleNames[s.sold_by]} · <LocalTime iso={s.created_at} mode="time" /></div>
                     </div>
-                    <div className="shrink-0 font-semibold">{formatMoney(s.total_cents)}</div>
+                    <div className="flex shrink-0 flex-col items-end gap-0.5">
+                      <span className="font-semibold">{formatMoney(s.total_cents)}</span>
+                      <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} />
+                    </div>
                   </li>
                 ))}
               </ul>

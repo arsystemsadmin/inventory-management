@@ -18,7 +18,7 @@ import { useT } from "@/i18n/client";
 
 type StoreOpt = { id: string; name: string; business_id: string };
 
-const empty = { name: "", sku: "", category: "", size: "", color: "", price: "", cost: "", quantity: "1", threshold: "3" };
+const empty = { name: "", sku: "", category: "", size: "", color: "", price: "", cost: "", quantity: "1", threshold: "1" };
 
 /**
  * Three modes:

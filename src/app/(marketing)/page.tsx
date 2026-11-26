@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { DashboardMock, PhoneSellMock } from "@/components/landing/mockups";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { DemoLandingRedirect } from "@/components/demo/demo-landing-redirect";
 import { getT } from "@/i18n/server";
 import type { TFunction } from "i18next";
 
@@ -62,6 +63,7 @@ export default async function LandingPage() {
   const t = await getT();
   return (
     <div className="landing min-h-dvh">
+      <DemoLandingRedirect />
       {/* Fonts for the landing page only */}
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

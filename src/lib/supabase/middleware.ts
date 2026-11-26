@@ -37,6 +37,14 @@ export async function updateSession(request: NextRequest) {
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
+  // Signed in: skip the landing page and go straight into the app
+  // (/app sends owners to the dashboard, employees to their stores).
+  if (user && path === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/app";
+    url.search = "";
+    return NextResponse.redirect(url);
+  }
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/app";

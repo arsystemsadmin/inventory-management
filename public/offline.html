@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Offline · Binventory</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100dvh; display: grid; place-items: center; font-family: system-ui, sans-serif; background: #fff; color: #111; text-align: center; padding: 24px; }
+  @media (prefers-color-scheme: dark) { body { background: #0a0a0a; color: #eee; } }
+  img { width: 72px; height: 72px; border-radius: 18px; }
+  h1 { font-size: 1.25rem; margin: 16px 0 4px; }
+  p { margin: 4px 0; opacity: .75; }
+  button { margin-top: 20px; font: inherit; font-weight: 600; padding: 12px 22px; border-radius: 10px; border: 0; background: #059669; color: #fff; }
+</style>
+</head>
+<body>
+  <main>
+    <img src="/icons/icon-192.png" alt="">
+    <h1>You're offline</h1>
+    <p>Check your internet connection and try again.</p>
+    <p dir="rtl">אין חיבור לאינטרנט. בדקו את החיבור ונסו שוב.</p>
+    <button onclick="location.reload()">Try again · נסו שוב</button>
+  </main>
+</body>
+</html>

@@ -5,6 +5,7 @@ import { Boxes } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { StoreSwitcher } from "@/components/store-switcher";
+import { InstallBanner } from "@/components/pwa/install-prompt";
 import type { Profile } from "@/lib/types";
 import { useT } from "@/i18n/client";
 
@@ -42,6 +43,7 @@ export function AppShellView({
         </div>
       </header>
       {banner}
+      <InstallBanner />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 pb-40 md:pb-24">{children}</main>
       {floating}
       <AppNav variant="mobile" role={profile.role} pendingApprovals={pendingApprovals} />

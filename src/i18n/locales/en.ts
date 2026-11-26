@@ -239,6 +239,17 @@ const en = {
     title: "Something went wrong", body: "That didn't work. Your data is safe. Try again, or go back to the app.",
     code: "Error code: {{code}}", backToApp: "Back to the app",
   },
+  install: {
+    bannerText: "Add Binventory to your home screen — it opens full-screen like an app.",
+    install: "Install", dismiss: "Not now", gotIt: "Got it", howTo: "Show me how",
+    iosTitle: "Add to Home Screen", iosNote: "On iPhone and iPad, apps like this are added from the Share menu.",
+    iosStep1: "Tap the Share button in the browser bar.", iosStep2: "Scroll down and tap “Add to Home Screen”.",
+    iosStep3: "Tap “Add”. Binventory now opens from its icon.",
+    iosUseSafari: "Don't see the option? Open this page in Safari and try again.",
+    cardTitle: "App on your phone", cardNote: "Install Binventory on this device for a full-screen app with its own home screen icon. No app store needed.",
+    installed: "Installed — you're using the app version. ✓",
+    browserMenu: "Use your browser's menu and choose “Install app” or “Add to Home screen”.",
+  },
   settings: {
     profile: "Your profile", fullName: "Full name", email: "Email", role: "Role",
     emailNote: "Your sign-in email. Ask the owner if it needs to change.",

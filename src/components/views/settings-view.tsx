@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Building2, Globe, Store, UserRound } from "lucide-react";
+import { Building2, Globe, Smartphone, Store, UserRound } from "lucide-react";
+import { InstallCard } from "@/components/pwa/install-prompt";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,6 +150,13 @@ export function SettingsView({
           <span className="text-sm">{t("common.language")}</span>
           <LanguageSwitcher />
         </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Smartphone className="size-4" /> {t("install.cardTitle")}</CardTitle>
+        </CardHeader>
+        <CardContent><InstallCard /></CardContent>
       </Card>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

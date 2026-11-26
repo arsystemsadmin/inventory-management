@@ -16,7 +16,10 @@ export type Product = {
   quantity: number;
   minPrice: number;
   maxPrice: number;
-  status: StockStatus; // worst variation
+  /** OUT only when every variation is at 0; otherwise the worst of those still in stock. */
+  status: StockStatus;
+  /** How many variations are sold out (shown separately so one sold-out size doesn't mark the whole product "Out"). */
+  outCount: number;
 };
 
 export const productKey = (storeId: string, name: string) => `${storeId}::${name.trim().toLowerCase()}`;
@@ -54,7 +57,11 @@ export function groupProducts(items: Item[]): Product[] {
       quantity: variants.reduce((n, v) => n + v.quantity, 0),
       minPrice: Math.min(...prices),
       maxPrice: Math.max(...prices),
-      status: variants.reduce<StockStatus>((w, v) => (STOCK_ORDER[v.stock_status] < STOCK_ORDER[w] ? v.stock_status : w), "OK"),
+      status: variants.every((v) => v.quantity <= 0)
+        ? "OUT"
+        : variants.filter((v) => v.quantity > 0)
+          .reduce<StockStatus>((w, v) => (STOCK_ORDER[v.stock_status] < STOCK_ORDER[w] ? v.stock_status : w), "OK"),
+      outCount: variants.filter((v) => v.quantity <= 0).length,
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }

@@ -1,6 +1,14 @@
 // English strings. Keys are type-checked: every t("…") in the app must exist here.
 // Plurals: i18next picks key_one / key_other from the `count` option.
 const en = {
+  onboarding: {
+    welcome: "Welcome, {{name}}!", intro: "Let's set up your first store. It takes a minute.",
+    step1: "Create your store", step2: "Next steps",
+    createTitle: "Your first store", createNote: "A pop-up (market, event) or a permanent shop. Dates are optional.",
+    storeName: "Store name", storeNamePlaceholder: "e.g. Shlush Market", createButton: "Create store",
+    doneTitle: "Your store is ready", doneNote: "Here's what to do next. You can come back to any of these later.",
+    addProducts: "Add products", addEmployees: "Add employees", toDashboard: "Go to the dashboard",
+  },
   meta: { description: "Inventory for pop-up and permanent stores" },
   nav: {
     dashboard: "Dashboard", stores: "Stores", myStores: "My stores", inventory: "Inventory", sales: "Sales",
@@ -69,6 +77,7 @@ const en = {
     sell: "Sell", colors_one: "{{count}} color", colors_other: "{{count}} colors",
     thisVariation: "this variation", setQuantityFor: "Set quantity for {{label}}", actionsFor: "Actions for {{label}}",
     addVariation: "Add variation", editProduct: "Edit product",
+    soldOutCount_one: "{{count}} sold out", soldOutCount_other: "{{count}} sold out",
     sizePhotoSaved: "Photo saved for size {{size}}", sizePhotoRemoved: "Photo removed for size {{size}}",
     photoSaved: "Photo saved for {{label}}", photoRemoved: "Photo removed for {{label}}",
   },

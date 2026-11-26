@@ -6,6 +6,14 @@ const pl = (key: string, one: string, two: string, other: string) => ({
 });
 
 const he = {
+  onboarding: {
+    welcome: "ברוכים הבאים, {{name}}!", intro: "בואו נקים את החנות הראשונה שלכם. זה לוקח דקה.",
+    step1: "יצירת החנות", step2: "השלבים הבאים",
+    createTitle: "החנות הראשונה שלכם", createNote: "פופ-אפ (שוק, אירוע) או חנות קבועה. התאריכים לא חובה.",
+    storeName: "שם החנות", storeNamePlaceholder: "למשל: שוק שלוש", createButton: "יצירת חנות",
+    doneTitle: "החנות מוכנה", doneNote: "זה מה שכדאי לעשות עכשיו. אפשר לחזור לכל אחד מהם גם אחר כך.",
+    addProducts: "הוספת מוצרים", addEmployees: "הוספת עובדים", toDashboard: "מעבר ללוח הבקרה",
+  },
   meta: { description: "ניהול מלאי לחנויות פופ-אפ וחנויות קבועות" },
   nav: {
     dashboard: "לוח בקרה", stores: "חנויות", myStores: "החנויות שלי", inventory: "מלאי", sales: "מכירות",
@@ -76,6 +84,7 @@ const he = {
     sell: "מכירה", ...pl("colors", "צבע אחד", "{{count}} צבעים", "{{count}} צבעים"),
     thisVariation: "הווריאציה הזו", setQuantityFor: "קביעת כמות ל-{{label}}", actionsFor: "פעולות עבור {{label}}",
     addVariation: "הוספת וריאציה", editProduct: "עריכת מוצר",
+    ...pl("soldOutCount", "{{count}} אזל", "{{count}} אזלו", "{{count}} אזלו"),
     sizePhotoSaved: "התמונה נשמרה למידה {{size}}", sizePhotoRemoved: "התמונה הוסרה ממידה {{size}}",
     photoSaved: "התמונה נשמרה ל-{{label}}", photoRemoved: "התמונה הוסרה מ-{{label}}",
   },

@@ -31,6 +31,8 @@ export function friendlyError(err: PgLikeError, tr: Translate): string {
   if (msg.includes("approval_one_pending")) return tr("errors.REQUEST_ALREADY_PENDING");
   if (msg.includes("store_members_pkey")) return tr("errors.ALREADY_ASSIGNED");
   if (msg.includes("profiles_one_owner_per_business")) return tr("errors.forbidden");
+  if (msg.includes("popup_needs_dates")) return tr("validation.popupDates"); // until migration 20261126000013 runs
+  if (msg.includes("store_dates_order")) return tr("validation.endAfterStart");
   for (const code of CODES) {
     if (msg.includes(code)) return tr(`errors.${code}`);
   }

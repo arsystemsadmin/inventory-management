@@ -208,6 +208,7 @@ export function InventoryView({
               label: g.size ?? t("inventory.oneSize"),
               qty: g.variants.reduce((n, v) => n + v.quantity, 0),
               warn: g.variants.some((v) => v.stock_status !== "OK"),
+              someOut: g.variants.some((v) => v.quantity <= 0),
             }));
             return (
               <li key={p.key} className="overflow-hidden rounded-xl border bg-card">
@@ -224,6 +225,12 @@ export function InventoryView({
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-semibold">{p.name}</span>
                       {p.status !== "OK" && <StockBadge status={p.status} />}
+                      {p.status !== "OUT" && p.outCount > 0 && (
+                        <span className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">
+                          <span className="size-1.5 rounded-full bg-red-600" aria-hidden />
+                          {t("inventory.soldOutCount", { count: p.outCount })}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
                       {[p.category, !fixedStoreId && stores.length > 1 ? store?.name : null,
@@ -237,9 +244,11 @@ export function InventoryView({
                       <div className="mt-1 flex flex-wrap gap-1">
                         {sizeSummary.map((sz) => (
                           <span key={sz.label} className={cn(
-                            "rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-border",
+                            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-border",
                             sz.qty === 0 ? "bg-red-50 text-red-700 line-through" : sz.warn ? "bg-amber-50 text-amber-800" : "bg-background",
                           )}>
+                            {/* a red dot = some colors of this size are sold out */}
+                            {sz.qty > 0 && sz.someOut && <span className="size-1.5 rounded-full bg-red-600" aria-hidden />}
                             {sz.label}
                           </span>
                         ))}

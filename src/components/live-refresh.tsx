@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
-import { formatMoney, variantLabel } from "@/lib/format";
+import { formatMoney, isolate, variantLabel } from "@/lib/format";
 import { tClient } from "@/i18n/client";
 
 type Table = "sales" | "items" | "time_entries" | "approval_requests" | "stores";
@@ -44,7 +44,7 @@ export function LiveRefresh({
           const s = payload.new as { item_name: string; size: string | null; color: string | null; quantity: number; total_cents: number; sold_by: string };
           if (s.sold_by !== currentUserId) {
             const v = variantLabel(s.size, s.color);
-            toast.info(tClient("toasts.newSale", { label: `${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}` }), {
+            toast.info(tClient("toasts.newSale", { label: `${s.quantity} × ${isolate(s.item_name)}${v ? ` (${v})` : ""}` }), {
               description: formatMoney(s.total_cents),
             });
           }

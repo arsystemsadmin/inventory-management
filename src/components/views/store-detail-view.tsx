@@ -36,7 +36,7 @@ export function StoreDetailView({
           <h1 className="text-2xl font-semibold">{s.name}</h1>
           <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             <StoreTypeBadge type={s.type} /> <StoreStatusBadge status={s.status} />
-            {s.type === "popup" && (
+            {s.type === "popup" && (s.starts_at || s.ends_at) && (
               <span className="flex items-center gap-1"><CalendarDays className="size-4" />{formatStoreDate(s.starts_at, locale)} – {formatStoreDate(s.ends_at, locale)}</span>
             )}
             {s.address && <span className="flex items-center gap-1"><MapPin className="size-4" />{s.address}</span>}

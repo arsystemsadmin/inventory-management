@@ -35,8 +35,17 @@ export function formatDate(iso: string | null | undefined, locale = "en-US") {
   return new Date(iso).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }
 
+/**
+ * Wraps user-entered text (product names, sizes, colors) in Unicode
+ * direction isolates, so Hebrew inside English text (or English inside
+ * Hebrew) keeps its own direction instead of scrambling the sentence.
+ */
+export function isolate(text: string | null | undefined): string {
+  return text ? `\u2068${text}\u2069` : "";
+}
+
 export function variantLabel(size?: string | null, color?: string | null) {
-  return [size, color].filter(Boolean).join(" · ");
+  return [size, color].filter(Boolean).map(isolate).join(" · ");
 }
 
 export const STOCK_ORDER: Record<StockStatus, number> = { OUT: 0, CRITICAL: 1, LOW: 2, OK: 3 };

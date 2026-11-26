@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { AppShellView } from "@/components/views/app-shell";
 import { ActionsProvider } from "@/lib/actions-context";
 import { demoActions } from "@/lib/demo/actions";
-import { currentUser, visibleApprovals, visibleSales } from "@/lib/demo/logic";
+import { currentUser, isOwner, visibleApprovals, visibleSales, visibleStores } from "@/lib/demo/logic";
 import { setSessionUser, tick, useDemo, type DemoState, type DemoUser } from "@/lib/demo/store";
-import { formatMoney, variantLabel } from "@/lib/format";
+import { formatMoney, isolate, variantLabel } from "@/lib/format";
 import { PAY_REFRESH_MS } from "@/lib/time";
 import { tClient } from "@/i18n/client";
 
@@ -40,7 +40,7 @@ function SaleToasts({ state, user }: { state: DemoState; user: DemoUser }) {
       seen.current.add(s.id);
       if (user.role === "owner" && s.sold_by !== user.id) {
         const v = variantLabel(s.size, s.color);
-        toast.info(tClient("toasts.newSale", { label: `${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}` }), { description: formatMoney(s.total_cents) });
+        toast.info(tClient("toasts.newSale", { label: `${s.quantity} × ${isolate(s.item_name)}${v ? ` (${v})` : ""}` }), { description: formatMoney(s.total_cents) });
       }
     }
   }, [state, user]);
@@ -62,7 +62,14 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
     return () => clearInterval(t);
   }, []);
 
+  // First sign-in: an owner without a store sets one up before anything else.
+  const needsOnboarding = !!snap && !!user && isOwner(user) && visibleStores(snap.state, user).length === 0;
+  useEffect(() => {
+    if (needsOnboarding) router.replace("/onboarding");
+  }, [needsOnboarding, router]);
+
   if (user) signingOut = false;
+  if (needsOnboarding) return <DemoLoading />;
   if (!snap || !user) return <DemoLoading />;
   const business = snap.state.businesses.find((b) => b.id === user.business_id);
   const pending = visibleApprovals(snap.state, user).filter((r) => r.status === "pending").length;

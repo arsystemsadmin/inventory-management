@@ -49,7 +49,7 @@ export function StoresView({
                   </div>
                 </CardHeader>
                 <CardContent className="grid gap-1.5 text-sm text-muted-foreground">
-                  {s.type === "popup" && (
+                  {s.type === "popup" && (s.starts_at || s.ends_at) && (
                     <div className="flex items-center gap-1.5">
                       <CalendarDays className="size-4" /> {formatStoreDate(s.starts_at, locale)} – {formatStoreDate(s.ends_at, locale)}
                     </div>

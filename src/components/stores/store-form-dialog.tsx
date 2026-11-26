@@ -74,12 +74,12 @@ export function StoreFormDialog({ open, onClose, store }: { open: boolean; onClo
           {f.type === "popup" && (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="s-start">{t("stores.starts")}</Label>
-                <Input id="s-start" type="date" value={f.starts_on} onChange={set("starts_on")} required />
+                <Label htmlFor="s-start">{t("stores.starts")} <span className="font-normal text-muted-foreground">{t("common.optional")}</span></Label>
+                <Input id="s-start" type="date" value={f.starts_on} onChange={set("starts_on")} />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="s-end">{t("stores.ends")}</Label>
-                <Input id="s-end" type="date" value={f.ends_on} onChange={set("ends_on")} required />
+                <Label htmlFor="s-end">{t("stores.ends")} <span className="font-normal text-muted-foreground">{t("common.optional")}</span></Label>
+                <Input id="s-end" type="date" value={f.ends_on} onChange={set("ends_on")} />
               </div>
             </div>
           )}

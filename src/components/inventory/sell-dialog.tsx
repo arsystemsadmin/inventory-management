@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ItemThumb } from "./item-thumb";
 import { cn } from "@/lib/utils";
-import { centsToInput, formatMoney, parseMoneyToCents, STOCK_ORDER, variantLabel } from "@/lib/format";
+import { centsToInput, formatMoney, isolate, parseMoneyToCents, STOCK_ORDER, variantLabel } from "@/lib/format";
 import { PAYMENT_METHODS, type Item, type PaymentMethod } from "@/lib/types";
 import { useT } from "@/i18n/client";
 
@@ -71,11 +71,11 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
       if (!res.ok) { toast.error(res.error); return; }
       const r = res.data!;
       const v = variantLabel(r.size, r.color);
-      toast.success(t("sell.sold", { label: `${r.quantity_sold} × ${r.item_name}${v ? ` (${v})` : ""}` }), {
+      toast.success(t("sell.sold", { label: `${r.quantity_sold} × ${isolate(r.item_name)}${v ? ` (${v})` : ""}` }), {
         description: `${formatMoney(r.total_cents)} · ${t(`payment.${method}`)} · ${t("common.left", { count: r.quantity_after })}`,
       });
       if (r.status_after !== "OK" && STOCK_ORDER[r.status_after] < STOCK_ORDER[r.status_before]) {
-        const name = `${r.item_name}${v ? ` (${v})` : ""}`;
+        const name = `${isolate(r.item_name)}${v ? ` (${v})` : ""}`;
         const msg = r.status_after === "OUT" ? t("sell.nowOut", { name }) : r.status_after === "CRITICAL" ? t("sell.nowCritical", { name }) : t("sell.nowLow", { name });
         toast.warning(msg, {
           description: r.status_after === "OUT" ? t("sell.askOwner") : t("common.left", { count: r.quantity_after }),
@@ -100,7 +100,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
           <ItemThumb path={selected.variation_image_path ?? selected.variant_image_path ?? selected.image_path ?? variants.find((v) => v.image_path)?.image_path}
             alt={selected.name} className="size-16" />
           <div className="grid gap-1.5">
-            <DialogTitle>{t("sell.title", { name: selected.name })}</DialogTitle>
+            <DialogTitle>{t("sell.title", { name: isolate(selected.name) })}</DialogTitle>
             <DialogDescription>{t("sales.each", { price: formatMoney(selected.price_cents) })}</DialogDescription>
           </div>
         </DialogHeader>
@@ -141,7 +141,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
         )}
 
         <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 text-sm">
-          <span>{variantLabel(selected.size, selected.color) || t("common.standard")} · {t("sell.inStock", { count: max })}</span>
+          <span><bdi className="font-medium">{variantLabel(selected.size, selected.color) || t("common.standard")}</bdi> · <bdi>{t("sell.inStock", { count: max })}</bdi></span>
           <StockBadge status={selected.stock_status} />
         </div>
 
@@ -210,7 +210,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
         </div>
 
         <Button size="xl" variant="success" disabled={pending || max === 0 || qty > max || !splitValid} onClick={confirm}>
-          {max === 0 ? t("sell.outOfStock") : pending ? t("sell.selling") : t("sell.confirm", { label: `${qty} × ${variantLabel(selected.size, selected.color) || selected.name}` })}
+          {max === 0 ? t("sell.outOfStock") : pending ? t("sell.selling") : t("sell.confirm", { label: `${qty} × ${variantLabel(selected.size, selected.color) || isolate(selected.name)}` })}
         </Button>
       </DialogContent>
     </Dialog>

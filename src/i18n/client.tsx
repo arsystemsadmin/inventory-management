@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import type { i18n as I18n, TFunction } from "i18next";
 import { I18nextProvider, initReactI18next, useTranslation } from "react-i18next";
-import { createI18n } from "./create";
+import { getI18n } from "./create";
 import { dirOf, localeOf, type Lang } from "./settings";
 
 // Instance for code that isn't a component (e.g. browser demo actions).
 let current: I18n | null = null;
 
 export function I18nProvider({ lang, children }: { lang: Lang; children: React.ReactNode }) {
-  const i18n = useMemo(() => createI18n(lang, [initReactI18next]), [lang]);
+  const i18n = getI18n(lang, "react", [initReactI18next]);
   current = i18n;
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -35,6 +35,6 @@ export function useLocale(): string {
 
 /** Translate outside React components (falls back to English before the provider mounts). */
 export function tClient(key: string, options?: Record<string, unknown>): string {
-  if (!current) current = createI18n("en");
+  if (!current) current = getI18n("en");
   return (current.t as unknown as (k: string, o?: Record<string, unknown>) => string)(key, options);
 }

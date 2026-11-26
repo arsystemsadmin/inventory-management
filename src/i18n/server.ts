@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import type { TFunction } from "i18next";
-import { createI18n } from "./create";
+import { getI18n } from "./create";
 import { LANG_COOKIE, pickLang, type Lang } from "./settings";
 
 /** Language for this request: the saved cookie, else the browser's preference. */
@@ -12,7 +12,7 @@ export const getLang = cache(async (): Promise<Lang> => {
 });
 
 /** Translation function for server components and server actions. */
-export const getT = cache(async (): Promise<TFunction> => createI18n(await getLang()).t);
+export const getT = cache(async (): Promise<TFunction> => getI18n(await getLang()).t);
 
 export type Translate = (key: string, options?: Record<string, unknown>) => string;
 

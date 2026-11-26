@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { LANG_COOKIE, LANGS, dirOf, type Lang } from "@/i18n/settings";
+import { LANG_COOKIE, LANGS, type Lang } from "@/i18n/settings";
 
 const SHORT: Record<Lang, string> = { en: "EN", he: "עב" };
 
@@ -16,9 +16,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
   const choose = (lang: Lang) => {
     if (lang === current) return;
     document.cookie = `${LANG_COOKIE}=${lang}; path=/; max-age=31536000; samesite=lax`;
-    document.documentElement.lang = lang;
-    document.documentElement.dir = dirOf(lang);
-    void i18n.changeLanguage(lang);
+    // The refreshed layout switches the language (and direction) for the whole page.
     router.refresh();
   };
 

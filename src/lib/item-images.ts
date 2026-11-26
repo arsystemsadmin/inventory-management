@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { isDemoMode } from "@/lib/mode";
+import { tClient as tr } from "@/i18n/client";
 
 const BUCKET = "item-images";
 
@@ -19,7 +20,7 @@ async function compress(file: File, maxDim: number, quality: number): Promise<Bl
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const el = new Image();
       el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error("Could not read that image"));
+      el.onerror = () => reject(new Error(tr("photo.readFailed")));
       el.src = url;
     });
     const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
@@ -27,12 +28,12 @@ async function compress(file: File, maxDim: number, quality: number): Promise<Bl
     canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
     canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Could not process that image");
+    if (!ctx) throw new Error(tr("photo.processFailed"));
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     return await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not process that image"))), "image/jpeg", quality));
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(tr("photo.processFailed")))), "image/jpeg", quality));
   } finally {
     URL.revokeObjectURL(url);
   }
@@ -42,7 +43,7 @@ function blobToDataUrl(blob: Blob) {
   return new Promise<string>((resolve, reject) => {
     const r = new FileReader();
     r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(new Error("Could not read that image"));
+    r.onerror = () => reject(new Error(tr("photo.readFailed")));
     r.readAsDataURL(blob);
   });
 }
@@ -55,8 +56,8 @@ function blobToDataUrl(blob: Blob) {
 export async function uploadItemImage(
   file: File, businessId: string, storeId: string,
 ): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
-  if (!file.type.startsWith("image/")) return { ok: false, error: "Choose an image file." };
-  if (file.size > 20 * 1024 * 1024) return { ok: false, error: "That image is too large (max 20 MB)." };
+  if (!file.type.startsWith("image/")) return { ok: false, error: tr("photo.chooseImage") };
+  if (file.size > 20 * 1024 * 1024) return { ok: false, error: tr("photo.tooLarge") };
   try {
     if (isDemoMode) {
       // Small enough that dozens of photos fit in browser storage.
@@ -67,9 +68,9 @@ export async function uploadItemImage(
     const { error } = await createClient().storage.from(BUCKET).upload(path, blob, {
       contentType: "image/jpeg", cacheControl: "31536000", upsert: false,
     });
-    if (error) return { ok: false, error: "Upload failed. Check your connection and try again." };
+    if (error) return { ok: false, error: tr("photo.uploadFailed") };
     return { ok: true, path };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Could not use that image." };
+    return { ok: false, error: e instanceof Error ? e.message : tr("photo.useFailed") };
   }
 }

@@ -8,8 +8,10 @@ import { EmployeesTable } from "@/components/employees/employees-table";
 import { ApprovalsView } from "@/components/views/approvals-view";
 import { ClockView } from "@/components/views/clock-view";
 import { DashboardView, type DashboardSummary } from "@/components/views/dashboard-view";
-import { PayrollView, isYmd, type PayrollRow } from "@/components/views/payroll-view";
-import { SalesView, parseSalesRange, salesRangeStart } from "@/components/views/sales-view";
+import { PayrollView, type PayrollRow } from "@/components/views/payroll-view";
+import { isYmd } from "@/lib/dates";
+import { SalesView } from "@/components/views/sales-view";
+import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import { StoreDetailView } from "@/components/views/store-detail-view";
 import { StoresView } from "@/components/views/stores-view";
 import {
@@ -19,6 +21,7 @@ import type { DemoState, DemoUser } from "@/lib/demo/store";
 import type { ShiftWithPay } from "@/lib/time";
 import { STOCK_STATUSES, type StockStatus } from "@/lib/types";
 import { DemoLoading, useDemoSession } from "./demo-shell";
+import { useT } from "@/i18n/client";
 
 // ------------------------------------------------------------- helpers ---
 
@@ -75,13 +78,14 @@ export function DemoStoresPage() {
 }
 
 export function DemoStorePage({ id }: { id: string }) {
+  const t = useT();
   const { state, user, now } = useDemoSession();
   const store = visibleStores(state, user).find((s) => s.id === id);
   if (!store) {
     return (
       <div className="grid gap-2 py-10 text-center">
-        <h1 className="text-xl font-semibold">Store not found</h1>
-        <Link href="/stores" className="text-sm underline">Back to stores</Link>
+        <h1 className="text-xl font-semibold">{t("stores.notFound")}</h1>
+        <Link href="/stores" className="text-sm underline">{t("stores.backToStores")}</Link>
       </div>
     );
   }
@@ -102,11 +106,12 @@ export function DemoStorePage({ id }: { id: string }) {
 }
 
 export function DemoInventoryPage({ status }: { status?: string }) {
+  const t = useT();
   const { state, user } = useDemoSession();
   const initial = status === "ALERTS" || STOCK_STATUSES.includes(status as StockStatus) ? (status as StockStatus | "ALERTS") : undefined;
   return (
     <div className="grid gap-4">
-      <h1 className="text-2xl font-semibold">Inventory</h1>
+      <h1 className="text-2xl font-semibold">{t("nav.inventory")}</h1>
       <InventoryView items={visibleItems(state, user)} stores={inventoryStores(state, user)} role={user.role} initialStatus={initial} />
     </div>
   );

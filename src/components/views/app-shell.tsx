@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { Boxes } from "lucide-react";
 import { AppNav } from "@/components/app-nav";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import type { Profile } from "@/lib/types";
+import { useT } from "@/i18n/client";
 
 /** Header + navigation shared by the Supabase and browser-demo layouts. */
 export function AppShellView({
@@ -14,6 +18,7 @@ export function AppShellView({
   banner?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <div className="min-h-dvh flex flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
@@ -23,10 +28,11 @@ export function AppShellView({
             <span className="truncate max-w-[10rem] sm:max-w-none">{businessName}</span>
           </Link>
           <AppNav variant="desktop" role={profile.role} pendingApprovals={pendingApprovals} />
-          <div className="ml-auto flex items-center gap-2 text-sm">
+          <div className="ms-auto flex items-center gap-2 text-sm">
             <span className="hidden sm:inline md:hidden xl:inline whitespace-nowrap text-muted-foreground">
-              {profile.full_name} · {profile.role === "owner" ? "Owner" : "Employee"}
+              {profile.full_name} · {profile.role === "owner" ? t("common.owner") : t("common.employee")}
             </span>
+            <LanguageSwitcher />
             {signOut}
           </div>
         </div>

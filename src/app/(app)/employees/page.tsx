@@ -4,8 +4,12 @@ import { isDemoMode } from "@/lib/mode";
 import { EmployeesTable } from "@/components/employees/employees-table";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoEmployeesPage } from "@/components/demo/demo-pages";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Employees · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.employees")} · Binventory` };
+}
 
 export default async function EmployeesPage() {
   if (isDemoMode) return <DemoEmployeesPage />;

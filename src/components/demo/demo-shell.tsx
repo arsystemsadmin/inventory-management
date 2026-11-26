@@ -12,6 +12,7 @@ import { currentUser, visibleApprovals, visibleSales } from "@/lib/demo/logic";
 import { setSessionUser, tick, useDemo, type DemoState, type DemoUser } from "@/lib/demo/store";
 import { formatMoney, variantLabel } from "@/lib/format";
 import { PAY_REFRESH_MS } from "@/lib/time";
+import { tClient } from "@/i18n/client";
 
 // Set while signing out, so the "no session -> login?next=" redirect doesn't race it.
 let signingOut = false;
@@ -25,7 +26,7 @@ export function useDemoSession() {
 }
 
 export function DemoLoading() {
-  return <div className="flex min-h-[50dvh] items-center justify-center text-sm text-muted-foreground">Loading…</div>;
+  return <div className="flex min-h-[50dvh] items-center justify-center text-sm text-muted-foreground">{tClient("common.loading")}</div>;
 }
 
 /** Owner gets a toast when someone else's sale lands (e.g. an employee in another tab). */
@@ -39,7 +40,7 @@ function SaleToasts({ state, user }: { state: DemoState; user: DemoUser }) {
       seen.current.add(s.id);
       if (user.role === "owner" && s.sold_by !== user.id) {
         const v = variantLabel(s.size, s.color);
-        toast.info(`New sale: ${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}`, { description: formatMoney(s.total_cents) });
+        toast.info(tClient("toasts.newSale", { label: `${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}` }), { description: formatMoney(s.total_cents) });
       }
     }
   }, [state, user]);
@@ -74,14 +75,14 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
           profile={user}
           pendingApprovals={pending}
           signOut={
-            <Button variant="ghost" size="icon" aria-label="Sign out"
+            <Button variant="ghost" size="icon" aria-label={tClient("common.signOut")}
               onClick={() => { signingOut = true; setSessionUser(null); router.replace("/login"); }}>
               <LogOut />
             </Button>
           }
           banner={
             <div className="border-b border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900">
-              Demo mode: data is saved in this browser only.
+              {tClient("demo.banner")}
             </div>
           }
         >

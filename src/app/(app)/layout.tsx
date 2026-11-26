@@ -7,11 +7,13 @@ import { Button } from "@/components/ui/button";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoShell } from "@/components/demo/demo-shell";
 import { AppShellView } from "@/components/views/app-shell";
+import { getT } from "@/i18n/server";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   if (isDemoMode) return <DemoShell>{children}</DemoShell>;
 
   const profile = await requireProfile();
+  const t = await getT();
   const supabase = await createClient();
   const [{ data: business }, { count: pending }] = await Promise.all([
     supabase.from("businesses").select("name").single(),
@@ -26,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         pendingApprovals={pending ?? 0}
         signOut={
           <form action={logout}>
-            <Button variant="ghost" size="icon" aria-label="Sign out"><LogOut /></Button>
+            <Button variant="ghost" size="icon" aria-label={t("common.signOut")}><LogOut /></Button>
           </form>
         }
       >

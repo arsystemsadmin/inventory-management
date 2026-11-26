@@ -6,33 +6,35 @@ import {
   LayoutDashboard, Store, Package, Receipt, ClipboardCheck, Users, Wallet, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/i18n/client";
 import type { Role } from "@/lib/types";
 
 const OWNER = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/stores", label: "Stores", icon: Store },
-  { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/sales", label: "Sales", icon: Receipt },
-  { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/employees", label: "Employees", icon: Users },
-  { href: "/payroll", label: "Payroll", icon: Wallet },
-];
+  { href: "/dashboard", label: "nav.dashboard", icon: LayoutDashboard },
+  { href: "/stores", label: "nav.stores", icon: Store },
+  { href: "/inventory", label: "nav.inventory", icon: Package },
+  { href: "/sales", label: "nav.sales", icon: Receipt },
+  { href: "/approvals", label: "nav.approvals", icon: ClipboardCheck },
+  { href: "/employees", label: "nav.employees", icon: Users },
+  { href: "/payroll", label: "nav.payroll", icon: Wallet },
+] as const;
 const EMPLOYEE = [
-  { href: "/stores", label: "My stores", icon: Store },
-  { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/sales", label: "Sales", icon: Receipt },
-  { href: "/clock", label: "Clock", icon: Clock },
-  { href: "/approvals", label: "Requests", icon: ClipboardCheck },
-];
+  { href: "/stores", label: "nav.myStores", icon: Store },
+  { href: "/inventory", label: "nav.inventory", icon: Package },
+  { href: "/sales", label: "nav.sales", icon: Receipt },
+  { href: "/clock", label: "nav.clock", icon: Clock },
+  { href: "/approvals", label: "nav.requests", icon: ClipboardCheck },
+] as const;
 
 export function AppNav({ role, pendingApprovals, variant }: { role: Role; pendingApprovals: number; variant: "desktop" | "mobile" }) {
   const pathname = usePathname();
+  const t = useT();
   const items = role === "owner" ? OWNER : EMPLOYEE;
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const badge = (href: string) =>
     href === "/approvals" && pendingApprovals > 0 ? (
-      <span className="absolute -top-1 right-0 md:static md:ml-1 min-w-4 h-4 rounded-full bg-red-600 px-1 text-[10px] leading-4 text-white text-center">
+      <span className="absolute -top-1 end-0 md:static md:ms-1 min-w-4 h-4 rounded-full bg-red-600 px-1 text-[10px] leading-4 text-white text-center">
         {pendingApprovals}
       </span>
     ) : null;
@@ -48,7 +50,7 @@ export function AppNav({ role, pendingApprovals, variant }: { role: Role; pendin
               isActive(href) ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icon className="size-4" /> {label}
+            <Icon className="size-4" /> {t(label)}
             {badge(href)}
           </Link>
         ))}
@@ -69,7 +71,7 @@ export function AppNav({ role, pendingApprovals, variant }: { role: Role; pendin
               )}
             >
               <Icon className={cn("size-5", isActive(href) && "stroke-[2.5]")} />
-              {label}
+              {t(label)}
               {badge(href)}
             </Link>
           ))}

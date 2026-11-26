@@ -5,8 +5,12 @@ import { LiveRefresh } from "@/components/live-refresh";
 import { DemoClockPage } from "@/components/demo/demo-pages";
 import { ClockView } from "@/components/views/clock-view";
 import { PAY_REFRESH_MS, type ShiftWithPay } from "@/lib/time";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Clock · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.clock")} · Binventory` };
+}
 
 export default async function ClockPage() {
   if (isDemoMode) return <DemoClockPage />;

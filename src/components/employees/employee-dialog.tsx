@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { centsToInput, parseMoneyToCents } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 export type EmployeeRow = {
   id: string; full_name: string; email: string; active: boolean; rate_cents: number | null; store_ids: string[];
@@ -21,6 +22,7 @@ export function EmployeeDialog({
 }) {
   const [f, setF] = useState({ full_name: "", email: "", password: "", rate: "" });
   const [storeIds, setStoreIds] = useState<Set<string>>(new Set());
+  const t = useT();
   const [pending, startTransition] = useTransition();
   const actions = useActions();
 
@@ -37,7 +39,7 @@ export function EmployeeDialog({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const rate = parseMoneyToCents(f.rate || "0");
-    if (Number.isNaN(rate)) { toast.error("Enter the hourly rate like 18.50"); return; }
+    if (Number.isNaN(rate)) { toast.error(t("employees.rateFormat")); return; }
     startTransition(async () => {
       const res = employee
         ? await actions.updateEmployee({ profile_id: employee.id, full_name: f.full_name, hourly_rate_cents: rate, store_ids: [...storeIds] })
@@ -56,33 +58,33 @@ export function EmployeeDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{employee ? `Edit ${employee.full_name}` : "Add employee"}</DialogTitle>
-          {!employee && <DialogDescription>Give them the email and temporary password to sign in.</DialogDescription>}
+          <DialogTitle>{employee ? t("form.editTitle", { name: employee.full_name }) : t("employees.add")}</DialogTitle>
+          {!employee && <DialogDescription>{t("employees.addNote")}</DialogDescription>}
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor="e-name">Full name</Label>
+            <Label htmlFor="e-name">{t("employees.fullName")}</Label>
             <Input id="e-name" value={f.full_name} onChange={set("full_name")} required maxLength={200} />
           </div>
           {!employee && (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="e-email">Email</Label>
+                <Label htmlFor="e-email">{t("auth.email")}</Label>
                 <Input id="e-email" type="email" value={f.email} onChange={set("email")} required />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="e-pass">Temporary password</Label>
+                <Label htmlFor="e-pass">{t("employees.tempPassword")}</Label>
                 <Input id="e-pass" type="text" value={f.password} onChange={set("password")} minLength={8} required autoComplete="off" />
               </div>
             </>
           )}
           <div className="grid gap-1.5">
-            <Label htmlFor="e-rate">Hourly rate (₪)</Label>
+            <Label htmlFor="e-rate">{t("employees.hourlyRate")}</Label>
             <Input id="e-rate" inputMode="decimal" value={f.rate} onChange={set("rate")} placeholder="40.00" required />
-            {employee && <p className="text-xs text-muted-foreground">Applies to new shifts. Past shifts keep the rate they were worked at.</p>}
+            {employee && <p className="text-xs text-muted-foreground">{t("employees.rateNote")}</p>}
           </div>
           <div className="grid gap-1">
-            <Label>Stores</Label>
+            <Label>{t("nav.stores")}</Label>
             {stores.map((s) => (
               <label key={s.id} className="flex min-h-11 items-center gap-3 rounded-md px-2 hover:bg-muted">
                 <Checkbox checked={storeIds.has(s.id)} onCheckedChange={(c) => setStoreIds((prev) => {
@@ -92,11 +94,11 @@ export function EmployeeDialog({
               </label>
             ))}
           </div>
-          <Button type="submit" size="lg" disabled={pending}>{pending ? "Saving…" : employee ? "Save" : "Create employee"}</Button>
+          <Button type="submit" size="lg" disabled={pending}>{pending ? t("common.saving") : employee ? t("common.save") : t("employees.create")}</Button>
           {employee && (
             <Button type="button" variant={employee.active ? "ghost" : "outline"} className={employee.active ? "text-destructive" : ""}
               disabled={pending} onClick={toggleActive}>
-              {employee.active ? "Deactivate (blocks sign-in)" : "Reactivate"}
+              {employee.active ? t("employees.deactivate") : t("employees.reactivate")}
             </Button>
           )}
         </form>

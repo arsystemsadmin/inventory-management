@@ -1,6 +1,7 @@
 "use client";
 
 import { loginSchema, signupSchema } from "@/lib/validation";
+import { tClient as tr } from "@/i18n/client";
 import { seedSampleData } from "./seed";
 import { commit, getState, hashPassword, newId, setSessionUser } from "./store";
 
@@ -8,10 +9,10 @@ type Result = { error?: string };
 
 export async function demoSignup(form: FormData): Promise<Result> {
   const parsed = signupSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: tr(parsed.error.issues[0].message) };
   const v = parsed.data;
   const email = v.email.toLowerCase();
-  if (getState().users.some((u) => u.email === email)) return { error: "An account with this email already exists in this browser." };
+  if (getState().users.some((u) => u.email === email)) return { error: tr("errors.demoEmailTaken") };
   const [ownerHash, sampleHash] = await Promise.all([hashPassword(v.password), hashPassword("password123")]);
   const withSample = form.get("sample") === "on";
 
@@ -30,10 +31,10 @@ export async function demoSignup(form: FormData): Promise<Result> {
 
 export async function demoLogin(form: FormData): Promise<Result> {
   const parsed = loginSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: tr(parsed.error.issues[0].message) };
   const user = getState().users.find((u) => u.email === parsed.data.email.toLowerCase());
-  if (!user || user.password_hash !== (await hashPassword(parsed.data.password))) return { error: "Invalid email or password." };
-  if (!user.active) return { error: "This account has been deactivated." };
+  if (!user || user.password_hash !== (await hashPassword(parsed.data.password))) return { error: tr("errors.INVALID_CREDENTIALS") };
+  if (!user.active) return { error: tr("errors.ACCOUNT_INACTIVE") };
   setSessionUser(user.id);
   return {};
 }

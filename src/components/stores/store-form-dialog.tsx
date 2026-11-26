@@ -11,11 +11,13 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { isoToDateInput } from "@/lib/format";
 import type { Store } from "@/lib/types";
+import { useT } from "@/i18n/client";
 
 export function StoreFormDialog({ open, onClose, store }: { open: boolean; onClose: () => void; store?: Store }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const actions = useActions();
+  const t = useT();
   const [f, setF] = useState({ name: "", type: "popup", address: "", starts_on: "", ends_on: "", status: "" });
 
   useEffect(() => {
@@ -45,47 +47,47 @@ export function StoreFormDialog({ open, onClose, store }: { open: boolean; onClo
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{store ? "Edit store" : "New store"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{store ? t("stores.editStore") : t("stores.newStore")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor="s-name">Name</Label>
+            <Label htmlFor="s-name">{t("fields.name")}</Label>
             <Input id="s-name" value={f.name} onChange={set("name")} required maxLength={200} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="s-type">Type</Label>
+              <Label htmlFor="s-type">{t("stores.type")}</Label>
               <NativeSelect id="s-type" value={f.type} onChange={set("type")}>
-                <option value="popup">Pop-up</option>
-                <option value="permanent">Permanent</option>
+                <option value="popup">{t("stores.popup")}</option>
+                <option value="permanent">{t("stores.permanent")}</option>
               </NativeSelect>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="s-status">Status</Label>
+              <Label htmlFor="s-status">{t("stores.statusLabel")}</Label>
               <NativeSelect id="s-status" value={f.status} onChange={set("status")}>
-                {!store && <option value="">Auto (from dates)</option>}
-                <option value="upcoming">Upcoming</option>
-                <option value="active">Active</option>
-                <option value="closed">Closed</option>
+                {!store && <option value="">{t("stores.autoStatus")}</option>}
+                <option value="upcoming">{t("stores.status.upcoming")}</option>
+                <option value="active">{t("stores.status.active")}</option>
+                <option value="closed">{t("stores.status.closed")}</option>
               </NativeSelect>
             </div>
           </div>
           {f.type === "popup" && (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="s-start">Starts</Label>
+                <Label htmlFor="s-start">{t("stores.starts")}</Label>
                 <Input id="s-start" type="date" value={f.starts_on} onChange={set("starts_on")} required />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="s-end">Ends</Label>
+                <Label htmlFor="s-end">{t("stores.ends")}</Label>
                 <Input id="s-end" type="date" value={f.ends_on} onChange={set("ends_on")} required />
               </div>
             </div>
           )}
           <div className="grid gap-1.5">
-            <Label htmlFor="s-address">Address / location</Label>
+            <Label htmlFor="s-address">{t("stores.address")}</Label>
             <Input id="s-address" value={f.address} onChange={set("address")} maxLength={300} />
           </div>
-          <Button type="submit" size="lg" disabled={pending}>{pending ? "Saving…" : "Save"}</Button>
+          <Button type="submit" size="lg" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</Button>
         </form>
       </DialogContent>
     </Dialog>

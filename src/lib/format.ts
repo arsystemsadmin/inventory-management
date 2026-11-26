@@ -25,14 +25,14 @@ export function formatMinutes(min: number) {
   return `${h}h ${m.toString().padStart(2, "0")}m`;
 }
 
-export function formatDateTime(iso: string | null | undefined) {
+export function formatDateTime(iso: string | null | undefined, locale = "en-US") {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleString(locale, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-export function formatDate(iso: string | null | undefined) {
+export function formatDate(iso: string | null | undefined, locale = "en-US") {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }
 
 export function variantLabel(size?: string | null, color?: string | null) {
@@ -49,9 +49,9 @@ export function stockStatus(qty: number, threshold: number): StockStatus {
 }
 
 /** Store dates are calendar days stored at UTC midnight; show them without TZ shift. */
-export function formatStoreDate(iso: string | null | undefined) {
+export function formatStoreDate(iso: string | null | undefined, locale = "en-US") {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  return new Date(iso).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 export function isoToDateInput(iso: string | null | undefined) {
   return iso ? iso.slice(0, 10) : "";

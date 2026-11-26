@@ -6,8 +6,12 @@ import { DemoDashboardPage } from "@/components/demo/demo-pages";
 import { DashboardView, type DashboardSummary } from "@/components/views/dashboard-view";
 import { PAY_REFRESH_MS, type ShiftWithPay } from "@/lib/time";
 import type { Item, Sale } from "@/lib/types";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Dashboard · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.dashboard")} · Binventory` };
+}
 
 export default async function DashboardPage() {
   if (isDemoMode) return <DemoDashboardPage />;

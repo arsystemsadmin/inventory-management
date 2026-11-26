@@ -3,11 +3,12 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { NOT_CONNECTED_MESSAGE, supabaseConfigured } from "@/lib/supabase/config";
+import { supabaseConfigured } from "@/lib/supabase/config";
 
 export type AuthFormState = { error?: string; message?: string } | undefined;
 
 import { loginSchema, signupSchema } from "@/lib/validation";
+import { getTr } from "@/i18n/server";
 
 function safeNext(next: string | undefined) {
   // Only allow same-site relative paths (no "//evil.com" open redirects).
@@ -15,9 +16,10 @@ function safeNext(next: string | undefined) {
 }
 
 export async function login(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  if (!supabaseConfigured) return { error: NOT_CONNECTED_MESSAGE };
+  const tr = await getTr();
+  if (!supabaseConfigured) return { error: tr("demo.notConnected") };
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: tr(parsed.error.issues[0].message) };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({
@@ -25,15 +27,16 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
     password: parsed.data.password,
   });
   if (error) {
-    return { error: error.message.includes("banned") ? "This account has been deactivated." : "Invalid email or password." };
+    return { error: error.message.includes("banned") ? tr("errors.ACCOUNT_INACTIVE") : tr("errors.INVALID_CREDENTIALS") };
   }
   redirect(safeNext(parsed.data.next));
 }
 
 export async function signup(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
-  if (!supabaseConfigured) return { error: NOT_CONNECTED_MESSAGE };
+  const tr = await getTr();
+  if (!supabaseConfigured) return { error: tr("demo.notConnected") };
   const parsed = signupSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: parsed.error.issues[0].message };
+  if (!parsed.success) return { error: tr(parsed.error.issues[0].message) };
 
   const supabase = await createClient();
   const h = await headers();
@@ -50,7 +53,7 @@ export async function signup(_prev: AuthFormState, formData: FormData): Promise<
   });
   if (error) return { error: error.message };
   if (!data.session) {
-    return { message: "Check your email to confirm your account, then sign in." };
+    return { message: tr("auth.checkEmail") };
   }
   redirect("/app");
 }

@@ -14,6 +14,7 @@ import type { Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
 import { PhotoField } from "./photo-field";
 import { SizeQuantityPicker, type SizeRow } from "./size-quantity-picker";
+import { useT } from "@/i18n/client";
 
 type StoreOpt = { id: string; name: string; business_id: string };
 
@@ -45,6 +46,7 @@ export function ItemFormDialog({
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
+  const t = useT();
   const colorRef = useRef<HTMLInputElement>(null);
 
   const mode: "new" | "variations" | "edit" = item ? "edit" : product ? "variations" : "new";
@@ -86,7 +88,7 @@ export function ItemFormDialog({
   const submit = (addAnother: boolean) => {
     const price = parseMoneyToCents(f.price || "0");
     const cost = parseMoneyToCents(f.cost || "0");
-    if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error("Enter prices like 12.50"); return; }
+    if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error(t("form.priceFormat")); return; }
 
     startTransition(async () => {
       if (mode === "edit") {
@@ -120,8 +122,8 @@ export function ItemFormDialog({
       if (!res.ok) { toast.error(res.error); return; }
       const color = f.color ? ` · ${f.color}` : "";
       toast.success(sizes.length
-        ? `Added ${f.name}${color} in ${sizes.length} size${sizes.length === 1 ? "" : "s"} (${sizes.map((r) => r.size).join(", ")})`
-        : `Added ${f.name}${color}`);
+        ? t("form.addedSizes", { name: `${f.name}${color}`, count: sizes.length, sizes: sizes.map((r) => r.size).join(", ") })
+        : t("form.added", { name: `${f.name}${color}` }));
       if (addAnother) {
         // Same product in another color: keep details and sizes, reset color and quantities.
         setF((s) => ({ ...s, sku: "", color: "", quantity: "1" }));
@@ -134,13 +136,13 @@ export function ItemFormDialog({
   };
 
   const title = mode === "edit"
-    ? `Edit ${item!.name}${variantLabel(item!.size, item!.color) ? ` · ${variantLabel(item!.size, item!.color)}` : ""}`
-    : mode === "variations" ? `Add variations to ${product!.name}` : "Add product";
+    ? t("form.editTitle", { name: `${item!.name}${variantLabel(item!.size, item!.color) ? ` · ${variantLabel(item!.size, item!.color)}` : ""}` })
+    : mode === "variations" ? t("form.addVariationsTitle", { name: product!.name }) : t("inventory.addProduct");
   const description = approval
-    ? "Setup is finished for this store, so the owner must approve changes."
-    : mode === "edit" ? "Changes apply to this variation only. Use “Edit product” to change the name, photo or category."
-    : mode === "variations" ? "Pick a color and the sizes to add, with how many of each."
-    : "Pick a color and every size you have, with how many of each. They're saved as variations of this product.";
+    ? t("form.needsApprovalNote")
+    : mode === "edit" ? t("form.editNote")
+    : mode === "variations" ? t("form.variationsNote")
+    : t("form.newNote");
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
@@ -152,7 +154,7 @@ export function ItemFormDialog({
         <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); submit(false); }}>
           {mode === "new" && stores.length > 1 && (
             <div className="grid gap-1.5">
-              <Label htmlFor="store">Store</Label>
+              <Label htmlFor="store">{t("dashboard.store")}</Label>
               <NativeSelect id="store" value={storeId} onChange={(e) => setStoreId(e.target.value)}>
                 {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </NativeSelect>
@@ -161,8 +163,8 @@ export function ItemFormDialog({
           {mode === "new" && (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="name">Product name</Label>
-                <Input id="name" value={f.name} onChange={set("name")} required maxLength={200} placeholder="e.g. Linen Shirt" />
+                <Label htmlFor="name">{t("form.productName")}</Label>
+                <Input id="name" value={f.name} onChange={set("name")} required maxLength={200} placeholder={t("form.namePlaceholder")} />
               </div>
               <PhotoField value={imagePath} onChange={setImagePath} businessId={businessId} storeId={storeId} onUploadingChange={setUploading} />
             </>
@@ -171,22 +173,22 @@ export function ItemFormDialog({
           {mode === "edit" ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="size">Size</Label>
+                <Label htmlFor="size">{t("fields.size")}</Label>
                 <Input id="size" value={f.size} onChange={set("size")} maxLength={40} placeholder="XS, S, M, L, XL…" />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="color">Color</Label>
-                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder="Black" />
+                <Label htmlFor="color">{t("fields.color")}</Label>
+                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder={t("form.colorPlaceholder")} />
               </div>
             </div>
           ) : (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="color">Color</Label>
-                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder="Black" />
+                <Label htmlFor="color">{t("fields.color")}</Label>
+                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder={t("form.colorPlaceholder")} />
               </div>
               <div className="grid gap-1.5">
-                <Label>Sizes <span className="font-normal text-muted-foreground">(tap each size you have)</span></Label>
+                <Label>{t("form.sizes")} <span className="font-normal text-muted-foreground">{t("form.sizesHint")}</span></Label>
                 <SizeQuantityPicker rows={sizes} onChange={setSizes} businessId={businessId} storeId={storeId} />
               </div>
             </>
@@ -194,54 +196,54 @@ export function ItemFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="price">Price (₪)</Label>
+              <Label htmlFor="price">{t("form.priceLabel")}</Label>
               <Input id="price" inputMode="decimal" value={f.price} onChange={set("price")} required placeholder="0.00" />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="cost">Cost (₪)</Label>
+              <Label htmlFor="cost">{t("form.costLabel")}</Label>
               <Input id="cost" inputMode="decimal" value={f.cost} onChange={set("cost")} placeholder="0.00" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {mode !== "edit" && sizes.length === 0 && (
               <div className="grid gap-1.5">
-                <Label htmlFor="quantity">Quantity</Label>
+                <Label htmlFor="quantity">{t("fields.quantity")}</Label>
                 <Input id="quantity" inputMode="numeric" value={f.quantity} onChange={set("quantity")} placeholder="0" />
               </div>
             )}
             <div className="grid gap-1.5">
-              <Label htmlFor="threshold">Low-stock alert at</Label>
+              <Label htmlFor="threshold">{t("form.alertAt")}</Label>
               <Input id="threshold" inputMode="numeric" value={f.threshold} onChange={set("threshold")} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {mode === "new" && (
               <div className="grid gap-1.5">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{t("fields.category")}</Label>
                 <Input id="category" list="category-options" value={f.category} onChange={set("category")} maxLength={100} />
                 <datalist id="category-options">{categories.map((c) => <option key={c} value={c} />)}</datalist>
               </div>
             )}
             <div className="grid gap-1.5">
-              <Label htmlFor="sku">SKU</Label>
+              <Label htmlFor="sku">{t("fields.sku")}</Label>
               <Input id="sku" value={f.sku} onChange={set("sku")} maxLength={58}
-                placeholder={mode !== "edit" && sizes.length ? "Size is added, e.g. LS-NVY-M" : ""} />
+                placeholder={mode !== "edit" && sizes.length ? t("form.skuHint") : ""} />
             </div>
           </div>
           {approval && (
             <div className="grid gap-1.5">
-              <Label htmlFor="reason">Reason for the owner</Label>
-              <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="e.g. wrong price on tag" />
+              <Label htmlFor="reason">{t("form.reasonForOwner")}</Label>
+              <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder={t("form.reasonPlaceholder")} />
             </div>
           )}
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end pt-1">
             {mode !== "edit" && (
               <Button type="button" variant="outline" size="lg" disabled={pending || uploading} onClick={() => submit(true)}>
-                Save &amp; add another color
+                {t("form.saveAndAddColor")}
               </Button>
             )}
             <Button type="submit" size="lg" disabled={pending || uploading}>
-              {pending ? "Saving…" : approval ? "Request approval" : "Save"}
+              {pending ? t("common.saving") : approval ? t("common.requestApproval") : t("common.save")}
             </Button>
           </div>
         </form>

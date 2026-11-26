@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { StockBadge } from "@/components/stock-badge";
 import { variantLabel } from "@/lib/format";
 import type { Item } from "@/lib/types";
+import { useT } from "@/i18n/client";
 
 type Mode = "menu" | "add" | "remove" | "delete";
 
@@ -29,6 +30,7 @@ export function ItemActionsDialog({
   const [reason, setReason] = useState("");
   const [pending, startTransition] = useTransition();
   const actions = useActions();
+  const t = useT();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (item) { setMode("menu"); setQty("1"); setReason(""); } }, [item?.id]);
@@ -51,7 +53,7 @@ export function ItemActionsDialog({
         <DialogHeader>
           <DialogTitle>{item.name}</DialogTitle>
           <DialogDescription className="flex items-center gap-2">
-            {variantLabel(item.size, item.color) || "Standard"} · {item.quantity} in stock <StockBadge status={item.stock_status} />
+            {variantLabel(item.size, item.color) || t("common.standard")} · {t("sell.inStock", { count: item.quantity })} <StockBadge status={item.stock_status} />
           </DialogDescription>
         </DialogHeader>
 
@@ -60,20 +62,20 @@ export function ItemActionsDialog({
             {item.archived ? (
               isOwner && (
                 <Button size="lg" variant="outline" onClick={() => run(() => actions.restoreItem(item.id))} disabled={pending}>
-                  <Undo2 /> Restore variation
+                  <Undo2 /> {t("actions.restoreVariation")}
                 </Button>
               )
             ) : (
               <>
-                <Button size="lg" onClick={() => setMode("add")}><Plus /> Add stock</Button>
+                <Button size="lg" onClick={() => setMode("add")}><Plus /> {t("actions.addStock")}</Button>
                 <Button size="lg" variant="outline" onClick={() => setMode("remove")}>
-                  <Minus /> Remove stock{needsApproval && " (needs approval)"}
+                  <Minus /> {t("actions.removeStock")}{needsApproval && ` ${t("actions.needsApproval")}`}
                 </Button>
                 <Button size="lg" variant="outline" onClick={() => { onClose(); onEdit(item); }}>
-                  <Pencil /> Edit variation{needsApproval && " (needs approval)"}
+                  <Pencil /> {t("actions.editVariation")}{needsApproval && ` ${t("actions.needsApproval")}`}
                 </Button>
                 <Button size="lg" variant="ghost" className="text-destructive" onClick={() => setMode("delete")}>
-                  <Trash2 /> Remove variation{deleteNeedsApproval && " (needs approval)"}
+                  <Trash2 /> {t("actions.removeVariation")}{deleteNeedsApproval && ` ${t("actions.needsApproval")}`}
                 </Button>
               </>
             )}
@@ -91,19 +93,19 @@ export function ItemActionsDialog({
             }}
           >
             <div className="grid gap-1.5">
-              <Label htmlFor="qty">{mode === "add" ? "How many arrived?" : "How many to remove?"}</Label>
+              <Label htmlFor="qty">{mode === "add" ? t("actions.howManyArrived") : t("actions.howManyRemove")}</Label>
               <Input id="qty" inputMode="numeric" autoFocus value={qty} onChange={(e) => setQty(e.target.value.replace(/\D/g, ""))} />
             </div>
             {mode === "remove" && needsApproval && (
               <div className="grid gap-1.5">
-                <Label htmlFor="reason">Reason</Label>
-                <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="e.g. damaged, miscounted" />
+                <Label htmlFor="reason">{t("common.reason")}</Label>
+                <Textarea id="reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder={t("actions.reasonPlaceholder")} />
               </div>
             )}
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>Back</Button>
+              <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>{t("common.back")}</Button>
               <Button type="submit" size="lg" className="flex-1" disabled={pending}>
-                {mode === "add" ? `Add ${n}` : needsApproval ? "Request approval" : `Remove ${n}`}
+                {mode === "add" ? t("actions.addN", { count: n }) : needsApproval ? t("common.requestApproval") : t("actions.removeN", { count: n })}
               </Button>
             </div>
           </form>
@@ -113,16 +115,16 @@ export function ItemActionsDialog({
           <form className="grid gap-3" onSubmit={(e) => { e.preventDefault(); run(() => actions.removeItem({ itemId: item.id, reason })); }}>
             <p className="text-sm text-muted-foreground">
               {deleteNeedsApproval
-                ? "The owner will be asked to approve removing this variation from inventory."
-                : "This variation is hidden from inventory. Its sales history is kept and you can restore it later."}
+                ? t("actions.removeExplainEmployee")
+                : t("actions.removeExplainOwner")}
             </p>
             {deleteNeedsApproval && (
-              <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="Reason (optional)" />
+              <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder={t("common.reasonOptional")} />
             )}
             <div className="flex gap-2">
-              <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>Back</Button>
+              <Button type="button" variant="outline" size="lg" className="flex-1" onClick={() => setMode("menu")}>{t("common.back")}</Button>
               <Button type="submit" variant="destructive" size="lg" className="flex-1" disabled={pending}>
-                {deleteNeedsApproval ? "Request removal" : "Remove variation"}
+                {deleteNeedsApproval ? t("actions.requestRemoval") : t("actions.removeVariation")}
               </Button>
             </div>
           </form>

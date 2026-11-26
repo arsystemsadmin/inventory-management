@@ -5,8 +5,12 @@ import { LiveRefresh } from "@/components/live-refresh";
 import { DemoStoresPage } from "@/components/demo/demo-pages";
 import { StoresView, type StoreTodaySummary } from "@/components/views/stores-view";
 import type { Store } from "@/lib/types";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Stores · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.stores")} · Binventory` };
+}
 
 export default async function StoresPage() {
   if (isDemoMode) return <DemoStoresPage />;

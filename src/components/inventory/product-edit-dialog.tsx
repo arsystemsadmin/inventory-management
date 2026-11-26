@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { centsToInput, parseMoneyToCents } from "@/lib/format";
 import type { Product } from "@/lib/products";
 import { PhotoField } from "./photo-field";
+import { useT } from "@/i18n/client";
 
 /**
  * Product-wide edit: name, category, photo, and optionally one price/cost/
@@ -30,6 +31,7 @@ export function ProductEditDialog({
   const [f, setF] = useState({ name: "", category: "", price: "", cost: "", threshold: "" });
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const t = useT();
 
   const base = product?.variants[0];
   const samePrice = !!product && product.minPrice === product.maxPrice;
@@ -59,19 +61,19 @@ export function ProductEditDialog({
     // Blank price/cost/alert = leave each variation as it is.
     if (f.price.trim()) {
       const p = parseMoneyToCents(f.price);
-      if (Number.isNaN(p)) { toast.error("Enter prices like 12.50"); return; }
+      if (Number.isNaN(p)) { toast.error(t("form.priceFormat")); return; }
       if (product.variants.some((v) => v.price_cents !== p)) changes.price_cents = p;
     }
     if (f.cost.trim()) {
       const c = parseMoneyToCents(f.cost);
-      if (Number.isNaN(c)) { toast.error("Enter prices like 12.50"); return; }
+      if (Number.isNaN(c)) { toast.error(t("form.priceFormat")); return; }
       if (product.variants.some((v) => v.cost_cents !== c)) changes.cost_cents = c;
     }
     if (f.threshold.trim()) {
       const t = Number(f.threshold);
       if (product.variants.some((v) => v.low_stock_threshold !== t)) changes.low_stock_threshold = t;
     }
-    if (!Object.keys(changes).length) { toast.error("Nothing changed."); return; }
+    if (!Object.keys(changes).length) { toast.error(t("errors.NO_CHANGES")); return; }
     startTransition(async () => {
       const res = await actions.saveProductEdit({ storeId: product.store_id, name: product.name, changes, reason });
       if (!res.ok) { toast.error(res.error); return; }
@@ -84,46 +86,46 @@ export function ProductEditDialog({
     <Dialog open={!!product} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit {product.name}</DialogTitle>
+          <DialogTitle>{t("form.editTitle", { name: product.name })}</DialogTitle>
           <DialogDescription>
-            Applies to all {product.variants.length} variation{product.variants.length === 1 ? "" : "s"}.
-            {needsApproval && " Setup is finished, so the owner must approve changes (photos apply right away)."}
+            {t("productEdit.appliesTo", { count: product.variants.length })}
+            {needsApproval && ` ${t("productEdit.approvalNote")}`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor="p-name">Product name</Label>
+            <Label htmlFor="p-name">{t("form.productName")}</Label>
             <Input id="p-name" value={f.name} onChange={set("name")} required maxLength={200} />
           </div>
           <PhotoField value={imagePath} onChange={setImagePath} businessId={base.business_id} storeId={product.store_id} onUploadingChange={setUploading} />
           <div className="grid gap-1.5">
-            <Label htmlFor="p-category">Category</Label>
+            <Label htmlFor="p-category">{t("fields.category")}</Label>
             <Input id="p-category" list="p-category-options" value={f.category} onChange={set("category")} maxLength={100} />
             <datalist id="p-category-options">{categories.map((c) => <option key={c} value={c} />)}</datalist>
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="p-price">Price (₪)</Label>
-              <Input id="p-price" inputMode="decimal" value={f.price} onChange={set("price")} placeholder={samePrice ? "" : "Varies"} />
+              <Label htmlFor="p-price">{t("form.priceLabel")}</Label>
+              <Input id="p-price" inputMode="decimal" value={f.price} onChange={set("price")} placeholder={samePrice ? "" : t("productEdit.varies")} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="p-cost">Cost (₪)</Label>
-              <Input id="p-cost" inputMode="decimal" value={f.cost} onChange={set("cost")} placeholder="Varies" />
+              <Label htmlFor="p-cost">{t("form.costLabel")}</Label>
+              <Input id="p-cost" inputMode="decimal" value={f.cost} onChange={set("cost")} placeholder={t("productEdit.varies")} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="p-threshold">Alert at</Label>
-              <Input id="p-threshold" inputMode="numeric" value={f.threshold} onChange={set("threshold")} placeholder="Varies" />
+              <Label htmlFor="p-threshold">{t("productEdit.alertAt")}</Label>
+              <Input id="p-threshold" inputMode="numeric" value={f.threshold} onChange={set("threshold")} placeholder={t("productEdit.varies")} />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Price, cost and alert level set here replace each variation&apos;s own value. Leave blank to keep them as they are.</p>
+          <p className="text-xs text-muted-foreground">{t("productEdit.note")}</p>
           {needsApproval && (
             <div className="grid gap-1.5">
-              <Label htmlFor="p-reason">Reason for the owner</Label>
+              <Label htmlFor="p-reason">{t("form.reasonForOwner")}</Label>
               <Textarea id="p-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
             </div>
           )}
           <Button type="submit" size="lg" disabled={pending || uploading}>
-            {pending ? "Saving…" : needsApproval ? "Save / request approval" : "Save for all variations"}
+            {pending ? t("common.saving") : needsApproval ? t("productEdit.saveOrRequest") : t("productEdit.saveAll")}
           </Button>
         </form>
       </DialogContent>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { centsToInput, formatMoney, parseMoneyToCents } from "@/lib/format";
 import type { ShiftWithPay } from "@/lib/time";
+import { useT, useLocale } from "@/i18n/client";
 
 type Person = { id: string; full_name: string; rate_cents: number | null };
 
@@ -29,6 +30,7 @@ export function TimeEntryDialog({
   const [f, setF] = useState({ profile_id: "", store_id: "", clock_in: "", clock_out: "", rate: "", note: "" });
   const [pending, startTransition] = useTransition();
   const actions = useActions();
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -56,7 +58,7 @@ export function TimeEntryDialog({
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const rate = parseMoneyToCents(f.rate || "0");
-    if (Number.isNaN(rate) || !f.clock_in) { toast.error("Check the times and rate"); return; }
+    if (Number.isNaN(rate) || !f.clock_in) { toast.error(t("time.checkTimes")); return; }
     startTransition(async () => {
       const res = await actions.saveTimeEntry({
         id: entry?.id, profile_id: f.profile_id, store_id: f.store_id,
@@ -76,40 +78,40 @@ export function TimeEntryDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
-        <DialogHeader><DialogTitle>{entry ? "Edit shift" : "Add shift"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{entry ? t("time.editShift") : t("time.addShift")}</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="t-person">Employee</Label>
+              <Label htmlFor="t-person">{t("common.employee")}</Label>
               <NativeSelect id="t-person" value={f.profile_id} onChange={set("profile_id")} disabled={!!entry}>
                 {people.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
               </NativeSelect>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="t-store">Store</Label>
+              <Label htmlFor="t-store">{t("dashboard.store")}</Label>
               <NativeSelect id="t-store" value={f.store_id} onChange={set("store_id")}>
                 {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </NativeSelect>
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="t-in">Clock in</Label>
+            <Label htmlFor="t-in">{t("time.clockIn")}</Label>
             <Input id="t-in" type="datetime-local" value={f.clock_in} onChange={set("clock_in")} required />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="t-out">Clock out <span className="text-muted-foreground font-normal">(empty = still on shift)</span></Label>
+            <Label htmlFor="t-out">{t("time.clockOut")} <span className="text-muted-foreground font-normal">{t("time.clockOutHint")}</span></Label>
             <Input id="t-out" type="datetime-local" value={f.clock_out} onChange={set("clock_out")} />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="t-rate">Rate for this shift (₪/h)</Label>
+            <Label htmlFor="t-rate">{t("time.rateForShift")}</Label>
             <Input id="t-rate" inputMode="decimal" value={f.rate} onChange={set("rate")} required />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="t-note">Note</Label>
-            <Input id="t-note" value={f.note} onChange={set("note")} maxLength={500} placeholder="e.g. forgot to clock out" />
+            <Label htmlFor="t-note">{t("time.note")}</Label>
+            <Input id="t-note" value={f.note} onChange={set("note")} maxLength={500} placeholder={t("time.notePlaceholder")} />
           </div>
-          <Button type="submit" size="lg" disabled={pending}>{pending ? "Saving…" : "Save"}</Button>
-          {entry && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>Delete shift</Button>}
+          <Button type="submit" size="lg" disabled={pending}>{pending ? t("common.saving") : t("common.save")}</Button>
+          {entry && <Button type="button" variant="ghost" className="text-destructive" disabled={pending} onClick={remove}>{t("time.deleteShift")}</Button>}
         </form>
       </DialogContent>
     </Dialog>
@@ -121,38 +123,40 @@ export function PayrollEntries({
 }: {
   entries: ShiftWithPay[]; people: Person[]; stores: { id: string; name: string }[];
 }) {
+  const t = useT();
+  const locale = useLocale();
   const [editing, setEditing] = useState<ShiftWithPay | null>(null);
   const [adding, setAdding] = useState(false);
   const personName = new Map(people.map((p) => [p.id, p.full_name]));
   const storeName = new Map(stores.map((s) => [s.id, s.name]));
-  const fmt = (iso: string) => new Date(iso).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const fmt = (iso: string) => new Date(iso).toLocaleString(locale, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const money = formatMoney;
   const mins = (m: number) => `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, "0")}m`;
 
   return (
     <section className="grid gap-2">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold">Shifts</h2>
-        <Button variant="outline" onClick={() => setAdding(true)}><Plus /> Add shift</Button>
+        <h2 className="font-semibold">{t("time.shifts")}</h2>
+        <Button variant="outline" onClick={() => setAdding(true)}><Plus /> {t("time.addShift")}</Button>
       </div>
-      {entries.length === 0 ? <p className="text-sm text-muted-foreground">No shifts in this period.</p> : (
+      {entries.length === 0 ? <p className="text-sm text-muted-foreground">{t("time.noShifts")}</p> : (
         <ul className="divide-y rounded-lg border bg-card text-sm">
           {entries.map((e) => (
             <li key={e.id}>
-              <button type="button" onClick={() => setEditing(e)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50">
+              <button type="button" onClick={() => setEditing(e)} className="flex w-full items-center gap-3 px-3 py-2.5 text-start hover:bg-muted/50">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">
                     {personName.get(e.profile_id)} <span className="font-normal text-muted-foreground">· {storeName.get(e.store_id)}</span>
-                    {e.is_open && <span className="ml-2 rounded bg-amber-100 px-1.5 text-xs font-semibold text-amber-800">OPEN</span>}
+                    {e.is_open && <span className="ms-2 rounded bg-amber-100 px-1.5 text-xs font-semibold text-amber-800">{t("time.open")}</span>}
                   </div>
                   <div className="text-xs text-muted-foreground" suppressHydrationWarning>
-                    {fmt(e.clock_in)} – {e.clock_out ? fmt(e.clock_out) : "still clocked in"}
+                    {fmt(e.clock_in)} – {e.clock_out ? fmt(e.clock_out) : t("time.stillClockedIn")}
                     {e.note && ` · ${e.note}`}
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-end">
                   <div className="font-semibold">{money(Number(e.amount_cents))}</div>
-                  <div className="text-xs text-muted-foreground">{mins(Number(e.worked_minutes))} @ {money(e.hourly_rate_cents_snapshot)}</div>
+                  <div className="text-xs text-muted-foreground">{t("time.minutesAtRate", { time: mins(Number(e.worked_minutes)), rate: money(e.hourly_rate_cents_snapshot) })}</div>
                 </div>
               </button>
             </li>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Minus, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SizePhotoButton } from "./photo-field";
+import { useT } from "@/i18n/client";
 
 export type SizeRow = { size: string; qty: string; photo?: string | null };
 
@@ -21,6 +22,7 @@ export function SizeQuantityPicker({
   rows: SizeRow[]; onChange: (rows: SizeRow[]) => void; businessId?: string; storeId?: string;
 }) {
   const [custom, setCustom] = useState("");
+  const t = useT();
   const selected = new Set(rows.map((r) => r.size.toLowerCase()));
 
   const sorted = (next: SizeRow[]) => [...next].sort((a, b) => rank(a.size) - rank(b.size));
@@ -64,44 +66,44 @@ export function SizeQuantityPicker({
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-          placeholder="Other size (e.g. 32, One size)"
+          placeholder={t("picker.otherSize")}
           maxLength={40}
-          aria-label="Custom size"
+          aria-label={t("picker.customSize")}
           className="h-10 min-w-0 flex-1 rounded-md border border-input bg-transparent px-3 shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         />
-        <button type="button" onClick={addCustom} className="h-10 rounded-md border px-3 text-sm font-medium hover:bg-muted">Add</button>
+        <button type="button" onClick={addCustom} className="h-10 rounded-md border px-3 text-sm font-medium hover:bg-muted">{t("common.add")}</button>
       </div>
 
       {rows.length > 0 && (
         <div className="rounded-lg border">
           <div className="flex items-center justify-between border-b px-3 py-2 text-xs text-muted-foreground">
-            <span>Photo (optional) and quantity per size</span>
-            <span>{rows.length} size{rows.length === 1 ? "" : "s"} · {total} total</span>
+            <span>{t("picker.header")}</span>
+            <span>{t("picker.summary", { count: rows.length, total })}</span>
           </div>
           <ul className="divide-y">
             {rows.map((r) => (
               <li key={r.size} className="flex items-center gap-2 px-3 py-2">
                 <SizePhotoButton
                   value={r.photo}
-                  label={`size ${r.size}`}
+                  label={t("picker.sizeLabel", { size: r.size })}
                   businessId={businessId}
                   storeId={storeId}
                   onChange={(photo) => onChange(rows.map((x) => (x.size === r.size ? { ...x, photo } : x)))}
                 />
                 <span className="min-w-0 flex-1 truncate font-medium">{r.size}</span>
-                <button type="button" aria-label={`Fewer ${r.size}`} onClick={() => bump(r.size, -1)}
+                <button type="button" aria-label={t("picker.fewer", { size: r.size })} onClick={() => bump(r.size, -1)}
                   className="grid size-10 place-items-center rounded-md border hover:bg-muted"><Minus className="size-4" /></button>
                 <input
                   inputMode="numeric"
-                  aria-label={`Quantity for size ${r.size}`}
+                  aria-label={t("picker.quantityFor", { size: r.size })}
                   value={r.qty}
                   placeholder="0"
                   onChange={(e) => setQty(r.size, e.target.value)}
                   className="h-10 w-16 rounded-md border text-center font-semibold"
                 />
-                <button type="button" aria-label={`More ${r.size}`} onClick={() => bump(r.size, 1)}
+                <button type="button" aria-label={t("picker.more", { size: r.size })} onClick={() => bump(r.size, 1)}
                   className="grid size-10 place-items-center rounded-md border hover:bg-muted"><Plus className="size-4" /></button>
-                <button type="button" aria-label={`Remove size ${r.size}`} onClick={() => toggle(r.size)}
+                <button type="button" aria-label={t("picker.remove", { size: r.size })} onClick={() => toggle(r.size)}
                   className="grid size-10 place-items-center rounded-md text-muted-foreground hover:bg-muted"><X className="size-4" /></button>
               </li>
             ))}

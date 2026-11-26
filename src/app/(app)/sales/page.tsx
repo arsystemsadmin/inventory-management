@@ -3,10 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/mode";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoSalesPage } from "@/components/demo/demo-pages";
-import { SalesView, parseSalesRange, salesRangeStart } from "@/components/views/sales-view";
+import { SalesView } from "@/components/views/sales-view";
+import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import type { Sale } from "@/lib/types";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Sales · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.sales")} · Binventory` };
+}
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ store?: string; range?: string }> }) {
   const sp = await searchParams;

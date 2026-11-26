@@ -3,10 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { isDemoMode } from "@/lib/mode";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoPayrollPage } from "@/components/demo/demo-pages";
-import { PayrollView, addDays, isYmd, type PayrollRow } from "@/components/views/payroll-view";
+import { PayrollView, type PayrollRow } from "@/components/views/payroll-view";
+import { addDays, isYmd } from "@/lib/dates";
 import { PAY_REFRESH_MS, type ShiftWithPay } from "@/lib/time";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Payroll · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.payroll")} · Binventory` };
+}
 
 export default async function PayrollPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
   const sp = await searchParams;

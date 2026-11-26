@@ -1,47 +1,28 @@
-// Maps the stable error codes raised by our Postgres functions/triggers to
-// user-facing text. Anything unknown gets a generic message (no internals leak).
-const MESSAGES: Record<string, string> = {
-  OUT_OF_STOCK: "Out of stock — someone may have just sold the last one.",
-  INVALID_QUANTITY: "Enter a quantity of at least 1.",
-  ITEM_NOT_FOUND: "That item no longer exists.",
-  ITEM_ARCHIVED: "That item has been removed from inventory.",
-  STORE_CLOSED: "This store is closed.",
-  NOT_STORE_MEMBER: "You are not assigned to this store.",
-  NOT_AUTHENTICATED: "Your session expired. Please sign in again.",
-  OWNER_ONLY: "Only the owner can do that.",
-  SALE_NOT_FOUND: "Sale not found.",
-  SALE_ALREADY_VOIDED: "That sale was already voided.",
-  EDIT_REQUIRES_APPROVAL: "Setup is finished for this store — edits need owner approval.",
-  STOCK_REMOVAL_REQUIRES_APPROVAL: "Removing stock needs owner approval.",
-  ARCHIVE_REQUIRES_APPROVAL: "Removing an item needs owner approval.",
-  REQUEST_ALREADY_PENDING: "There is already a pending request for this.",
-  ALREADY_DECIDED: "That request was already handled.",
-  ALREADY_CLOCKED_IN: "You are already clocked in.",
-  NOT_CLOCKED_IN: "You are not clocked in.",
-  NO_CHANGES: "Nothing changed.",
-  CANNOT_DEACTIVATE_OWNER: "The owner account can't be deactivated.",
-  EMAIL_TAKEN: "A user with this email already exists.",
-  VARIANT_EXISTS: "This product already has that size and color. Use “Add stock” on it instead.",
-  items_variant_unique: "This product already has that size and color. Use “Add stock” on it instead.",
-  INVALID_CREDENTIALS: "Invalid email or password.",
-  ACCOUNT_INACTIVE: "This account has been deactivated.",
-  NOT_FOUND: "Not found. It may have been removed.",
-};
+// Maps the stable error codes raised by our Postgres functions/triggers (and
+// the browser demo) to translated, user-facing text. Anything unknown gets a
+// generic message (no internals leak).
+export type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+const CODES = [
+  "OUT_OF_STOCK", "INVALID_QUANTITY", "ITEM_NOT_FOUND", "ITEM_ARCHIVED", "STORE_CLOSED", "NOT_STORE_MEMBER",
+  "NOT_AUTHENTICATED", "OWNER_ONLY", "SALE_NOT_FOUND", "SALE_ALREADY_VOIDED", "EDIT_REQUIRES_APPROVAL",
+  "STOCK_REMOVAL_REQUIRES_APPROVAL", "ARCHIVE_REQUIRES_APPROVAL", "REQUEST_ALREADY_PENDING", "ALREADY_DECIDED",
+  "ALREADY_CLOCKED_IN", "NOT_CLOCKED_IN", "NO_CHANGES", "CANNOT_DEACTIVATE_OWNER", "EMAIL_TAKEN", "VARIANT_EXISTS",
+  "INVALID_CREDENTIALS", "ACCOUNT_INACTIVE", "INVALID_PAYMENT", "NOT_FOUND",
+] as const;
 
 type PgLikeError = { message?: string; code?: string; details?: string | null } | null | undefined;
 
-export function friendlyError(err: PgLikeError, fallback = "Something went wrong. Please try again."): string {
-  if (!err) return fallback;
+export function friendlyError(err: PgLikeError, tr: Translate): string {
+  if (!err) return tr("errors.generic");
   const msg = err.message ?? "";
-  for (const key of Object.keys(MESSAGES)) {
-    if (msg.includes(key)) {
-      if (key === "OUT_OF_STOCK" && err.details) return `Out of stock: ${err.details.toLowerCase()}.`;
-      return MESSAGES[key];
-    }
+  if (msg.includes("items_variant_unique")) return tr("errors.VARIANT_EXISTS");
+  for (const code of CODES) {
+    if (msg.includes(code)) return tr(`errors.${code}`);
   }
-  if (err.code === "23505") return "That already exists (duplicate SKU or entry).";
-  if (err.code === "42501") return "You don't have permission to do that.";
-  if (err.code === "23514") return "Some values are not allowed. Check the form.";
+  if (err.code === "23505") return tr("errors.duplicate");
+  if (err.code === "42501") return tr("errors.forbidden");
+  if (err.code === "23514") return tr("errors.invalidValues");
   console.error("Unmapped DB error", err);
-  return fallback;
+  return tr("errors.generic");
 }

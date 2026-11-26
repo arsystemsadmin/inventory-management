@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "@/components/ui/sonner";
+import { I18nProvider } from "@/i18n/client";
+import { getLang, getT } from "@/i18n/server";
+import { dirOf } from "@/i18n/settings";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Binventory",
-  description: "Inventory for pop-up and permanent stores",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return { title: "Binventory", description: t("meta.description") };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -14,12 +17,15 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const lang = await getLang();
   return (
-    <html lang="en">
+    <html lang={lang} dir={dirOf(lang)}>
       <body>
-        {children}
-        <Toaster />
+        <I18nProvider lang={lang}>
+          {children}
+          <Toaster />
+        </I18nProvider>
       </body>
     </html>
   );

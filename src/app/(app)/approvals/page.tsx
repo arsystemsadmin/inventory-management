@@ -4,8 +4,12 @@ import { isDemoMode } from "@/lib/mode";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoApprovalsPage } from "@/components/demo/demo-pages";
 import { ApprovalsView, type ApprovalReq } from "@/components/views/approvals-view";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Approvals · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.approvals")} · Binventory` };
+}
 
 export default async function ApprovalsPage() {
   if (isDemoMode) return <DemoApprovalsPage />;

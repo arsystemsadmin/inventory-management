@@ -19,6 +19,7 @@ import { ProductEditDialog } from "./product-edit-dialog";
 import { QuantityDialog } from "./quantity-dialog";
 import { SizePhotoButton } from "./photo-field";
 import { useActions } from "@/lib/actions-context";
+import { useT } from "@/i18n/client";
 
 export type InventoryStore = { id: string; business_id: string; name: string; inventory_locked_at: string | null; status: string };
 
@@ -55,6 +56,7 @@ export function InventoryView({
   // While searching or filtering by stock, show what matched.
   const autoOpen = q.trim() !== "" || status !== "";
   const actions = useActions();
+  const t = useT();
 
   const isOwner = role === "owner";
   const storeById = useMemo(() => new Map(stores.map((s) => [s.id, s])), [stores]);
@@ -112,15 +114,15 @@ export function InventoryView({
       const res = await actions.saveItemEdit({ itemId: v.id, changes: { variant_image_path: path } });
       if (!res.ok) { toast.error(res.error); return; }
     }
-    toast.success(path ? `Photo saved for size ${size ?? "(no size)"}` : `Photo removed for size ${size ?? "(no size)"}`);
+    toast.success(path ? t("inventory.sizePhotoSaved", { size: size ?? t("common.noSize") }) : t("inventory.sizePhotoRemoved", { size: size ?? t("common.noSize") }));
   };
 
   // A variation photo belongs to one size + color only.
   const setVariationPhoto = async (v: Item, path: string | null) => {
     const res = await actions.saveItemEdit({ itemId: v.id, changes: { variation_image_path: path } });
     if (!res.ok) { toast.error(res.error); return; }
-    const label = [v.size, v.color].filter(Boolean).join(" · ") || "this variation";
-    toast.success(path ? `Photo saved for ${label}` : `Photo removed for ${label}`);
+    const label = [v.size, v.color].filter(Boolean).join(" · ") || t("inventory.thisVariation");
+    toast.success(path ? t("inventory.photoSaved", { label }) : t("inventory.photoRemoved", { label }));
   };
 
   const startSale = (p: Product) => {
@@ -135,36 +137,36 @@ export function InventoryView({
         <button
           type="button"
           onClick={() => setStatus(status === "ALERTS" ? "" : "ALERTS")}
-          className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-left text-sm text-amber-900"
+          className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 text-start text-sm text-amber-900"
         >
           <AlertTriangle className="size-5 shrink-0 text-amber-600" />
           <span className="flex-1">
-            <b>{alerts} variation{alerts > 1 ? "s" : ""} need restocking</b>
-            {" — "}{counts.OUT} out, {counts.CRITICAL} critical, {counts.LOW} low.
+            <b>{t("inventory.needRestocking", { count: alerts })}</b>
+            {" — "}{t("inventory.alertBreakdown", { out: counts.OUT, critical: counts.CRITICAL, low: counts.LOW })}
           </span>
-          <span className="underline shrink-0">{status === "ALERTS" ? "Show all" : "Show"}</span>
+          <span className="underline shrink-0">{status === "ALERTS" ? t("inventory.showAll") : t("inventory.show")}</span>
         </button>
       )}
 
       <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto] sm:items-center">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search product, size, color, SKU…" className="pl-9" />
+          <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("inventory.searchPlaceholder")} className="ps-9" />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
           {!fixedStoreId && stores.length > 1 && (
-            <NativeSelect value={storeId} onChange={(e) => setStoreId(e.target.value)} aria-label="Store" className="sm:w-48">
-              <option value="">All stores</option>
+            <NativeSelect value={storeId} onChange={(e) => setStoreId(e.target.value)} aria-label={t("dashboard.store")} className="sm:w-48">
+              <option value="">{t("common.allStores")}</option>
               {stores.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </NativeSelect>
           )}
-          <NativeSelect value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Category" className="sm:w-40">
-            <option value="">All categories</option>
+          <NativeSelect value={category} onChange={(e) => setCategory(e.target.value)} aria-label={t("fields.category")} className="sm:w-40">
+            <option value="">{t("inventory.allCategories")}</option>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </NativeSelect>
         </div>
         {editableStores.length > 0 && (
-          <Button size="lg" onClick={() => setAdding(true)}><Plus /> Add product</Button>
+          <Button size="lg" onClick={() => setAdding(true)}><Plus /> {t("inventory.addProduct")}</Button>
         )}
       </div>
 
@@ -179,20 +181,20 @@ export function InventoryView({
               status === s ? "bg-foreground text-background border-foreground" : "bg-background",
             )}
           >
-            {s === "" ? `All (${totalProducts})` : `${s[0]}${s.slice(1).toLowerCase()} (${counts[s]})`}
+            {s === "" ? `${t("inventory.all")} (${totalProducts})` : `${t(`stock.${s}`)} (${counts[s]})`}
           </button>
         ))}
         {isOwner && (
           <button type="button" onClick={() => setShowArchived((v) => !v)}
             className={cn("shrink-0 rounded-full border px-3 py-1.5 text-sm", showArchived && "bg-muted font-medium")}>
-            {showArchived ? "Showing removed" : "Removed items"}
+            {showArchived ? t("inventory.showingRemoved") : t("inventory.removedItems")}
           </button>
         )}
       </div>
 
       {products.length === 0 ? (
         <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          {items.length === 0 ? "No products yet. Tap “Add product” to start building this inventory." : "Nothing matches these filters."}
+          {items.length === 0 ? t("inventory.empty") : t("inventory.noMatch")}
         </div>
       ) : (
         <ul className="grid gap-3">
@@ -203,7 +205,7 @@ export function InventoryView({
             const isOpen = autoOpen || expanded.has(p.key);
             // Collapsed summary: one chip per size (red = sold out, amber = running low).
             const sizeSummary = bySize(p.variants).map((g) => ({
-              label: g.size ?? "One size",
+              label: g.size ?? t("inventory.oneSize"),
               qty: g.variants.reduce((n, v) => n + v.quantity, 0),
               warn: g.variants.some((v) => v.stock_status !== "OK"),
             }));
@@ -214,8 +216,8 @@ export function InventoryView({
                     type="button"
                     onClick={() => toggle(p.key)}
                     aria-expanded={isOpen}
-                    aria-label={`${isOpen ? "Hide" : "Show"} sizes and colors for ${p.name}`}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    aria-label={isOpen ? t("inventory.hideVariations", { name: p.name }) : t("inventory.showVariations", { name: p.name })}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-start"
                   >
                   <ItemThumb path={p.image_path} alt={p.name} className="size-14" />
                   <div className="min-w-0 flex-1">
@@ -229,7 +231,7 @@ export function InventoryView({
                     </div>
                     <div className="mt-0.5 text-sm">
                       <span className="font-semibold">{price}</span>
-                      <span className="ml-2 text-muted-foreground">{p.quantity} in stock</span>
+                      <span className="ms-2 text-muted-foreground">{t("sell.inStock", { count: p.quantity })}</span>
                     </div>
                     {!isOpen && (
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -248,7 +250,7 @@ export function InventoryView({
                   </button>
                   {!showArchived && (
                     <Button size="lg" variant="success" className="min-w-20" disabled={p.quantity === 0 || closed} onClick={() => startSale(p)}>
-                      Sell
+                      {t("inventory.sell")}
                     </Button>
                   )}
                 </div>
@@ -271,18 +273,18 @@ export function InventoryView({
                               className="size-9"
                             />
                           ) : null}
-                          <span className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.size ?? "No size"}</span>
+                          <span className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.size ?? t("common.noSize")}</span>
                           <span className="text-xs text-muted-foreground">
-                            {g.variants.length} color{g.variants.length === 1 ? "" : "s"} · {total} in stock
+                            {t("inventory.colors", { count: g.variants.length })} · {t("sell.inStock", { count: total })}
                           </span>
                         </div>
                         <ul className="pb-1">
                           {g.variants.map((v) => (
-                            <li key={v.id} className="flex items-center gap-2 py-1 pl-3 pr-1 sm:pl-14">
+                            <li key={v.id} className="flex items-center gap-2 py-1 ps-3 pe-1 sm:ps-14">
                               {!showArchived && (
                                 <SizePhotoButton
                                   value={v.variation_image_path}
-                                  label={[g.size, v.color].filter(Boolean).join(" ") || "this variation"}
+                                  label={[g.size, v.color].filter(Boolean).join(" ") || t("inventory.thisVariation")}
                                   businessId={v.business_id}
                                   storeId={v.store_id}
                                   onChange={(path) => setVariationPhoto(v, path)}
@@ -290,26 +292,26 @@ export function InventoryView({
                                 />
                               )}
                               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
-                                <span className="truncate font-medium">{v.color ?? "No color"}</span>
+                                <span className="truncate font-medium">{v.color ?? t("common.noColor")}</span>
                                 {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
                               </div>
                               {showArchived ? (
-                                <span className="w-20 text-right text-sm tabular-nums">{v.quantity} left</span>
+                                <span className="w-20 text-end text-sm tabular-nums">{t("common.left", { count: v.quantity })}</span>
                               ) : (
                                 <button
                                   type="button"
                                   onClick={() => setSettingQty(v)}
-                                  aria-label={`Set quantity for ${g.size ?? ""} ${v.color ?? ""}`}
+                                  aria-label={t("inventory.setQuantityFor", { label: `${g.size ?? ""} ${v.color ?? ""}`.trim() })}
                                   className={cn(
                                     "h-9 min-w-20 rounded-md border bg-background px-2 text-sm font-semibold tabular-nums hover:bg-muted",
                                     v.stock_status !== "OK" && "text-orange-700", v.quantity === 0 && "text-red-700",
                                   )}
                                 >
-                                  {v.quantity} left
+                                  {t("common.left", { count: v.quantity })}
                                 </button>
                               )}
                               <StockBadge status={v.stock_status} className="w-16 justify-center" />
-                              <Button variant="ghost" size="icon-lg" aria-label={`Actions for ${p.name} ${g.size ?? ""} ${v.color ?? ""}`} onClick={() => setActing(v)}>
+                              <Button variant="ghost" size="icon-lg" aria-label={t("inventory.actionsFor", { label: `${p.name} ${g.size ?? ""} ${v.color ?? ""}`.trim() })} onClick={() => setActing(v)}>
                                 <MoreHorizontal />
                               </Button>
                             </li>
@@ -322,8 +324,8 @@ export function InventoryView({
 
                 {!showArchived && !closed && (
                   <div className="flex gap-2 border-t px-3 py-2">
-                    <Button variant="outline" size="sm" onClick={() => setAddingTo(p)}><Plus /> Add variation</Button>
-                    <Button variant="ghost" size="sm" onClick={() => setEditingProduct(p)}><Pencil /> Edit product</Button>
+                    <Button variant="outline" size="sm" onClick={() => setAddingTo(p)}><Plus /> {t("inventory.addVariation")}</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingProduct(p)}><Pencil /> {t("inventory.editProduct")}</Button>
                   </div>
                 )}
                 </>)}

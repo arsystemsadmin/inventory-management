@@ -1,8 +1,13 @@
 import { LoginForm } from "./login-form";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Sign in · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("auth.signIn")} · Binventory` };
+}
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
   const { next, error } = await searchParams;
-  return <LoginForm next={next} notice={error === "inactive" ? "Your account is deactivated. Ask the owner." : error === "link" ? "That link has expired or was already used. Sign in, or sign up again." : undefined} />;
+  const t = await getT();
+  return <LoginForm next={next} notice={error === "inactive" ? t("auth.deactivated") : error === "link" ? t("auth.linkExpired") : undefined} />;
 }

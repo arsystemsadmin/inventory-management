@@ -5,8 +5,12 @@ import { InventoryView } from "@/components/inventory/inventory-view";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DemoInventoryPage } from "@/components/demo/demo-pages";
 import { STOCK_STATUSES, type StockStatus } from "@/lib/types";
+import { getT } from "@/i18n/server";
 
-export const metadata = { title: "Inventory · Binventory" };
+export async function generateMetadata() {
+  const t = await getT();
+  return { title: `${t("nav.inventory")} · Binventory` };
+}
 
 export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const { status } = await searchParams;

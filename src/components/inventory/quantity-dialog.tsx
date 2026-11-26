@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Textarea } from "@/components/ui/textarea";
 import { variantLabel } from "@/lib/format";
 import type { Item } from "@/lib/types";
+import { useT } from "@/i18n/client";
 
 /**
  * Set the stock for one variation (one color of one size). Increases are
@@ -19,6 +20,7 @@ export function QuantityDialog({ item, onClose, needsApproval }: { item: Item | 
   const actions = useActions();
   const [qty, setQty] = useState(0);
   const [reason, setReason] = useState("");
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function QuantityDialog({ item, onClose, needsApproval }: { item: Item | 
   if (!item) return null;
 
   const delta = qty - item.quantity;
-  const label = variantLabel(item.size, item.color) || "Standard";
+  const label = variantLabel(item.size, item.color) || t("common.standard");
 
   const save = () => startTransition(async () => {
     if (delta === 0) { onClose(); return; }
@@ -45,14 +47,14 @@ export function QuantityDialog({ item, onClose, needsApproval }: { item: Item | 
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{item.name} · {label}</DialogTitle>
-          <DialogDescription>Currently {item.quantity} in stock. Set the new quantity.</DialogDescription>
+          <DialogDescription>{t("qty.currently", { count: item.quantity })}</DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-center gap-4">
-          <Button type="button" variant="outline" size="icon-lg" aria-label="Decrease" disabled={qty <= 0}
+          <Button type="button" variant="outline" size="icon-lg" aria-label={t("common.decrease")} disabled={qty <= 0}
             onClick={() => setQty((q) => Math.max(0, q - 1))}><Minus /></Button>
           <input
             inputMode="numeric"
-            aria-label="New quantity"
+            aria-label={t("qty.newQuantity")}
             className="h-14 w-24 rounded-md border text-center text-2xl font-bold"
             value={qty}
             onChange={(e) => {
@@ -60,16 +62,16 @@ export function QuantityDialog({ item, onClose, needsApproval }: { item: Item | 
               setQty(Number.isFinite(n) ? Math.min(100000, n) : 0);
             }}
           />
-          <Button type="button" variant="outline" size="icon-lg" aria-label="Increase" onClick={() => setQty((q) => q + 1)}><Plus /></Button>
+          <Button type="button" variant="outline" size="icon-lg" aria-label={t("common.increase")} onClick={() => setQty((q) => q + 1)}><Plus /></Button>
         </div>
         <p className="text-center text-sm text-muted-foreground">
-          {delta === 0 ? "No change" : delta > 0 ? `Adds ${delta} to stock` : `Removes ${-delta} from stock${needsApproval ? " (needs owner approval)" : ""}`}
+          {delta === 0 ? t("qty.noChange") : delta > 0 ? t("qty.adds", { count: delta }) : `${t("qty.removes", { count: -delta })}${needsApproval ? ` ${t("qty.needsOwnerApproval")}` : ""}`}
         </p>
         {delta < 0 && needsApproval && (
-          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder="Reason (e.g. damaged, miscounted)" />
+          <Textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} placeholder={t("qty.reasonPlaceholder")} />
         )}
         <Button size="lg" disabled={pending || delta === 0} onClick={save}>
-          {pending ? "Saving…" : delta < 0 && needsApproval ? "Request approval" : "Save quantity"}
+          {pending ? t("common.saving") : delta < 0 && needsApproval ? t("common.requestApproval") : t("qty.save")}
         </Button>
       </DialogContent>
     </Dialog>

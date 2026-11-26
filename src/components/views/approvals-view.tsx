@@ -1,6 +1,9 @@
+"use client";
+
 import { LocalTime } from "@/components/local-time";
 import { ApprovalActions } from "@/components/sales/approval-actions";
 import { formatMoney, variantLabel } from "@/lib/format";
+import { useT } from "@/i18n/client";
 
 export type ApprovalReq = {
   id: string; kind: "archive_item" | "void_sale" | "edit_item"; status: "pending" | "approved" | "rejected";
@@ -11,15 +14,16 @@ export type ApprovalReq = {
 type ItemLite = { id: string; name: string; size: string | null; color: string | null; quantity: number } & Record<string, unknown>;
 type SaleLite = { id: string; item_name: string; size: string | null; color: string | null; quantity: number; total_cents: number };
 
-const FIELD_LABELS: Record<string, string> = {
-  name: "Name", sku: "SKU", category: "Category", size: "Size", color: "Color",
-  price_cents: "Price", cost_cents: "Cost", low_stock_threshold: "Low-stock alert", quantity_delta: "Remove stock",
-};
+const FIELD_LABELS = {
+  name: "fields.name", sku: "fields.sku", category: "fields.category", size: "fields.size", color: "fields.color",
+  price_cents: "fields.price", cost_cents: "fields.cost", low_stock_threshold: "fields.lowStockAlert", quantity_delta: "fields.removeStock",
+  image_path: "fields.photo", variant_image_path: "fields.photo", variation_image_path: "fields.photo",
+} as const;
 
-function fmtField(k: string, v: unknown) {
+function fmtField(k: string, v: unknown, units: (n: number) => string) {
   if (v === null || v === undefined || v === "") return "—";
   if (k.endsWith("_cents")) return formatMoney(Number(v));
-  if (k === "quantity_delta") return `${-Number(v)} units`;
+  if (k === "quantity_delta") return units(-Number(v));
   return String(v);
 }
 
@@ -29,6 +33,8 @@ export function ApprovalsView({
   reqs: ApprovalReq[]; items: ItemLite[]; sales: SaleLite[]; storeNames: Record<string, string>;
   peopleNames: Record<string, string>; isOwner: boolean;
 }) {
+  const t = useT();
+  const units = (n: number) => t("approvals.units", { count: n });
   const itemById = new Map(items.map((i) => [i.id, i]));
   const saleById = new Map(sales.map((s) => [s.id, s]));
   const sorted = [...reqs].sort((a, b) => b.requested_at.localeCompare(a.requested_at));
@@ -38,11 +44,11 @@ export function ApprovalsView({
   const describe = (r: ApprovalReq) => {
     if (r.kind === "void_sale") {
       const s = saleById.get(r.sale_id!);
-      return s ? `Void sale: ${s.quantity} × ${s.item_name}${variantLabel(s.size, s.color) ? ` (${variantLabel(s.size, s.color)})` : ""} · ${formatMoney(s.total_cents)}` : "Void sale";
+      return s ? t("approvals.voidSaleOf", { label: `${s.quantity} × ${s.item_name}${variantLabel(s.size, s.color) ? ` (${variantLabel(s.size, s.color)})` : ""} · ${formatMoney(s.total_cents)}` }) : t("approvals.voidSale");
     }
     const i = itemById.get(r.item_id!);
-    const name = i ? `${i.name}${variantLabel(i.size, i.color) ? ` (${variantLabel(i.size, i.color)})` : ""}` : "item";
-    return r.kind === "archive_item" ? `Remove item: ${name}` : `Edit ${name}`;
+    const name = i ? `${i.name}${variantLabel(i.size, i.color) ? ` (${variantLabel(i.size, i.color)})` : ""}` : t("approvals.item");
+    return r.kind === "archive_item" ? t("approvals.removeItem", { name }) : t("approvals.editItem", { name });
   };
 
   const card = (r: ApprovalReq, actions: boolean) => {
@@ -58,7 +64,7 @@ export function ApprovalsView({
           </div>
           {actions ? <ApprovalActions id={r.id} /> : (
             <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${r.status === "approved" ? "bg-emerald-100 text-emerald-800" : r.status === "rejected" ? "bg-red-100 text-red-800" : "bg-amber-100 text-amber-800"}`}>
-              {r.status}
+              {t(`approvals.status.${r.status}`)}
             </span>
           )}
         </div>
@@ -66,37 +72,37 @@ export function ApprovalsView({
           <ul className="grid gap-0.5 rounded-md bg-muted/60 px-3 py-2 text-sm">
             {Object.entries(r.changes).map(([k, v]) => (
               <li key={k}>
-                <span className="text-muted-foreground">{FIELD_LABELS[k] ?? k}:</span>{" "}
-                {k !== "quantity_delta" && i && <><span className="line-through">{fmtField(k, i[k])}</span> → </>}
-                <b>{fmtField(k, v)}</b>
-                {k === "quantity_delta" && i && <span className="text-muted-foreground"> (currently {i.quantity})</span>}
+                <span className="text-muted-foreground">{k in FIELD_LABELS ? t(FIELD_LABELS[k as keyof typeof FIELD_LABELS]) : k}:</span>{" "}
+                {k !== "quantity_delta" && i && <><span className="line-through">{fmtField(k, i[k], units)}</span> → </>}
+                <b>{fmtField(k, v, units)}</b>
+                {k === "quantity_delta" && i && <span className="text-muted-foreground"> ({t("approvals.currently", { count: i.quantity })})</span>}
               </li>
             ))}
           </ul>
         )}
         {r.reason && <p className="text-sm">“{r.reason}”</p>}
-        {r.decision_note && <p className="text-xs text-muted-foreground">Note: {r.decision_note}</p>}
+        {r.decision_note && <p className="text-xs text-muted-foreground">{t("approvals.note", { note: r.decision_note })}</p>}
       </li>
     );
   };
 
   return (
     <div className="grid gap-4">
-      <h1 className="text-2xl font-semibold">{isOwner ? "Approvals" : "My requests"}</h1>
+      <h1 className="text-2xl font-semibold">{isOwner ? t("nav.approvals") : t("approvals.myRequests")}</h1>
       <p className="text-sm text-muted-foreground">
         {isOwner
-          ? "Employees need your OK to remove items, remove stock or edit items after setup, and to void sales."
-          : "Removing items, voiding sales, and edits after setup go to the owner for approval."}
+          ? t("approvals.introOwner")
+          : t("approvals.introEmployee")}
       </p>
       <section className="grid gap-2">
-        <h2 className="font-semibold">Pending ({pending.length})</h2>
-        {pending.length === 0 ? <p className="text-sm text-muted-foreground">Nothing waiting.</p> : (
+        <h2 className="font-semibold">{t("approvals.pending", { count: pending.length })}</h2>
+        {pending.length === 0 ? <p className="text-sm text-muted-foreground">{t("approvals.nothing")}</p> : (
           <ul className="divide-y rounded-lg border bg-card">{pending.map((r) => card(r, isOwner))}</ul>
         )}
       </section>
       {done.length > 0 && (
         <section className="grid gap-2">
-          <h2 className="font-semibold">History</h2>
+          <h2 className="font-semibold">{t("approvals.history")}</h2>
           <ul className="divide-y rounded-lg border bg-card">{done.map((r) => card(r, false))}</ul>
         </section>
       )}

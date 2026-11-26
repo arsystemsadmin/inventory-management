@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { getTr } from "@/i18n/server";
 
 const KEY_NAMES = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"];
 
@@ -53,9 +54,6 @@ export async function createAdminClient() {
 }
 
 export async function adminKeyMissingMessage() {
-  const seen = await visibleSupabaseSettingNames();
-  return "Employee accounts can't be managed yet: the running app can't see the secret key. " +
-    "In Cloudflare: Worker → Settings → Variables and Secrets (not the Build section), add a Secret named " +
-    "SUPABASE_SERVICE_ROLE_KEY with your Supabase sb_secret_… key, then redeploy. " +
-    `Settings the app can see right now: ${seen.length ? seen.join(", ") : "none"}.`;
+  const [seen, tr] = await Promise.all([visibleSupabaseSettingNames(), getTr()]);
+  return tr("errors.adminKeyMissing", { names: seen.length ? seen.join(", ") : tr("errors.none") });
 }

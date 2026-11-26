@@ -3,13 +3,13 @@ import { z } from "zod";
 // Shared by the server actions (Supabase) and the browser demo backend.
 
 export const uuid = z.string().uuid();
-export const qty = z.coerce.number().int().min(1, "Quantity must be at least 1").max(10000);
+export const qty = z.coerce.number().int().min(1, "validation.qtyMin").max(10000);
 const optText = (max: number) =>
   z.string().trim().max(max).optional().nullable().transform((v) => (v ? v : null));
 const cents = z.coerce.number().int().min(0).max(100_000_000);
 
 export const itemFields = z.object({
-  name: z.string().trim().min(1, "Name is required").max(200),
+  name: z.string().trim().min(1, "validation.nameRequired").max(200),
   sku: optText(64),
   category: optText(100),
   size: optText(40),
@@ -32,13 +32,13 @@ export const newItemSchema = itemFields.extend({
 });
 
 /** Several variants at once (e.g. one product in many sizes). */
-export const newItemsSchema = z.array(newItemSchema).min(1, "Add at least one size").max(60, "Too many sizes at once");
+export const newItemsSchema = z.array(newItemSchema).min(1, "validation.atLeastOneSize").max(60, "validation.tooManySizes");
 
-const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick a date");
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "validation.pickDate");
 
 export const storeSchema = z
   .object({
-    name: z.string().trim().min(1, "Name is required").max(200),
+    name: z.string().trim().min(1, "validation.nameRequired").max(200),
     type: z.enum(["popup", "permanent"]),
     address: z.string().trim().max(300).optional().transform((v) => v || null),
     starts_on: date.optional().or(z.literal("")),
@@ -47,8 +47,8 @@ export const storeSchema = z
   })
   .superRefine((v, ctx) => {
     if (v.type === "popup") {
-      if (!v.starts_on || !v.ends_on) ctx.addIssue({ code: "custom", message: "Pop-ups need start and end dates" });
-      else if (v.ends_on < v.starts_on) ctx.addIssue({ code: "custom", message: "End date must be after start date" });
+      if (!v.starts_on || !v.ends_on) ctx.addIssue({ code: "custom", message: "validation.popupDates" });
+      else if (v.ends_on < v.starts_on) ctx.addIssue({ code: "custom", message: "validation.endAfterStart" });
     }
   });
 
@@ -68,9 +68,9 @@ export function storeToRow(v: z.infer<typeof storeSchema>) {
 const rateCents = z.coerce.number().int().min(0).max(100_000);
 
 export const createEmployeeSchema = z.object({
-  full_name: z.string().trim().min(1, "Name is required").max(200),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  password: z.string().min(8, "Temporary password must be at least 8 characters").max(72),
+  full_name: z.string().trim().min(1, "validation.nameRequired").max(200),
+  email: z.string().trim().toLowerCase().email("validation.email"),
+  password: z.string().min(8, "validation.tempPassword").max(72),
   hourly_rate_cents: rateCents,
   store_ids: z.array(uuid).max(200).default([]),
 });
@@ -90,17 +90,17 @@ export const timeEntrySchema = z.object({
   clock_out: z.string().datetime({ offset: true }).nullable(),
   hourly_rate_cents_snapshot: z.coerce.number().int().min(0).max(100_000),
   note: z.string().trim().max(500).optional().transform((v) => v || null),
-}).refine((v) => !v.clock_out || v.clock_out > v.clock_in, { message: "Clock-out must be after clock-in" });
+}).refine((v) => !v.clock_out || v.clock_out > v.clock_in, { message: "validation.clockOrder" });
 
 export const loginSchema = z.object({
-  email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(1, "Enter your password"),
+  email: z.string().trim().email("validation.email"),
+  password: z.string().min(1, "validation.password"),
   next: z.string().optional(),
 });
 
 export const signupSchema = z.object({
-  business_name: z.string().trim().min(1, "Business name is required").max(200),
-  full_name: z.string().trim().min(1, "Your name is required").max(200),
-  email: z.string().trim().email("Enter a valid email"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  business_name: z.string().trim().min(1, "validation.businessName").max(200),
+  full_name: z.string().trim().min(1, "validation.yourName").max(200),
+  email: z.string().trim().email("validation.email"),
+  password: z.string().min(8, "validation.passwordLength").max(72),
 });

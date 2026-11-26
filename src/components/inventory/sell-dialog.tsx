@@ -11,6 +11,7 @@ import { ItemThumb } from "./item-thumb";
 import { cn } from "@/lib/utils";
 import { formatMoney, STOCK_ORDER, variantLabel } from "@/lib/format";
 import type { Item } from "@/lib/types";
+import { useT } from "@/i18n/client";
 
 /**
  * Fast sale confirmation: pick the variant (size/color), the quantity, confirm.
@@ -21,6 +22,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
   const [qty, setQty] = useState(1);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
+  const t = useT();
 
   useEffect(() => {
     if (item) { setSelectedId(item.id); setQty(1); }
@@ -49,13 +51,14 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
       if (!res.ok) { toast.error(res.error); return; }
       const r = res.data!;
       const v = variantLabel(r.size, r.color);
-      toast.success(`Sold ${r.quantity_sold} × ${r.item_name}${v ? ` (${v})` : ""}`, {
-        description: `${formatMoney(r.total_cents)} · ${r.quantity_after} left`,
+      toast.success(t("sell.sold", { label: `${r.quantity_sold} × ${r.item_name}${v ? ` (${v})` : ""}` }), {
+        description: `${formatMoney(r.total_cents)} · ${t("common.left", { count: r.quantity_after })}`,
       });
       if (r.status_after !== "OK" && STOCK_ORDER[r.status_after] < STOCK_ORDER[r.status_before]) {
-        const msg = r.status_after === "OUT" ? "is now OUT of stock" : r.status_after === "CRITICAL" ? "is critically low" : "is running low";
-        toast.warning(`${r.item_name}${v ? ` (${v})` : ""} ${msg}`, {
-          description: r.status_after === "OUT" ? "Ask the owner to bring more." : `${r.quantity_after} left`,
+        const name = `${r.item_name}${v ? ` (${v})` : ""}`;
+        const msg = r.status_after === "OUT" ? t("sell.nowOut", { name }) : r.status_after === "CRITICAL" ? t("sell.nowCritical", { name }) : t("sell.nowLow", { name });
+        toast.warning(msg, {
+          description: r.status_after === "OUT" ? t("sell.askOwner") : t("common.left", { count: r.quantity_after }),
           duration: 8000,
         });
       }
@@ -77,14 +80,14 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
           <ItemThumb path={selected.variation_image_path ?? selected.variant_image_path ?? selected.image_path ?? variants.find((v) => v.image_path)?.image_path}
             alt={selected.name} className="size-16" />
           <div className="grid gap-1.5">
-            <DialogTitle>Sell {selected.name}</DialogTitle>
-            <DialogDescription>{formatMoney(selected.price_cents)} each</DialogDescription>
+            <DialogTitle>{t("sell.title", { name: selected.name })}</DialogTitle>
+            <DialogDescription>{t("sales.each", { price: formatMoney(selected.price_cents) })}</DialogDescription>
           </div>
         </DialogHeader>
 
         {sizes.some(Boolean) && (
           <div className="grid gap-2">
-            <div className="text-sm font-medium">Size</div>
+            <div className="text-sm font-medium">{t("fields.size")}</div>
             <div className="flex flex-wrap gap-2">
               {sizes.map((s) => {
                 const any = variants.filter((v) => (v.size ?? "") === s);
@@ -101,7 +104,7 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
         )}
         {colors.some(Boolean) && (
           <div className="grid gap-2">
-            <div className="text-sm font-medium">Color</div>
+            <div className="text-sm font-medium">{t("fields.color")}</div>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => {
                 const match = variants.find((v) => (v.size ?? "") === (selected.size ?? "") && (v.color ?? "") === c);
@@ -118,17 +121,17 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
         )}
 
         <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 text-sm">
-          <span>{variantLabel(selected.size, selected.color) || "Standard"} · <b>{max}</b> in stock</span>
+          <span>{variantLabel(selected.size, selected.color) || t("common.standard")} · {t("sell.inStock", { count: max })}</span>
           <StockBadge status={selected.stock_status} />
         </div>
 
         <div className="grid gap-2">
-          <div className="text-sm font-medium">Quantity</div>
+          <div className="text-sm font-medium">{t("fields.quantity")}</div>
           <div className="flex items-center gap-3">
-            <Button type="button" variant="outline" size="icon-lg" aria-label="Decrease"
+            <Button type="button" variant="outline" size="icon-lg" aria-label={t("common.decrease")}
               disabled={qty <= 1} onClick={() => setQty((q) => Math.max(1, q - 1))}><Minus /></Button>
             <input
-              inputMode="numeric" aria-label="Quantity"
+              inputMode="numeric" aria-label={t("fields.quantity")}
               className="h-12 w-20 rounded-md border text-center text-xl font-semibold"
               value={qty}
               onChange={(e) => {
@@ -136,17 +139,17 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
                 setQty(Number.isFinite(n) ? Math.max(1, n) : 1);
               }}
             />
-            <Button type="button" variant="outline" size="icon-lg" aria-label="Increase"
+            <Button type="button" variant="outline" size="icon-lg" aria-label={t("common.increase")}
               disabled={qty >= max} onClick={() => setQty((q) => Math.min(max, q + 1))}><Plus /></Button>
-            <div className="ml-auto text-right">
-              <div className="text-xs text-muted-foreground">Total</div>
+            <div className="ms-auto text-end">
+              <div className="text-xs text-muted-foreground">{t("common.total")}</div>
               <div className="text-xl font-bold">{formatMoney(qty * selected.price_cents)}</div>
             </div>
           </div>
         </div>
 
         <Button size="xl" variant="success" disabled={pending || max === 0 || qty > max} onClick={confirm}>
-          {max === 0 ? "Out of stock" : pending ? "Selling…" : `Confirm sale · ${qty} × ${variantLabel(selected.size, selected.color) || selected.name}`}
+          {max === 0 ? t("sell.outOfStock") : pending ? t("sell.selling") : t("sell.confirm", { label: `${qty} × ${variantLabel(selected.size, selected.color) || selected.name}` })}
         </Button>
       </DialogContent>
     </Dialog>

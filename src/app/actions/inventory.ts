@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
-import type { ActionResult, PaymentInput, SellResult } from "@/lib/types";
+import type { ActionResult, AddVariationsResult, PaymentInput, SellResult } from "@/lib/types";
+import { variantLabel } from "@/lib/format";
 
 import { itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
@@ -67,7 +68,7 @@ async function createItemImpl(input: unknown): Promise<ActionResult> {
 }
 
 /** Creates several variants (e.g. one per size) in a single insert, so it's all-or-nothing. */
-async function createItemsImpl(input: unknown): Promise<ActionResult<number>> {
+async function createItemsImpl(input: unknown): Promise<ActionResult<AddVariationsResult>> {
   const tr = await getTr();
   const parsed = newItemsSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
@@ -75,13 +76,36 @@ async function createItemsImpl(input: unknown): Promise<ActionResult<number>> {
     return { ok: false, error: tr("errors.invalidPhoto") };
   }
   const supabase = await createClient();
+
+  // Skip size/color combinations the product already has (e.g. a retry after a
+  // save that did go through) instead of failing the whole batch. Same rule as
+  // the items_variant_unique index: store + name + size + color, case-insensitive.
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  const keyOf = (r: { store_id: string; name: string; size?: string | null; color?: string | null }) =>
+    [r.store_id, norm(r.name), norm(r.size), norm(r.color)].join("|");
+  const storeIds = [...new Set(parsed.data.map((r) => r.store_id))];
+  const { data: existing } = await supabase.from("items").select("store_id, name, size, color")
+    .in("store_id", storeIds).eq("archived", false);
+  const taken = new Set((existing ?? []).map(keyOf));
+  const fresh = parsed.data.filter((r) => !taken.has(keyOf(r)));
+  const skipped = parsed.data.filter((r) => taken.has(keyOf(r))).map((r) => variantLabel(r.size, r.color) || r.name);
+
+  if (fresh.length === 0) {
+    return { ok: false, error: tr("errors.allVariantsExist", { list: skipped.join(", ") }) };
+  }
   // Only send the variation photo when set, so inserts work even before the
   // variation_image_path column exists (migration 20261120000010).
-  const rows: Record<string, unknown>[] = parsed.data.map(({ variation_image_path, ...r }) => (variation_image_path ? { ...r, variation_image_path } : r));
+  const rows: Record<string, unknown>[] = fresh.map(({ variation_image_path, ...r }) => (variation_image_path ? { ...r, variation_image_path } : r));
   const { error } = await supabase.from("items").insert(rows);
   if (error) return { ok: false, error: friendlyError(error, tr) };
   revalidateInventory();
-  return { ok: true, data: parsed.data.length, message: `Added ${parsed.data.length} item${parsed.data.length === 1 ? "" : "s"}` };
+  return {
+    ok: true,
+    data: { added: fresh.length, skipped },
+    message: skipped.length
+      ? tr("toasts.addedSomeSkipped", { count: fresh.length, list: skipped.join(", ") })
+      : tr("toasts.itemsAdded", { count: fresh.length }),
+  };
 }
 
 async function saveItemEditImpl(input: { itemId: string; changes: unknown; reason?: string }): Promise<ActionResult<"applied" | "requested">> {

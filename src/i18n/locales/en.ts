@@ -104,6 +104,7 @@ const en = {
     sizes: "Sizes", sizesHint: "(tap each size you have)", priceLabel: "Price (₪)", costLabel: "Cost (₪)",
     alertAt: "Low-stock alert at", skuHint: "Size is added, e.g. LS-NVY-M", reasonForOwner: "Reason for the owner",
     reasonPlaceholder: "e.g. wrong price on tag", saveAndAddColor: "Save & add another color",
+    required: "Required", fillRequired: "Fill in the required fields (marked *).",
   },
   picker: {
     otherSize: "Other size (e.g. 32, One size)", customSize: "Custom size", header: "Photo (optional) and quantity per size",
@@ -202,6 +203,8 @@ const en = {
   toasts: {
     newSale: "New sale: {{label}}", itemAdded: "Item added",
     itemsAdded_one: "Added {{count}} item", itemsAdded_other: "Added {{count}} items",
+    addedSomeSkipped_one: "Added {{count}} variation · already existed: {{list}} (use Add stock)",
+    addedSomeSkipped_other: "Added {{count}} variations · already existed: {{list}} (use Add stock)",
     photoUpdated: "Photo updated", photoRemoved: "Photo removed", itemUpdated: "Item updated",
     editRequested: "Edit sent to the owner for approval", changesRequested: "Changes sent to the owner for approval",
     productUpdated: "Product updated",
@@ -247,6 +250,7 @@ const en = {
     banSkipped: "Saved, but sign-in access wasn't changed. {{reason}}", banFailed: "Saved, but could not update sign-in access: {{reason}}",
     adminKeyMissing: "Employee accounts can't be managed yet: the running app can't see the secret key. In Cloudflare: Worker → Settings → Variables and Secrets (not the Build section), add a Secret named SUPABASE_SERVICE_ROLE_KEY with your Supabase sb_secret_… key, then redeploy. Settings the app can see right now: {{names}}.",
     demoEmailTaken: "An account with this email already exists in this browser.",
+    allVariantsExist: "These variations already exist: {{list}}. Use “Add stock” on them instead.",
   },
   validation: {
     qtyMin: "Quantity must be at least 1", nameRequired: "Name is required", atLeastOneSize: "Add at least one size",

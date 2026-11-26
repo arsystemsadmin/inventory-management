@@ -112,6 +112,7 @@ const he = {
     sizes: "מידות", sizesHint: "(הקישו על כל מידה שיש לכם)", priceLabel: "מחיר (₪)", costLabel: "עלות (₪)",
     alertAt: "התראת מלאי נמוך ב-", skuHint: "המידה מתווספת, למשל LS-NVY-M", reasonForOwner: "סיבה לבעלים",
     reasonPlaceholder: "למשל: מחיר שגוי על התווית", saveAndAddColor: "שמירה והוספת צבע נוסף",
+    required: "שדה חובה", fillRequired: "מלאו את שדות החובה (מסומנים ב-*).",
   },
   picker: {
     otherSize: "מידה אחרת (למשל 32, מידה אחת)", customSize: "מידה מותאמת", header: "תמונה (לא חובה) וכמות לכל מידה",
@@ -212,6 +213,7 @@ const he = {
   toasts: {
     newSale: "מכירה חדשה: {{label}}", itemAdded: "הפריט נוסף",
     ...pl("itemsAdded", "נוסף פריט אחד", "נוספו {{count}} פריטים", "נוספו {{count}} פריטים"),
+    ...pl("addedSomeSkipped", "נוספה וריאציה אחת · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)", "נוספו {{count}} וריאציות · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)", "נוספו {{count}} וריאציות · כבר קיימות: {{list}} (השתמשו ב״הוספת מלאי״)"),
     photoUpdated: "התמונה עודכנה", photoRemoved: "התמונה הוסרה", itemUpdated: "הפריט עודכן",
     editRequested: "העריכה נשלחה לאישור הבעלים", changesRequested: "השינויים נשלחו לאישור הבעלים",
     productUpdated: "המוצר עודכן",
@@ -257,6 +259,7 @@ const he = {
     banSkipped: "נשמר, אבל הרשאת הכניסה לא שונתה. {{reason}}", banFailed: "נשמר, אבל לא ניתן לעדכן את הרשאת הכניסה: {{reason}}",
     adminKeyMissing: "אי אפשר לנהל חשבונות עובדים עדיין: האפליקציה לא רואה את המפתח הסודי. ב-Cloudflare: Worker → Settings → Variables and Secrets (לא בקטע Build), הוסיפו Secret בשם SUPABASE_SERVICE_ROLE_KEY עם מפתח ה-sb_secret_… של Supabase, ואז פרסו מחדש. הגדרות שהאפליקציה רואה כרגע: {{names}}.",
     demoEmailTaken: "כבר קיים חשבון עם האימייל הזה בדפדפן הזה.",
+    allVariantsExist: "הווריאציות האלה כבר קיימות: {{list}}. השתמשו ב״הוספת מלאי״ במקום.",
   },
   validation: {
     qtyMin: "הכמות חייבת להיות לפחות 1", nameRequired: "חובה להזין שם", atLeastOneSize: "הוסיפו לפחות מידה אחת",

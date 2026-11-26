@@ -44,6 +44,7 @@ export function ItemFormDialog({
   const [sizes, setSizes] = useState<SizeRow[]>([]);
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showErrors, setShowErrors] = useState(false);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const t = useT();
@@ -55,6 +56,7 @@ export function ItemFormDialog({
     if (!open) return;
     setReason("");
     setSizes([]);
+    setShowErrors(false);
     if (item) {
       setStoreId(item.store_id);
       setImagePath(item.image_path ?? null);
@@ -85,7 +87,23 @@ export function ItemFormDialog({
   const approval = mode === "edit" && needsApproval(item!.store_id);
   const businessId = item?.business_id ?? product?.variants[0].business_id ?? stores.find((x) => x.id === storeId)?.business_id;
 
+  // The details that matter for selling and stock: name, color, size(s), price.
+  const missing = {
+    name: mode === "new" && !f.name.trim(),
+    color: mode !== "edit" && !f.color.trim(),
+    sizes: mode !== "edit" && sizes.length === 0,
+    price: !f.price.trim(),
+  };
+  const req = <span className="text-destructive" aria-hidden> *</span>;
+  const errorFor = (k: keyof typeof missing) =>
+    showErrors && missing[k] ? <p className="text-xs font-medium text-destructive">{t("form.required")}</p> : null;
+
   const submit = (addAnother: boolean) => {
+    if (Object.values(missing).some(Boolean)) {
+      setShowErrors(true);
+      toast.error(t("form.fillRequired"));
+      return;
+    }
     const price = parseMoneyToCents(f.price || "0");
     const cost = parseMoneyToCents(f.cost || "0");
     if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error(t("form.priceFormat")); return; }
@@ -121,7 +139,9 @@ export function ItemFormDialog({
       const res = await actions.createItems(rows);
       if (!res.ok) { toast.error(res.error); return; }
       const color = f.color ? ` · ${f.color}` : "";
-      toast.success(sizes.length
+      // Some sizes already existed: say exactly which were skipped.
+      if (res.data?.skipped.length) toast.warning(res.message);
+      else toast.success(sizes.length
         ? t("form.addedSizes", { name: `${f.name}${color}`, count: sizes.length, sizes: sizes.map((r) => r.size).join(", ") })
         : t("form.added", { name: `${f.name}${color}` }));
       if (addAnother) {
@@ -163,8 +183,10 @@ export function ItemFormDialog({
           {mode === "new" && (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="name">{t("form.productName")}</Label>
-                <Input id="name" value={f.name} onChange={set("name")} required maxLength={200} placeholder={t("form.namePlaceholder")} />
+                <Label htmlFor="name">{t("form.productName")}{req}</Label>
+                <Input id="name" value={f.name} onChange={set("name")} required maxLength={200} placeholder={t("form.namePlaceholder")}
+                  aria-invalid={showErrors && missing.name} />
+                {errorFor("name")}
               </div>
               <PhotoField value={imagePath} onChange={setImagePath} businessId={businessId} storeId={storeId} onUploadingChange={setUploading} />
             </>
@@ -184,20 +206,25 @@ export function ItemFormDialog({
           ) : (
             <>
               <div className="grid gap-1.5">
-                <Label htmlFor="color">{t("fields.color")}</Label>
-                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder={t("form.colorPlaceholder")} />
+                <Label htmlFor="color">{t("fields.color")}{req}</Label>
+                <Input id="color" ref={colorRef} value={f.color} onChange={set("color")} maxLength={40} placeholder={t("form.colorPlaceholder")}
+                  aria-invalid={showErrors && missing.color} />
+                {errorFor("color")}
               </div>
               <div className="grid gap-1.5">
-                <Label>{t("form.sizes")} <span className="font-normal text-muted-foreground">{t("form.sizesHint")}</span></Label>
+                <Label>{t("form.sizes")}{req} <span className="font-normal text-muted-foreground">{t("form.sizesHint")}</span></Label>
                 <SizeQuantityPicker rows={sizes} onChange={setSizes} businessId={businessId} storeId={storeId} />
+                {errorFor("sizes")}
               </div>
             </>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="price">{t("form.priceLabel")}</Label>
-              <Input id="price" inputMode="decimal" value={f.price} onChange={set("price")} required placeholder="0.00" />
+              <Label htmlFor="price">{t("form.priceLabel")}{req}</Label>
+              <Input id="price" inputMode="decimal" value={f.price} onChange={set("price")} required placeholder="0.00"
+                aria-invalid={showErrors && missing.price} />
+              {errorFor("price")}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="cost">{t("form.costLabel")}</Label>
@@ -205,12 +232,6 @@ export function ItemFormDialog({
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            {mode !== "edit" && sizes.length === 0 && (
-              <div className="grid gap-1.5">
-                <Label htmlFor="quantity">{t("fields.quantity")}</Label>
-                <Input id="quantity" inputMode="numeric" value={f.quantity} onChange={set("quantity")} placeholder="0" />
-              </div>
-            )}
             <div className="grid gap-1.5">
               <Label htmlFor="threshold">{t("form.alertAt")}</Label>
               <Input id="threshold" inputMode="numeric" value={f.threshold} onChange={set("threshold")} />

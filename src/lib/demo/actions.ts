@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { friendlyError } from "@/lib/errors";
+import { variantLabel } from "@/lib/format";
 import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
@@ -43,9 +44,17 @@ export const demoActions: AppActions = {
   async createItems(input) {
     const p = newItemsSchema.safeParse(input);
     if (!p.success) return invalid(p.error);
+    // Skip size/color combinations that already exist (same rule as the database).
+    const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+    const keyOf = (r: { store_id: string; name: string; size?: string | null; color?: string | null }) =>
+      [r.store_id, norm(r.name), norm(r.size), norm(r.color)].join("|");
+    const taken = new Set(getState().items.filter((i) => !i.archived).map(keyOf));
+    const fresh = p.data.filter((r) => !taken.has(keyOf(r)));
+    const skipped = p.data.filter((r) => taken.has(keyOf(r))).map((r) => variantLabel(r.size, r.color) || r.name);
+    if (!fresh.length) return { ok: false, error: tr("errors.allVariantsExist", { list: skipped.join(", ") }) };
     // One commit: if any variant fails (e.g. duplicate SKU) nothing is saved.
-    return run(() => commit((s) => { p.data.forEach((row) => L.createItem(s, getUserId(), row)); return p.data.length; }),
-      tr("toasts.itemsAdded", { count: p.data.length }));
+    return run(() => commit((s) => { fresh.forEach((row) => L.createItem(s, getUserId(), row)); return { added: fresh.length, skipped }; }),
+      skipped.length ? tr("toasts.addedSomeSkipped", { count: fresh.length, list: skipped.join(", ") }) : tr("toasts.itemsAdded", { count: fresh.length }));
   },
   async saveItemEdit({ itemId, changes, reason }) {
     const p = itemFields.partial().safeParse(changes);

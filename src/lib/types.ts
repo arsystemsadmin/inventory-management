@@ -85,4 +85,7 @@ export type SellResult = {
   status_after: StockStatus;
 };
 
+/** Result of adding variations: duplicates of existing ones are skipped, not errors. */
+export type AddVariationsResult = { added: number; skipped: string[] };
+
 export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string } | { ok: false; error: string };

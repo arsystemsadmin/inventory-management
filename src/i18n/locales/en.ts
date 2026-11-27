@@ -243,6 +243,12 @@ const en = {
     title: "Something went wrong", body: "That didn't work. Your data is safe. Try again, or go back to the app.",
     code: "Error code: {{code}}", backToApp: "Back to the app",
   },
+  product: {
+    addColor: "Add color", addSizes: "Add sizes", edit: "Edit", colors: "Colors", variations: "Variations",
+    colorsAndSizes: "Colors & sizes", sizes: "Sizes", noActive: "No active variations.",
+    removed: "Removed variations", colorRemoved: "This color has been removed from the product.",
+    moreColors: "+{{count}}", variationsCount_one: "{{count}} variation", variationsCount_other: "{{count}} variations", open: "Open {{name}}",
+  },
   variation: {
     stock: "Stock", more: "More", inStock: "In stock", alertAt: "Alert at", margin: "Margin",
     unitsSold: "Units sold", revenue: "Revenue", lastSold: "Last sold", removed: "Removed",

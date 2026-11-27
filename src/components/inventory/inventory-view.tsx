@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, ChevronRight, MoreHorizontal, PackagePlus, Pencil, Plus, Search } from "lucide-react";
+import { AlertTriangle, PackagePlus, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -14,12 +13,9 @@ import { groupProducts, type Product } from "@/lib/products";
 import { STOCK_STATUSES, type Item, type Role, type StockStatus } from "@/lib/types";
 import { SellDialog } from "./sell-dialog";
 import { ItemFormDialog } from "./item-form-dialog";
-import { ItemActionsDialog } from "./item-actions-dialog";
 import { ItemThumb } from "./item-thumb";
-import { ProductEditDialog } from "./product-edit-dialog";
 import { QuantityDialog } from "./quantity-dialog";
-import { SizePhotoButton } from "./photo-field";
-import { useActions } from "@/lib/actions-context";
+import { colorHref, colorKey, productHref } from "@/lib/product-links";
 import { useActiveStore } from "@/lib/active-store";
 import { useT } from "@/i18n/client";
 
@@ -51,19 +47,8 @@ export function InventoryView({
   useEffect(() => { if (!fixedStoreId) setStoreId(startStore); }, [startStore, fixedStoreId]);
   const [showArchived, setShowArchived] = useState(false);
   const [selling, setSelling] = useState<{ item: Item; variants: Item[] } | null>(null);
-  const [acting, setActing] = useState<Item | null>(null);
-  const [editing, setEditing] = useState<Item | null>(null);
-  const [addingTo, setAddingTo] = useState<Product | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [adding, setAdding] = useState(false);
   const [settingQty, setSettingQty] = useState<Item | null>(null);
-  // Products start collapsed; tap a card to see its sizes and colors.
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const toggle = (key: string) =>
-    setExpanded((prev) => { const n = new Set(prev); if (n.has(key)) n.delete(key); else n.add(key); return n; });
-  // While searching or filtering by stock, show what matched.
-  const autoOpen = q.trim() !== "" || status !== "";
-  const actions = useActions();
   const t = useT();
 
   const isOwner = role === "owner";
@@ -126,34 +111,21 @@ export function InventoryView({
   }, [items, storeId, category, q]);
   const restockCount = restock.reduce((n, r) => n + r.variants.length, 0);
 
-  // Group a product's (visible) variations by color; sizes stay in size order inside each color.
-  const byColor = (variants: Item[]) => {
-    const map = new Map<string, { color: string | null; variants: Item[] }>();
+  // Per color: name, whether every size is out, whether some are, whether any are low.
+  const colorSummary = (variants: Item[]) => {
+    const map = new Map<string, Item[]>();
     for (const v of variants) {
-      const k = (v.color ?? "").trim().toLowerCase();
-      const g = map.get(k);
-      if (g) g.variants.push(v); else map.set(k, { color: v.color, variants: [v] });
+      const k = colorKey(v.color);
+      const list = map.get(k);
+      if (list) list.push(v); else map.set(k, [v]);
     }
-    return [...map.values()].sort((x, y) => (x.color ?? "").localeCompare(y.color ?? ""));
-  };
-  const sameColor = (v: Item, color: string | null) => (v.color ?? "").trim().toLowerCase() === (color ?? "").trim().toLowerCase();
-
-  // A color photo is shared by every size of that color.
-  const setColorPhoto = async (p: Product, color: string | null, path: string | null) => {
-    for (const v of p.variants.filter((x) => sameColor(x, color))) {
-      const res = await actions.saveItemEdit({ itemId: v.id, changes: { variant_image_path: path } });
-      if (!res.ok) { toast.error(res.error); return; }
-    }
-    const label = color ?? t("common.noColor");
-    toast.success(path ? t("inventory.photoSaved", { label }) : t("inventory.photoRemoved", { label }));
-  };
-
-  // A variation photo belongs to one size + color only.
-  const setVariationPhoto = async (v: Item, path: string | null) => {
-    const res = await actions.saveItemEdit({ itemId: v.id, changes: { variation_image_path: path } });
-    if (!res.ok) { toast.error(res.error); return; }
-    const label = [v.size, v.color].filter(Boolean).join(" · ") || t("inventory.thisVariation");
-    toast.success(path ? t("inventory.photoSaved", { label }) : t("inventory.photoRemoved", { label }));
+    return [...map.entries()].map(([key, vs]) => ({
+      key,
+      label: vs[0].color ?? t("common.noColor"),
+      out: vs.every((v) => v.quantity <= 0),
+      someOut: vs.some((v) => v.quantity <= 0),
+      warn: vs.some((v) => v.stock_status !== "OK"),
+    })).sort((x, y) => Number(x.out) - Number(y.out) || x.label.localeCompare(y.label));
   };
 
   const startSale = (p: Product) => {
@@ -251,7 +223,7 @@ export function InventoryView({
                         <li key={v.id} className={cn("flex items-center gap-3 px-3 py-2.5", v.quantity <= 0 && "bg-red-50/60 dark:bg-red-950/20")}>
                           <ItemThumb path={v.variation_image_path ?? v.variant_image_path ?? p.image_path} alt={p.name} className="size-10" />
                           <div className="min-w-0 flex-1">
-                            <Link href={`/inventory/${v.id}`} className="block truncate text-sm font-medium hover:underline">{variantLabel(v.size, v.color) || t("common.standard")}</Link>
+                            <Link href={colorHref(v.id)} className="block truncate text-sm font-medium hover:underline">{variantLabel(v.size, v.color) || t("common.standard")}</Link>
                             <span className="block text-xs text-muted-foreground">
                               {t("inventory.leftOf", { count: v.quantity, threshold: v.low_stock_threshold })}
                             </span>
@@ -299,154 +271,62 @@ export function InventoryView({
           {items.length === 0 ? t("inventory.empty") : t("inventory.noMatch")}
         </div>
       ) : (
-        <ul className="grid gap-3">
-          {products.map(({ product: p, variants }) => {
+        <ul className="grid gap-2">
+          {products.map(({ product: p }) => {
             const store = storeById.get(p.store_id);
             const closed = store?.status === "closed";
             const price = p.minPrice === p.maxPrice ? formatMoney(p.minPrice) : `${formatMoney(p.minPrice)}–${formatMoney(p.maxPrice)}`;
-            const isOpen = autoOpen || expanded.has(p.key);
-            // Collapsed summary: one chip per color (red = sold out, amber = running low).
-            const colorSummary = byColor(p.variants).map((g) => ({
-              label: g.color ?? t("common.noColor"),
-              qty: g.variants.reduce((n, v) => n + v.quantity, 0),
-              warn: g.variants.some((v) => v.stock_status !== "OK"),
-              someOut: g.variants.some((v) => v.quantity <= 0),
-            }));
+            // One short line of colors: the first few, then "+N".
+            const colors = colorSummary(p.variants);
+            const shown = colors.slice(0, 3);
             return (
-              <li key={p.key} className="overflow-hidden rounded-xl border bg-card">
-                <div className="flex items-center gap-3 p-3">
-                  <button
-                    type="button"
-                    onClick={() => toggle(p.key)}
-                    aria-expanded={isOpen}
-                    aria-label={isOpen ? t("inventory.hideVariations", { name: p.name }) : t("inventory.showVariations", { name: p.name })}
-                    className="flex min-w-0 flex-1 items-center gap-3 text-start"
-                  >
-                  <ItemThumb path={p.image_path} alt={p.name} className="size-14" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-semibold">{p.name}</span>
-                      {p.status !== "OK" && <StockBadge status={p.status} />}
-                      {p.status !== "OUT" && p.outCount > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700">
-                          <span className="size-1.5 rounded-full bg-red-600" aria-hidden />
-                          {t("inventory.soldOutCount", { count: p.outCount })}
-                        </span>
+              <li key={p.key} className="rounded-xl border bg-card">
+                <div className="flex items-start gap-3 p-3">
+                  <Link href={productHref(p.variants[0].id)} aria-label={t("product.open", { name: p.name })}
+                    className="flex min-w-0 flex-1 items-start gap-3">
+                    <ItemThumb path={p.image_path} alt={p.name} className="size-16 shrink-0" />
+                    <div className="grid min-w-0 flex-1 gap-0.5">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <bdi className="truncate font-semibold">{p.name}</bdi>
+                        {p.status !== "OK" && <StockBadge status={p.status} className="shrink-0" />}
+                      </div>
+                      <div className="text-sm">
+                        <span className="font-semibold tabular-nums">{price}</span>
+                        <span className="ms-2 text-muted-foreground">{t("sell.inStock", { count: p.quantity })}</span>
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {t("inventory.colors", { count: colors.length })} · {t("product.variationsCount", { count: p.variants.length })}
+                        {p.status !== "OUT" && p.outCount > 0 && (
+                          <span className="font-semibold text-red-700"> · {t("inventory.soldOutCount", { count: p.outCount })}</span>
+                        )}
+                        {!fixedStoreId && stores.length > 1 && store ? ` · ${store.name}` : ""}
+                      </div>
+                      {colors.length > 1 && (
+                        <div className="mt-1 flex min-w-0 gap-1 overflow-hidden">
+                          {shown.map((c) => (
+                            <span key={c.key} className={cn(
+                              "inline-flex min-w-0 max-w-[8rem] shrink items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-border",
+                              c.out ? "bg-red-50 text-red-700 line-through" : c.warn ? "bg-amber-50 text-amber-800" : "bg-background",
+                            )}>
+                              {!c.out && c.someOut && <span className="size-1.5 shrink-0 rounded-full bg-red-600" aria-hidden />}
+                              <bdi className="truncate">{c.label}</bdi>
+                            </span>
+                          ))}
+                          {colors.length > shown.length && (
+                            <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border">
+                              {t("product.moreColors", { count: colors.length - shown.length })}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      {[p.category, !fixedStoreId && stores.length > 1 ? store?.name : null,
-                        `${p.variants.length} variation${p.variants.length === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}
-                    </div>
-                    <div className="mt-0.5 text-sm">
-                      <span className="font-semibold">{price}</span>
-                      <span className="ms-2 text-muted-foreground">{t("sell.inStock", { count: p.quantity })}</span>
-                    </div>
-                    {!isOpen && (
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {colorSummary.map((sz) => (
-                          <span key={sz.label} className={cn(
-                            "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-border",
-                            sz.qty === 0 ? "bg-red-50 text-red-700 line-through" : sz.warn ? "bg-amber-50 text-amber-800" : "bg-background",
-                          )}>
-                            {/* a red dot = some sizes of this color are sold out */}
-                            {sz.qty > 0 && sz.someOut && <span className="size-1.5 rounded-full bg-red-600" aria-hidden />}
-                            {sz.label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <ChevronDown className={cn("size-5 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} aria-hidden />
-                  </button>
+                  </Link>
                   {!showArchived && (
-                    <Button size="lg" variant="success" className="min-w-20" disabled={p.quantity === 0 || closed} onClick={() => startSale(p)}>
+                    <Button size="lg" variant="success" className="min-w-20 shrink-0" disabled={p.quantity === 0 || closed} onClick={() => startSale(p)}>
                       {t("inventory.sell")}
                     </Button>
                   )}
                 </div>
-
-                {isOpen && (<>
-                <ul className="divide-y border-t">
-                  {byColor(variants).map((g) => {
-                    const colorPhoto = p.variants.find((v) => sameColor(v, g.color) && v.variant_image_path)?.variant_image_path;
-                    const total = g.variants.reduce((n, v) => n + v.quantity, 0);
-                    return (
-                      <li key={g.color ?? "none"} className="bg-muted/20">
-                        <div className="flex items-center gap-2.5 px-3 pt-2 pb-1">
-                          {!showArchived ? (
-                            <SizePhotoButton
-                              value={colorPhoto}
-                              label={g.color ?? t("common.noColor")}
-                              businessId={p.variants[0].business_id}
-                              storeId={p.store_id}
-                              onChange={(path) => setColorPhoto(p, g.color, path)}
-                              className="size-9"
-                            />
-                          ) : null}
-                          <bdi className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.color ?? t("common.noColor")}</bdi>
-                          <span className="text-xs text-muted-foreground">
-                            {t("inventory.sizes", { count: g.variants.length })} · {t("sell.inStock", { count: total })}
-                          </span>
-                        </div>
-                        <ul className="pb-1">
-                          {g.variants.map((v) => {
-                            const label = variantLabel(v.size, v.color) || t("inventory.thisVariation");
-                            return (
-                            <li key={v.id} className="flex items-center gap-2 py-1 ps-3 pe-1 sm:ps-14">
-                              {!showArchived && (
-                                <SizePhotoButton
-                                  value={v.variation_image_path}
-                                  fallback={colorPhoto ?? p.image_path}
-                                  label={label}
-                                  businessId={v.business_id}
-                                  storeId={v.store_id}
-                                  onChange={(path) => setVariationPhoto(v, path)}
-                                  className="size-9"
-                                />
-                              )}
-                              {/* Tap the size to open this variation's own page. */}
-                              <Link href={`/inventory/${v.id}`} aria-label={t("inventory.openVariation", { label: `${p.name} ${label}` })}
-                                className="group flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-1 text-sm">
-                                <span className="min-w-9 rounded border px-1.5 py-0.5 text-center font-semibold group-hover:bg-muted">{v.size ?? t("inventory.oneSize")}</span>
-                                {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
-                                <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" aria-hidden />
-                              </Link>
-                              {showArchived ? (
-                                <span className="w-20 text-end text-sm tabular-nums">{t("common.left", { count: v.quantity })}</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setSettingQty(v)}
-                                  aria-label={t("inventory.setQuantityFor", { label })}
-                                  className={cn(
-                                    "h-9 min-w-20 rounded-md border bg-background px-2 text-sm font-semibold tabular-nums hover:bg-muted",
-                                    v.stock_status !== "OK" && "text-orange-700", v.quantity === 0 && "text-red-700",
-                                  )}
-                                >
-                                  {t("common.left", { count: v.quantity })}
-                                </button>
-                              )}
-                              <StockBadge status={v.stock_status} className="w-16 justify-center" />
-                              <Button variant="ghost" size="icon-lg" aria-label={t("inventory.actionsFor", { label: `${p.name} ${label}` })} onClick={() => setActing(v)}>
-                                <MoreHorizontal />
-                              </Button>
-                            </li>
-                            );
-                          })}
-                        </ul>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                {!showArchived && !closed && (
-                  <div className="flex gap-2 border-t px-3 py-2">
-                    <Button variant="outline" size="sm" onClick={() => setAddingTo(p)}><Plus /> {t("inventory.addVariation")}</Button>
-                    <Button variant="ghost" size="sm" onClick={() => setEditingProduct(p)}><Pencil /> {t("inventory.editProduct")}</Button>
-                  </div>
-                )}
-                </>)}
               </li>
             );
           })}
@@ -455,20 +335,9 @@ export function InventoryView({
       </>)}
 
       <SellDialog item={selling?.item ?? null} variants={selling?.variants ?? []} onClose={() => setSelling(null)} />
-      <ItemActionsDialog
-        item={acting}
-        onClose={() => setActing(null)}
-        onEdit={(i) => setEditing(i)}
-        needsApproval={acting ? needsApproval(acting.store_id) : false}
-        isOwner={isOwner}
-      />
       <ItemFormDialog
-        open={adding || !!editing || !!addingTo}
-        onClose={() => { setAdding(false); setEditing(null); setAddingTo(null); }}
-        item={editing}
-        product={addingTo}
-        siblings={editing ? items.filter((i) => i.store_id === editing.store_id && !i.archived
-          && i.name.trim().toLowerCase() === editing.name.trim().toLowerCase()) : undefined}
+        open={adding}
+        onClose={() => setAdding(false)}
         stores={editableStores}
         defaultStoreId={fixedStoreId || storeId || undefined}
         needsApproval={needsApproval}
@@ -478,12 +347,6 @@ export function InventoryView({
         item={settingQty}
         onClose={() => setSettingQty(null)}
         needsApproval={settingQty ? needsApproval(settingQty.store_id) : false}
-      />
-      <ProductEditDialog
-        product={editingProduct}
-        onClose={() => setEditingProduct(null)}
-        needsApproval={editingProduct ? needsApproval(editingProduct.store_id) : false}
-        categories={categories}
       />
     </div>
   );

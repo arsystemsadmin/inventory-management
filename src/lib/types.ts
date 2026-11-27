@@ -91,3 +91,9 @@ export type SellResult = {
 export type AddVariationsResult = { added: number; skipped: string[] };
 
 export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string } | { ok: false; error: string };
+
+/** One stock change for a variation (inventory_movements). */
+export type Movement = {
+  id: string; item_id: string; delta: number; quantity_after: number;
+  reason: "initial" | "restock" | "edit" | "sale" | "void"; actor_id: string | null; created_at: string;
+};

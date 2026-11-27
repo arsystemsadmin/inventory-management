@@ -254,6 +254,12 @@ const he = {
     title: "משהו השתבש", body: "זה לא עבד. הנתונים שלך בטוחים. נסו שוב, או חזרו לאפליקציה.",
     code: "קוד שגיאה: {{code}}", backToApp: "חזרה לאפליקציה",
   },
+  product: {
+    addColor: "הוספת צבע", addSizes: "הוספת מידות", edit: "עריכה", colors: "צבעים", variations: "וריאציות",
+    colorsAndSizes: "צבעים ומידות", sizes: "מידות", noActive: "אין וריאציות פעילות.",
+    removed: "וריאציות שהוסרו", colorRemoved: "הצבע הזה הוסר מהמוצר.",
+    moreColors: "+{{count}}", ...pl("variationsCount", "וריאציה אחת", "{{count}} וריאציות", "{{count}} וריאציות"), open: "פתיחת {{name}}",
+  },
   variation: {
     stock: "מלאי", more: "עוד", inStock: "במלאי", alertAt: "התראה ב-", margin: "רווחיות",
     unitsSold: "יחידות שנמכרו", revenue: "הכנסות", lastSold: "נמכר לאחרונה", removed: "הוסר",

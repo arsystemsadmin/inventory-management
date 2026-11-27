@@ -15,7 +15,7 @@ import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import { StoreDetailView } from "@/components/views/store-detail-view";
 import { StoresView } from "@/components/views/stores-view";
 import { SettingsView } from "@/components/views/settings-view";
-import { VariationDetailView } from "@/components/views/variation-detail-view";
+import { ColorDetailView, ProductDetailView, type DetailProps } from "@/components/views/product-detail-views";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { setSessionUser } from "@/lib/demo/store";
@@ -252,30 +252,43 @@ export function DemoSettingsPage() {
   );
 }
 
-export function DemoVariationPage({ id }: { id: string }) {
+/** Same data the server loader returns, from browser storage. */
+function useDemoDetail(id: string): Omit<DetailProps, "role"> | null {
   const { state, user } = useDemoSession();
-  const t = useT();
   const items = visibleItems(state, user);
-  const item = items.find((i) => i.id === id);
-  if (!item) {
-    return (
-      <div className="grid gap-3 py-10 text-center text-sm text-muted-foreground">
-        <p>{t("variation.notFound")}</p>
-        <Link href="/inventory" className="underline">{t("nav.inventory")}</Link>
-      </div>
-    );
-  }
-  const key = item.name.trim().toLowerCase();
-  const store = inventoryStores(state, user).find((s) => s.id === item.store_id) ?? null;
+  const anchor = items.find((i) => i.id === id);
+  if (!anchor) return null;
+  const key = anchor.name.trim().toLowerCase();
+  const siblings = items.filter((i) => i.store_id === anchor.store_id && i.name.trim().toLowerCase() === key);
+  const ids = new Set(siblings.map((i) => i.id));
+  return {
+    anchor,
+    siblings,
+    store: inventoryStores(state, user).find((s) => s.id === anchor.store_id) ?? null,
+    sales: visibleSales(state, user).filter((s) => ids.has(s.item_id)).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 500),
+    movements: state.movements.filter((m) => ids.has(m.item_id)).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 300),
+    peopleNames: names(state, user),
+  };
+}
+
+function DemoNotFound() {
+  const t = useT();
   return (
-    <VariationDetailView
-      item={item}
-      siblings={items.filter((i) => i.store_id === item.store_id && i.name.trim().toLowerCase() === key)}
-      store={store}
-      sales={visibleSales(state, user).filter((s) => s.item_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 200)}
-      movements={state.movements.filter((m) => m.item_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 100)}
-      peopleNames={names(state, user)}
-      role={user.role}
-    />
+    <div className="grid gap-3 py-10 text-center text-sm text-muted-foreground">
+      <p>{t("variation.notFound")}</p>
+      <Link href="/inventory" className="underline">{t("nav.inventory")}</Link>
+    </div>
   );
+}
+
+export function DemoProductPage({ id }: { id: string }) {
+  const { user } = useDemoSession();
+  const d = useDemoDetail(id);
+  return d ? <ProductDetailView {...d} role={user.role} /> : <DemoNotFound />;
+}
+
+export function DemoColorPage({ id }: { id: string }) {
+  const { user } = useDemoSession();
+  const d = useDemoDetail(id);
+  return d ? <ColorDetailView {...d} role={user.role} /> : <DemoNotFound />;
 }

@@ -27,7 +27,7 @@ const empty = { name: "", sku: "", category: "", size: "", color: "", price: "",
  *  - edit variation:  `item` given; size, color, price, cost, alert, SKU
  */
 export function ItemFormDialog({
-  open, onClose, item, product, siblings, stores, defaultStoreId, needsApproval, categories,
+  open, onClose, item, product, siblings, presetColor, stores, defaultStoreId, needsApproval, categories,
 }: {
   open: boolean;
   onClose: () => void;
@@ -35,6 +35,8 @@ export function ItemFormDialog({
   product?: Product | null;
   /** When editing one variation: the product's other variations (for its usual price). */
   siblings?: Item[];
+  /** Adding sizes to one color: start with that color filled in. */
+  presetColor?: string;
   stores: StoreOpt[];
   defaultStoreId?: string;
   needsApproval: (storeId: string) => boolean;
@@ -79,7 +81,7 @@ export function ItemFormDialog({
       setStoreId(product.store_id);
       setImagePath(product.image_path);
       setF({
-        ...empty, name: product.name, category: product.category ?? "",
+        ...empty, name: product.name, category: product.category ?? "", color: presetColor ?? "",
         price: price ? centsToInput(price) : "", cost: cost ? centsToInput(cost) : "", threshold: String(base.low_stock_threshold),
       });
     } else {

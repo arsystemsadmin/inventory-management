@@ -37,7 +37,7 @@ begin
   -- Lock every row first (in a fixed order, so two carts can't deadlock) and
   -- work out the total. sell_item re-checks access, stock and store per line.
   for v_line in
-    select (e->>'item_id')::uuid as item_id, sum((e->>'quantity')::integer) as qty
+    select (e->>'item_id')::uuid as item_id, sum((e->>'quantity')::integer)::integer as qty
     from jsonb_array_elements(p_lines) e group by 1 order by 1
   loop
     select price_cents into v_price from public.items
@@ -54,7 +54,7 @@ begin
   v_left := case p_payment_method when 'cash' then v_total when 'credit' then 0 else p_cash_cents end;
 
   for v_line in
-    select (e->>'item_id')::uuid as item_id, sum((e->>'quantity')::integer) as qty
+    select (e->>'item_id')::uuid as item_id, sum((e->>'quantity')::integer)::integer as qty
     from jsonb_array_elements(p_lines) e group by 1 order by 1
   loop
     select price_cents into v_price from public.items where id = v_line.item_id;

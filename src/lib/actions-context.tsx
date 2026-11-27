@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import { addStock, createItem, createItems, removeItem, removeStock, restoreItem, saveItemEdit, saveProductEdit, sellItem } from "@/app/actions/inventory";
+import { addStock, createItem, createItems, removeItem, removeStock, restoreItem, saveItemEdit, saveProductEdit, sellCart, sellItem } from "@/app/actions/inventory";
 import { createStore, finishSetup, reopenSetup, setStoreMembers, updateStore } from "@/app/actions/stores";
 import { decideApproval, requestVoid, voidSale } from "@/app/actions/sales";
 import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
@@ -14,7 +14,7 @@ import { safeActions } from "@/lib/safe-call";
  * implementations. Every action is wrapped so it can never throw into the UI.
  */
 const rawServerActions = {
-  sellItem, createItem, createItems, saveItemEdit, saveProductEdit, addStock, removeStock, removeItem, restoreItem,
+  sellItem, sellCart, createItem, createItems, saveItemEdit, saveProductEdit, addStock, removeStock, removeItem, restoreItem,
   createStore, updateStore, finishSetup, reopenSetup, setStoreMembers,
   voidSale, requestVoid, decideApproval,
   createEmployee, updateEmployee, setEmployeeActive,

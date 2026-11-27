@@ -13,6 +13,12 @@ export const paymentSchema = z.object({
   cash_cents: z.coerce.number().int().min(0).max(100_000_000).optional(),
 }).refine((p) => p.method !== "split" || (p.cash_cents ?? 0) > 0, { message: "errors.INVALID_PAYMENT" });
 
+/** A multi-item sale: up to 50 lines, one payment for the whole cart. */
+export const cartSchema = z.object({
+  lines: z.array(z.object({ itemId: uuid, quantity: qty })).min(1, "errors.INVALID_QUANTITY").max(50, "errors.cartTooBig"),
+  payment: paymentSchema,
+});
+
 export const itemFields = z.object({
   name: z.string().trim().min(1, "validation.nameRequired").max(200),
   sku: optText(64),

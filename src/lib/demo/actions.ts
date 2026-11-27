@@ -8,7 +8,7 @@ import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
 import {
-  settingsSchema, createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
+  cartSchema, settingsSchema, createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
 } from "@/lib/validation";
 import * as L from "./logic";
 import { commit, getState, getUserId, hashPassword } from "./store";
@@ -35,6 +35,11 @@ const rawDemoActions: AppActions = {
     const p = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
     if (!p.success) return invalid(p.error);
     return run(() => commit((s) => L.sellItem(s, getUserId(), p.data.itemId, p.data.quantity, undefined, p.data.payment)));
+  },
+  async sellCart(input) {
+    const p = cartSchema.safeParse(input);
+    if (!p.success) return invalid(p.error);
+    return run(() => commit((s) => L.sellCart(s, getUserId(), p.data.lines, p.data.payment)));
   },
   async createItem(input) {
     const p = newItemSchema.safeParse(input);

@@ -5,10 +5,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/auth";
 import { friendlyError } from "@/lib/errors";
-import type { ActionResult, AddVariationsResult, PaymentInput, SellResult } from "@/lib/types";
+import type { ActionResult, AddVariationsResult, CartLineInput, CartResult, PaymentInput, SellResult } from "@/lib/types";
 import { variantLabel } from "@/lib/format";
 
-import { itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
+import { cartSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
 import { logged } from "@/lib/error-log";
 
@@ -48,6 +48,26 @@ async function sellItemImpl(input: { itemId: string; quantity: number; payment?:
   revalidateInventory();
   revalidatePath("/sales");
   return { ok: true, data: data as SellResult };
+}
+
+/** Several variations in one checkout, all or nothing (sell_cart). */
+async function sellCartImpl(input: { lines: CartLineInput[]; payment: PaymentInput }): Promise<ActionResult<CartResult>> {
+  const tr = await getTr();
+  const parsed = cartSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
+  const { lines, payment } = parsed.data;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("sell_cart", {
+    p_lines: lines.map((l) => ({ item_id: l.itemId, quantity: l.quantity })),
+    p_payment_method: payment.method,
+    p_cash_cents: payment.method === "split" ? payment.cash_cents ?? null : null,
+  });
+  // Database not updated yet (migration 20261127000015).
+  if (error?.code === "PGRST202") return { ok: false, error: tr("errors.cartNeedsUpdate") };
+  if (error) return { ok: false, error: friendlyError(error, tr) };
+  revalidateInventory();
+  revalidatePath("/sales");
+  return { ok: true, data: data as CartResult };
 }
 
 async function createItemImpl(input: unknown): Promise<ActionResult> {
@@ -251,6 +271,7 @@ async function restoreItemImpl(itemId: string): Promise<ActionResult> {
 
 // Failures are recorded in the developer error log (see src/lib/error-log.ts).
 export const sellItem = logged("sellItem", sellItemImpl);
+export const sellCart = logged("sellCart", sellCartImpl);
 export const createItem = logged("createItem", createItemImpl);
 export const createItems = logged("createItems", createItemsImpl);
 export const saveItemEdit = logged("saveItemEdit", saveItemEditImpl);

@@ -64,6 +64,8 @@ export type Sale = {
   payment_method?: PaymentMethod;
   cash_cents?: number;
   credit_cents?: number;
+  /** Set when the sale was one line of a multi-item checkout. */
+  cart_id?: string | null;
 };
 
 export type PaymentMethod = "cash" | "credit" | "split";
@@ -86,6 +88,10 @@ export type SellResult = {
   status_before: StockStatus;
   status_after: StockStatus;
 };
+
+/** One checkout of several lines (each line is its own sale row). */
+export type CartResult = { cart_id: string; total_cents: number; lines: SellResult[] };
+export type CartLineInput = { itemId: string; quantity: number };
 
 /** Result of adding variations: duplicates of existing ones are skipped, not errors. */
 export type AddVariationsResult = { added: number; skipped: string[] };

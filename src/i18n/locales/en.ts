@@ -88,6 +88,19 @@ const en = {
     leftOf_one: "{{count}} left · alert at {{threshold}}", leftOf_other: "{{count}} left · alert at {{threshold}}",
     addStock: "Add stock",
   },
+  cart: {
+    title: "Cart", note: "Check the items, choose how they're paying, then check out once.",
+    browseNote: "Tap a product, pick color, size and quantity, and add it to the cart. Add as many as you like.",
+    empty: "The cart is empty. Add items to sell them together.",
+    addToCart: "Add {{label}} to cart", addMore: "Add to cart (sell with more items)",
+    added: "Added {{label}} to the cart", view: "View cart",
+    inCartNow_one: "{{count}} of this in the cart", inCartNow_other: "{{count}} of this in the cart",
+    items_one: "{{count}} item", items_other: "{{count}} items",
+    checkout: "Check out · {{total}}", addItems: "Add items", clear: "Clear cart", remove: "Remove {{name}}", removeShort: "Remove",
+    review_one: "Cart: {{count}} item · {{total}}", review_other: "Cart: {{count}} items · {{total}}",
+    sold_one: "Sold {{count}} item", sold_other: "Sold {{count}} items",
+    buttonWithCount_one: "Sell — {{count}} item in cart", buttonWithCount_other: "Sell — {{count}} items in cart",
+  },
   quickSell: {
     button: "Sell", title: "Quick sale", note: "Pick a product, then choose size, color and quantity.",
     loadFailed: "Couldn't load the products. Check your connection and try again.",
@@ -305,6 +318,8 @@ const en = {
   },
   errors: {
     generic: "Something went wrong. Please try again.",
+    cartNeedsUpdate: "Selling several items at once needs a database update. Ask the developer to run migration 15, or sell items one by one for now.",
+    cartTooBig: "A cart can have up to 50 different items. Check out and start a new one.",
     STORE_NOT_ACCESSIBLE: "You don't have access to that store.",
     removeTooMany_one: "You can't remove more than what's in stock — only {{count}} left.",
     removeTooMany_other: "You can't remove more than what's in stock — only {{count}} left.",

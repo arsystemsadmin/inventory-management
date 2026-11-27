@@ -6,7 +6,7 @@
  * them to the same messages.
  */
 import { stockStatus } from "@/lib/format";
-import type { Item, PaymentInput, SellResult } from "@/lib/types";
+import type { CartResult, Item, PaymentInput, SellResult } from "@/lib/types";
 import {
   newId, type DemoApproval, type DemoItem, type DemoShift, type DemoState, type DemoStore, type DemoUser,
 } from "./store";
@@ -141,6 +141,37 @@ export function sellItem(
     payment_method: payment.method, cash_cents: cash, credit_cents: credit,
     status_before: before, status_after: stockStatus(item.quantity, item.low_stock_threshold),
   };
+}
+
+/** Same rules as sell_cart: all lines or none; one payment spread over the lines. */
+export function sellCart(
+  s: DemoState, uid: string | null, lines: { itemId: string; quantity: number }[], payment: PaymentInput,
+): CartResult {
+  requireUser(s, uid);
+  const merged = new Map<string, number>();
+  for (const l of lines) merged.set(l.itemId, (merged.get(l.itemId) ?? 0) + l.quantity);
+  if (merged.size === 0 || merged.size > 50) fail("INVALID_QUANTITY");
+  const ordered = [...merged.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const priceOf = (id: string) => (s.items.find((i) => i.id === id) ?? fail("ITEM_NOT_FOUND")).price_cents;
+  const total = ordered.reduce((n, [id, q]) => n + q * priceOf(id), 0);
+  if (payment.method === "split" && (!payment.cash_cents || payment.cash_cents <= 0 || payment.cash_cents >= total)) fail("INVALID_PAYMENT");
+  let left = payment.method === "cash" ? total : payment.method === "credit" ? 0 : payment.cash_cents!;
+  const cartId = newId();
+  const results: SellResult[] = [];
+  for (const [id, q] of ordered) {
+    const lt = q * priceOf(id);
+    let pay: PaymentInput = { method: payment.method };
+    if (payment.method === "split") {
+      if (left >= lt) { pay = { method: "cash" }; left -= lt; }
+      else if (left > 0) { pay = { method: "split", cash_cents: left }; left = 0; }
+      else pay = { method: "credit" };
+    }
+    const r = sellItem(s, uid, id, q, undefined, pay);
+    const sale = s.sales.find((x) => x.id === r.sale_id);
+    if (sale) (sale as typeof sale & { cart_id?: string }).cart_id = cartId;
+    results.push(r);
+  }
+  return { cart_id: cartId, total_cents: total, lines: results };
 }
 
 type ItemFields = {

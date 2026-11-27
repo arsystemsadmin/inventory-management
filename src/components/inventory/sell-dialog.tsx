@@ -1,36 +1,61 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Banknote, CreditCard, Minus, Plus, Split } from "lucide-react";
+import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StockBadge } from "@/components/stock-badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { PaymentPicker, usePayment } from "@/components/sales/payment-picker";
+import { addToCart, openCart } from "@/lib/cart";
 import { ItemThumb } from "./item-thumb";
 import { cn } from "@/lib/utils";
-import { centsToInput, formatMoney, isolate, parseMoneyToCents, STOCK_ORDER, variantLabel } from "@/lib/format";
-import { PAYMENT_METHODS, type Item, type PaymentMethod } from "@/lib/types";
+import { formatMoney, isolate, STOCK_ORDER, variantLabel } from "@/lib/format";
+import type { Item, PaymentMethod, SellResult } from "@/lib/types";
 import { useT } from "@/i18n/client";
 
 /**
  * Fast sale confirmation: pick the variant (size/color), the quantity, confirm.
  * `variants` = all active rows with the same product name in the same store.
  */
-export function SellDialog({ item, variants, onClose }: { item: Item | null; variants: Item[]; onClose: () => void }) {
+/** Success toast for one sold line, plus a warning if it just ran low or out. */
+export function announceSale(r: SellResult, method: PaymentMethod, t: ReturnType<typeof useT>, quiet = false) {
+  const v = variantLabel(r.size, r.color);
+  const name = `${isolate(r.item_name)}${v ? ` (${v})` : ""}`;
+  if (!quiet) {
+    toast.success(t("sell.sold", { label: `${r.quantity_sold} × ${name}` }), {
+      description: `${formatMoney(r.total_cents)} · ${t(`payment.${method}`)} · ${t("common.left", { count: r.quantity_after })}`,
+    });
+  }
+  if (r.status_after !== "OK" && STOCK_ORDER[r.status_after] < STOCK_ORDER[r.status_before]) {
+    const msg = r.status_after === "OUT" ? t("sell.nowOut", { name }) : r.status_after === "CRITICAL" ? t("sell.nowCritical", { name }) : t("sell.nowLow", { name });
+    toast.warning(msg, {
+      description: r.status_after === "OUT" ? t("sell.askOwner") : t("common.left", { count: r.quantity_after }),
+      duration: 8000,
+    });
+  }
+}
+
+export function SellDialog({
+  item, variants, onClose, mode = "sell",
+}: {
+  item: Item | null;
+  variants: Item[];
+  onClose: () => void;
+  /** "cart": only pick the variation and quantity, then add it to the quick-sale cart. */
+  mode?: "sell" | "cart";
+}) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
-  // Payment: cash / credit need no amount; split asks for both parts.
-  const [method, setMethod] = useState<PaymentMethod>("cash");
-  const [splitEdit, setSplitEdit] = useState<{ field: "cash" | "credit"; text: string }>({ field: "cash", text: "" });
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const t = useT();
+  const selectedPrice = variants.find((v) => v.id === selectedId)?.price_cents ?? item?.price_cents ?? 0;
+  const pay = usePayment(qty * selectedPrice);
 
   useEffect(() => {
-    if (item) { setSelectedId(item.id); setQty(1); setMethod("cash"); setSplitEdit({ field: "cash", text: "" }); }
+    if (item) { setSelectedId(item.id); setQty(1); pay.reset(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
 
@@ -51,40 +76,25 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
     if (match) { setSelectedId(match.id); setQty(1); }
   };
 
-  // Split amounts: the field being typed in is kept as typed; the other one is
-  // always "total minus that", so the two parts can't disagree with the total.
-  const total = qty * selected.price_cents;
-  const typed = parseMoneyToCents(splitEdit.text || "x");
-  const typedOk = Number.isFinite(typed) && typed > 0 && typed < total;
-  const cashCents = splitEdit.field === "cash" ? typed : total - typed;
-  const splitValid = method !== "split" || typedOk;
-  const cashText = splitEdit.field === "cash" ? splitEdit.text : typedOk ? centsToInput(total - typed) : "";
-  const creditText = splitEdit.field === "credit" ? splitEdit.text : typedOk ? centsToInput(total - typed) : "";
-  const PAY_ICONS = { cash: Banknote, credit: CreditCard, split: Split };
-
   const confirm = () => {
-    if (!splitValid) return;
+    if (!pay.valid) return;
+    const method = pay.method;
     startTransition(async () => {
-      const res = await actions.sellItem({
-        itemId: selected.id, quantity: qty,
-        payment: method === "split" ? { method, cash_cents: cashCents } : { method },
-      });
+      const res = await actions.sellItem({ itemId: selected.id, quantity: qty, payment: pay.input() });
       if (!res.ok) { toast.error(res.error); return; }
-      const r = res.data!;
-      const v = variantLabel(r.size, r.color);
-      toast.success(t("sell.sold", { label: `${r.quantity_sold} × ${isolate(r.item_name)}${v ? ` (${v})` : ""}` }), {
-        description: `${formatMoney(r.total_cents)} · ${t(`payment.${method}`)} · ${t("common.left", { count: r.quantity_after })}`,
-      });
-      if (r.status_after !== "OK" && STOCK_ORDER[r.status_after] < STOCK_ORDER[r.status_before]) {
-        const name = `${isolate(r.item_name)}${v ? ` (${v})` : ""}`;
-        const msg = r.status_after === "OUT" ? t("sell.nowOut", { name }) : r.status_after === "CRITICAL" ? t("sell.nowCritical", { name }) : t("sell.nowLow", { name });
-        toast.warning(msg, {
-          description: r.status_after === "OUT" ? t("sell.askOwner") : t("common.left", { count: r.quantity_after }),
-          duration: 8000,
-        });
-      }
+      announceSale(res.data!, method, t);
       onClose();
     });
+  };
+
+  const addLine = () => {
+    const inCart = addToCart(selected, qty);
+    const v = variantLabel(selected.size, selected.color);
+    toast.success(t("cart.added", { label: `${qty} × ${isolate(selected.name)}${v ? ` (${v})` : ""}` }), {
+      description: t("cart.inCartNow", { count: inCart }),
+      ...(mode === "sell" ? { action: { label: t("cart.view"), onClick: () => openCart() } } : {}),
+    });
+    onClose();
   };
 
   const chip = (active: boolean, disabled: boolean) =>
@@ -167,50 +177,22 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
           </div>
         </div>
 
-        <div className="grid gap-2">
-          <div className="text-sm font-medium">{t("payment.method")}</div>
-          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("payment.method")}>
-            {PAYMENT_METHODS.map((m) => {
-              const Icon = PAY_ICONS[m];
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={method === m}
-                  onClick={() => setMethod(m)}
-                  className={cn(
-                    "flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-2 text-sm font-semibold transition-colors",
-                    method === m ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted",
-                  )}
-                >
-                  <Icon className="size-4" /> {t(`payment.${m}`)}
-                </button>
-              );
-            })}
-          </div>
-          {method === "split" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-1.5">
-                <Label htmlFor="pay-cash">{t("payment.cashAmount")}</Label>
-                <Input id="pay-cash" inputMode="decimal" autoFocus value={cashText} placeholder="0.00"
-                  onChange={(e) => setSplitEdit({ field: "cash", text: e.target.value })} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="pay-credit">{t("payment.creditAmount")}</Label>
-                <Input id="pay-credit" inputMode="decimal" value={creditText} placeholder="0.00"
-                  onChange={(e) => setSplitEdit({ field: "credit", text: e.target.value })} />
-              </div>
-              {!splitValid && (
-                <p className="col-span-2 text-xs text-destructive">{t("payment.splitMustMatch", { total: formatMoney(total) })}</p>
-              )}
-            </div>
-          )}
-        </div>
+        {mode === "sell" && <PaymentPicker state={pay} />}
 
-        <Button size="xl" variant="success" disabled={pending || max === 0 || qty > max || !splitValid} onClick={confirm}>
-          {max === 0 ? t("sell.outOfStock") : pending ? t("sell.selling") : t("sell.confirm", { label: `${qty} × ${variantLabel(selected.size, selected.color) || isolate(selected.name)}` })}
-        </Button>
+        {mode === "sell" ? (
+          <div className="grid gap-2">
+            <Button size="xl" variant="success" disabled={pending || max === 0 || qty > max || !pay.valid} onClick={confirm}>
+              {max === 0 ? t("sell.outOfStock") : pending ? t("sell.selling") : t("sell.confirm", { label: `${qty} × ${variantLabel(selected.size, selected.color) || isolate(selected.name)}` })}
+            </Button>
+            <Button size="lg" variant="outline" disabled={pending || max === 0 || qty > max} onClick={addLine}>
+              <ShoppingCart /> {t("cart.addMore")}
+            </Button>
+          </div>
+        ) : (
+          <Button size="xl" variant="success" disabled={max === 0 || qty > max} onClick={addLine}>
+            <ShoppingCart /> {max === 0 ? t("sell.outOfStock") : t("cart.addToCart", { label: `${qty} × ${variantLabel(selected.size, selected.color) || isolate(selected.name)}` })}
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   );

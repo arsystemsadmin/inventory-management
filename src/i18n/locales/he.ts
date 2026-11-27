@@ -17,7 +17,7 @@ const he = {
   meta: { description: "ניהול מלאי לחנויות פופ-אפ וחנויות קבועות" },
   nav: {
     dashboard: "לוח בקרה", stores: "חנויות", myStores: "החנויות שלי", inventory: "מלאי", sales: "מכירות",
-    approvals: "אישורים", requests: "בקשות", employees: "עובדים", payroll: "שכר", clock: "שעון נוכחות", settings: "הגדרות",
+    approvals: "אישורים", requests: "בקשות", employees: "עובדים", payroll: "שכר", clock: "שעון נוכחות", settings: "הגדרות", more: "עוד",
   },
   stock: { OUT: "אזל", CRITICAL: "קריטי", LOW: "נמוך", OK: "תקין" },
   common: {

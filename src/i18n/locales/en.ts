@@ -12,7 +12,7 @@ const en = {
   meta: { description: "Inventory for pop-up and permanent stores" },
   nav: {
     dashboard: "Dashboard", stores: "Stores", myStores: "My stores", inventory: "Inventory", sales: "Sales",
-    approvals: "Approvals", requests: "Requests", employees: "Employees", payroll: "Payroll", clock: "Clock", settings: "Settings",
+    approvals: "Approvals", requests: "Requests", employees: "Employees", payroll: "Payroll", clock: "Clock", settings: "Settings", more: "More",
   },
   stock: { OUT: "Out", CRITICAL: "Critical", LOW: "Low", OK: "OK" },
   common: {

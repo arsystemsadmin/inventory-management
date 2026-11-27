@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import { centsToInput, parseMoneyToCents, variantLabel } from "@/lib/format";
-import type { Product } from "@/lib/products";
+import { centsToInput, formatMoney, parseMoneyToCents, variantLabel } from "@/lib/format";
+import { usualPrice, type Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
 import { PhotoField } from "./photo-field";
 import { SizeQuantityPicker, type SizeRow } from "./size-quantity-picker";
@@ -27,12 +27,14 @@ const empty = { name: "", sku: "", category: "", size: "", color: "", price: "",
  *  - edit variation:  `item` given; size, color, price, cost, alert, SKU
  */
 export function ItemFormDialog({
-  open, onClose, item, product, stores, defaultStoreId, needsApproval, categories,
+  open, onClose, item, product, siblings, stores, defaultStoreId, needsApproval, categories,
 }: {
   open: boolean;
   onClose: () => void;
   item?: Item | null;
   product?: Product | null;
+  /** When editing one variation: the product's other variations (for its usual price). */
+  siblings?: Item[];
   stores: StoreOpt[];
   defaultStoreId?: string;
   needsApproval: (storeId: string) => boolean;
@@ -45,6 +47,8 @@ export function ItemFormDialog({
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
+  // A ₪0 price needs a second, deliberate tap.
+  const [confirmZero, setConfirmZero] = useState(false);
   const [pending, startTransition] = useTransition();
   const actions = useActions();
   const t = useT();
@@ -57,6 +61,7 @@ export function ItemFormDialog({
     setReason("");
     setSizes([]);
     setShowErrors(false);
+    setConfirmZero(false);
     if (item) {
       setStoreId(item.store_id);
       setImagePath(item.image_path ?? null);
@@ -67,11 +72,15 @@ export function ItemFormDialog({
       });
     } else if (product) {
       const base = product.variants[0];
+      // New variations start at the price most of this product's variations
+      // sell at (never a stray ₪0 one).
+      const price = usualPrice(product.variants);
+      const cost = usualPrice(product.variants, "cost_cents");
       setStoreId(product.store_id);
       setImagePath(product.image_path);
       setF({
         ...empty, name: product.name, category: product.category ?? "",
-        price: centsToInput(base.price_cents), cost: centsToInput(base.cost_cents), threshold: String(base.low_stock_threshold),
+        price: price ? centsToInput(price) : "", cost: cost ? centsToInput(cost) : "", threshold: String(base.low_stock_threshold),
       });
     } else {
       setF(empty);
@@ -83,7 +92,13 @@ export function ItemFormDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, item?.id, product?.key]);
 
-  const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const set = (k: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (k === "price") setConfirmZero(false);
+    setF((s) => ({ ...s, [k]: e.target.value }));
+  };
+  // Editing a ₪0 variation: offer the price the rest of the product uses.
+  const suggested = mode === "edit" ? usualPrice((siblings ?? []).filter((v) => v.id !== item!.id)) : 0;
+  const enteredPrice = parseMoneyToCents(f.price || "x");
   const approval = mode === "edit" && needsApproval(item!.store_id);
   const businessId = item?.business_id ?? product?.variants[0].business_id ?? stores.find((x) => x.id === storeId)?.business_id;
 
@@ -107,6 +122,7 @@ export function ItemFormDialog({
     const price = parseMoneyToCents(f.price || "0");
     const cost = parseMoneyToCents(f.cost || "0");
     if (Number.isNaN(price) || Number.isNaN(cost)) { toast.error(t("form.priceFormat")); return; }
+    if (price === 0 && !confirmZero) { setConfirmZero(true); return; }
 
     startTransition(async () => {
       if (mode === "edit") {
@@ -229,6 +245,12 @@ export function ItemFormDialog({
               <Input id="price" inputMode="decimal" value={f.price} onChange={set("price")} required placeholder="0.00"
                 aria-invalid={showErrors && missing.price} />
               {errorFor("price")}
+              {suggested > 0 && enteredPrice !== suggested && (
+                <button type="button" className="w-fit text-xs font-medium text-emerald-700 underline"
+                  onClick={() => { setConfirmZero(false); setF((s) => ({ ...s, price: centsToInput(suggested) })); }}>
+                  {t("form.useUsualPrice", { price: formatMoney(suggested) })}
+                </button>
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="cost">{t("form.costLabel")}</Label>
@@ -255,6 +277,11 @@ export function ItemFormDialog({
                 placeholder={mode !== "edit" && sizes.length ? t("form.skuHint") : ""} />
             </div>
           </div>
+          {confirmZero && (
+            <p role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-sm text-amber-900">
+              {t("form.zeroPriceWarning")}
+            </p>
+          )}
           {approval && (
             <div className="grid gap-1.5">
               <Label htmlFor="reason">{t("form.reasonForOwner")}</Label>
@@ -268,7 +295,7 @@ export function ItemFormDialog({
               </Button>
             )}
             <Button type="submit" size="lg" disabled={pending || uploading}>
-              {pending ? t("common.saving") : approval ? t("common.requestApproval") : t("common.save")}
+              {pending ? t("common.saving") : confirmZero ? t("form.saveAtZero") : approval ? t("common.requestApproval") : t("common.save")}
             </Button>
           </div>
         </form>

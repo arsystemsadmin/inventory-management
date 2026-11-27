@@ -65,3 +65,15 @@ export function groupProducts(items: Item[]): Product[] {
     };
   }).sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/**
+ * The price (or cost) a product normally sells at: the most common non-zero
+ * value across its variations, the higher one on a tie. 0 when none is set.
+ */
+export function usualPrice(variants: Pick<Item, "price_cents" | "cost_cents">[], field: "price_cents" | "cost_cents" = "price_cents") {
+  const counts = new Map<number, number>();
+  for (const v of variants) if (v[field] > 0) counts.set(v[field], (counts.get(v[field]) ?? 0) + 1);
+  let best = 0, n = 0;
+  for (const [value, c] of counts) if (c > n || (c === n && value > best)) { best = value; n = c; }
+  return best;
+}

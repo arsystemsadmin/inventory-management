@@ -115,6 +115,9 @@ const en = {
     upTo_one: "You can remove up to {{count}}.", upTo_other: "You can remove up to {{count}}.",
   },
   form: {
+    zeroPriceWarning: "The price is ₪0, so this would sell for free. Enter the price, or tap “Save at ₪0” if it really is free.",
+    zeroPriceWarningAll: "This sets every size and color of this product to ₪0. Enter the price, or tap “Save at ₪0” if it really is free.",
+    saveAtZero: "Save at ₪0", useUsualPrice: "Use {{price}} (same as the other variations)",
     priceFormat: "Enter prices like 12.50", added: "Added {{name}}",
     addedSizes_one: "Added {{name}} in {{count}} size ({{sizes}})", addedSizes_other: "Added {{name}} in {{count}} sizes ({{sizes}})",
     editTitle: "Edit {{name}}", addVariationsTitle: "Add variations to {{name}}",

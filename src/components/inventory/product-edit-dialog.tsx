@@ -31,6 +31,7 @@ export function ProductEditDialog({
   const [f, setF] = useState({ name: "", category: "", price: "", cost: "", threshold: "" });
   const [imagePath, setImagePath] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [confirmZero, setConfirmZero] = useState(false);
   const t = useT();
 
   const base = product?.variants[0];
@@ -46,11 +47,15 @@ export function ProductEditDialog({
     });
     setImagePath(product.image_path);
     setReason("");
+    setConfirmZero(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.key]);
 
   if (!product || !base) return null;
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (k === "price") setConfirmZero(false);
+    setF((s) => ({ ...s, [k]: e.target.value }));
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +67,8 @@ export function ProductEditDialog({
     if (f.price.trim()) {
       const p = parseMoneyToCents(f.price);
       if (Number.isNaN(p)) { toast.error(t("form.priceFormat")); return; }
+      // Setting every variation to ₪0 needs a second tap.
+      if (p === 0 && !confirmZero) { setConfirmZero(true); return; }
       if (product.variants.some((v) => v.price_cents !== p)) changes.price_cents = p;
     }
     if (f.cost.trim()) {
@@ -118,6 +125,11 @@ export function ProductEditDialog({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">{t("productEdit.note")}</p>
+          {confirmZero && (
+            <p role="alert" className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-sm text-amber-900">
+              {t("form.zeroPriceWarningAll")}
+            </p>
+          )}
           {needsApproval && (
             <div className="grid gap-1.5">
               <Label htmlFor="p-reason">{t("form.reasonForOwner")}</Label>
@@ -125,7 +137,7 @@ export function ProductEditDialog({
             </div>
           )}
           <Button type="submit" size="lg" disabled={pending || uploading}>
-            {pending ? t("common.saving") : needsApproval ? t("productEdit.saveOrRequest") : t("productEdit.saveAll")}
+            {pending ? t("common.saving") : confirmZero ? t("form.saveAtZero") : needsApproval ? t("productEdit.saveOrRequest") : t("productEdit.saveAll")}
           </Button>
         </form>
       </DialogContent>

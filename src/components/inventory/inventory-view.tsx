@@ -459,6 +459,8 @@ export function InventoryView({
         onClose={() => { setAdding(false); setEditing(null); setAddingTo(null); }}
         item={editing}
         product={addingTo}
+        siblings={editing ? items.filter((i) => i.store_id === editing.store_id && !i.archived
+          && i.name.trim().toLowerCase() === editing.name.trim().toLowerCase()) : undefined}
         stores={editableStores}
         defaultStoreId={fixedStoreId || storeId || undefined}
         needsApproval={needsApproval}

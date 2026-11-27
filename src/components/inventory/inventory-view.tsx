@@ -278,7 +278,7 @@ export function InventoryView({
             const price = p.minPrice === p.maxPrice ? formatMoney(p.minPrice) : `${formatMoney(p.minPrice)}–${formatMoney(p.maxPrice)}`;
             // One short line of colors: the first few, then "+N".
             const colors = colorSummary(p.variants);
-            const shown = colors.slice(0, 3);
+            const shown = colors.slice(0, 2);
             return (
               <li key={p.key} className="rounded-xl border bg-card">
                 <div className="flex items-start gap-3 p-3">
@@ -290,22 +290,23 @@ export function InventoryView({
                         <bdi className="truncate font-semibold">{p.name}</bdi>
                         {p.status !== "OK" && <StockBadge status={p.status} className="shrink-0" />}
                       </div>
-                      <div className="text-sm">
-                        <span className="font-semibold tabular-nums">{price}</span>
-                        <span className="ms-2 text-muted-foreground">{t("sell.inStock", { count: p.quantity })}</span>
+                      {/* Separate boxes so the price and stock count never run together in Hebrew. */}
+                      <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                        <bdi className="font-semibold tabular-nums">{price}</bdi>
+                        <bdi className="text-muted-foreground">{t("sell.inStock", { count: p.quantity })}</bdi>
+                        {p.status !== "OUT" && p.outCount > 0 && (
+                          <bdi className="text-xs font-semibold text-red-700">{t("inventory.soldOutCount", { count: p.outCount })}</bdi>
+                        )}
                       </div>
                       <div className="truncate text-xs text-muted-foreground">
                         {t("inventory.colors", { count: colors.length })} · {t("product.variationsCount", { count: p.variants.length })}
-                        {p.status !== "OUT" && p.outCount > 0 && (
-                          <span className="font-semibold text-red-700"> · {t("inventory.soldOutCount", { count: p.outCount })}</span>
-                        )}
                         {!fixedStoreId && stores.length > 1 && store ? ` · ${store.name}` : ""}
                       </div>
                       {colors.length > 1 && (
                         <div className="mt-1 flex min-w-0 gap-1 overflow-hidden">
                           {shown.map((c) => (
                             <span key={c.key} className={cn(
-                              "inline-flex min-w-0 max-w-[8rem] shrink items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-border",
+                              "inline-flex max-w-[45%] shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-border",
                               c.out ? "bg-red-50 text-red-700 line-through" : c.warn ? "bg-amber-50 text-amber-800" : "bg-background",
                             )}>
                               {!c.out && c.someOut && <span className="size-1.5 shrink-0 rounded-full bg-red-600" aria-hidden />}

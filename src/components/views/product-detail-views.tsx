@@ -372,12 +372,12 @@ export function ColorDetailView({ anchor, siblings, store, sales, movements, peo
       </Link>
 
       <div className="flex items-start gap-4">
-        <div className="relative shrink-0">
+        <div className="grid shrink-0 justify-items-center gap-1.5">
           <ItemThumb path={group?.photo ?? productPhoto} alt={`${product.name} ${colorName}`} className="size-24 sm:size-32" />
           {group && (
             <SizePhotoButton value={group.photo} fallback={productPhoto} label={colorName}
               businessId={anchor.business_id} storeId={anchor.store_id} onChange={setColorPhoto}
-              className="absolute -bottom-2 -end-2 size-10 bg-background shadow" />
+              className="size-9" />
           )}
         </div>
         <div className="grid min-w-0 gap-1">

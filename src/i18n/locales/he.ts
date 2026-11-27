@@ -82,6 +82,7 @@ const he = {
     empty: "אין עדיין מוצרים. הקישו על ״הוספת מוצר״ כדי להתחיל לבנות את המלאי.", noMatch: "אין תוצאות לסינון הזה.",
     oneSize: "מידה אחת", showVariations: "הצגת מידות וצבעים של {{name}}", hideVariations: "הסתרת מידות וצבעים של {{name}}",
     sell: "מכירה", ...pl("colors", "צבע אחד", "{{count}} צבעים", "{{count}} צבעים"),
+    ...pl("sizes", "מידה אחת", "{{count}} מידות", "{{count}} מידות"), openVariation: "פתיחת {{label}}",
     thisVariation: "הווריאציה הזו", setQuantityFor: "קביעת כמות ל-{{label}}", actionsFor: "פעולות עבור {{label}}",
     addVariation: "הוספת וריאציה", editProduct: "עריכת מוצר",
     ...pl("soldOutCount", "{{count}} אזל", "{{count}} אזלו", "{{count}} אזלו"),
@@ -252,6 +253,15 @@ const he = {
   errorPage: {
     title: "משהו השתבש", body: "זה לא עבד. הנתונים שלך בטוחים. נסו שוב, או חזרו לאפליקציה.",
     code: "קוד שגיאה: {{code}}", backToApp: "חזרה לאפליקציה",
+  },
+  variation: {
+    stock: "מלאי", more: "עוד", inStock: "במלאי", alertAt: "התראה ב-", margin: "רווחיות",
+    unitsSold: "יחידות שנמכרו", revenue: "הכנסות", lastSold: "נמכר לאחרונה", removed: "הוסר",
+    otherVariations: "כל המידות והצבעים", salesHistory: "מכירות", noSales: "עדיין אין מכירות.",
+    stockHistory: "היסטוריית מלאי", noMovements: "עדיין אין שינויים במלאי.",
+    reason_initial: "מלאי התחלתי", reason_restock: "נוסף מלאי", reason_edit: "עדכון מלאי",
+    reason_sale: "נמכר", reason_void: "מכירה בוטלה (הוחזר למלאי)",
+    notFound: "הווריאציה הזו לא קיימת או שאין לך גישה אליה.",
   },
   install: {
     bannerText: "הוסיפו את Binventory למסך הבית — היא תיפתח במסך מלא כמו אפליקציה.",

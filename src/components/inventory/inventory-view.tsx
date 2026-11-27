@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
-import { AlertTriangle, ChevronDown, MoreHorizontal, PackagePlus, Pencil, Plus, Search } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, MoreHorizontal, PackagePlus, Pencil, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -125,25 +126,26 @@ export function InventoryView({
   }, [items, storeId, category, q]);
   const restockCount = restock.reduce((n, r) => n + r.variants.length, 0);
 
-  // Group a product's (visible) variations by size, keeping size order.
-  const bySize = (variants: Item[]) => {
-    const groups: { size: string | null; variants: Item[] }[] = [];
+  // Group a product's (visible) variations by color; sizes stay in size order inside each color.
+  const byColor = (variants: Item[]) => {
+    const map = new Map<string, { color: string | null; variants: Item[] }>();
     for (const v of variants) {
-      const last = groups[groups.length - 1];
-      if (last && (last.size ?? "").toLowerCase() === (v.size ?? "").toLowerCase()) last.variants.push(v);
-      else groups.push({ size: v.size, variants: [v] });
+      const k = (v.color ?? "").trim().toLowerCase();
+      const g = map.get(k);
+      if (g) g.variants.push(v); else map.set(k, { color: v.color, variants: [v] });
     }
-    return groups;
+    return [...map.values()].sort((x, y) => (x.color ?? "").localeCompare(y.color ?? ""));
   };
+  const sameColor = (v: Item, color: string | null) => (v.color ?? "").trim().toLowerCase() === (color ?? "").trim().toLowerCase();
 
-  // A size photo is shared by every color of that size.
-  const setSizePhoto = async (p: Product, size: string | null, path: string | null) => {
-    const targets = p.variants.filter((v) => (v.size ?? "").toLowerCase() === (size ?? "").toLowerCase());
-    for (const v of targets) {
+  // A color photo is shared by every size of that color.
+  const setColorPhoto = async (p: Product, color: string | null, path: string | null) => {
+    for (const v of p.variants.filter((x) => sameColor(x, color))) {
       const res = await actions.saveItemEdit({ itemId: v.id, changes: { variant_image_path: path } });
       if (!res.ok) { toast.error(res.error); return; }
     }
-    toast.success(path ? t("inventory.sizePhotoSaved", { size: size ?? t("common.noSize") }) : t("inventory.sizePhotoRemoved", { size: size ?? t("common.noSize") }));
+    const label = color ?? t("common.noColor");
+    toast.success(path ? t("inventory.photoSaved", { label }) : t("inventory.photoRemoved", { label }));
   };
 
   // A variation photo belongs to one size + color only.
@@ -249,7 +251,7 @@ export function InventoryView({
                         <li key={v.id} className={cn("flex items-center gap-3 px-3 py-2.5", v.quantity <= 0 && "bg-red-50/60 dark:bg-red-950/20")}>
                           <ItemThumb path={v.variation_image_path ?? v.variant_image_path ?? p.image_path} alt={p.name} className="size-10" />
                           <div className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium">{variantLabel(v.size, v.color) || t("common.standard")}</span>
+                            <Link href={`/inventory/${v.id}`} className="block truncate text-sm font-medium hover:underline">{variantLabel(v.size, v.color) || t("common.standard")}</Link>
                             <span className="block text-xs text-muted-foreground">
                               {t("inventory.leftOf", { count: v.quantity, threshold: v.low_stock_threshold })}
                             </span>
@@ -303,9 +305,9 @@ export function InventoryView({
             const closed = store?.status === "closed";
             const price = p.minPrice === p.maxPrice ? formatMoney(p.minPrice) : `${formatMoney(p.minPrice)}–${formatMoney(p.maxPrice)}`;
             const isOpen = autoOpen || expanded.has(p.key);
-            // Collapsed summary: one chip per size (red = sold out, amber = running low).
-            const sizeSummary = bySize(p.variants).map((g) => ({
-              label: g.size ?? t("inventory.oneSize"),
+            // Collapsed summary: one chip per color (red = sold out, amber = running low).
+            const colorSummary = byColor(p.variants).map((g) => ({
+              label: g.color ?? t("common.noColor"),
               qty: g.variants.reduce((n, v) => n + v.quantity, 0),
               warn: g.variants.some((v) => v.stock_status !== "OK"),
               someOut: g.variants.some((v) => v.quantity <= 0),
@@ -342,12 +344,12 @@ export function InventoryView({
                     </div>
                     {!isOpen && (
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {sizeSummary.map((sz) => (
+                        {colorSummary.map((sz) => (
                           <span key={sz.label} className={cn(
                             "inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ring-1 ring-border",
                             sz.qty === 0 ? "bg-red-50 text-red-700 line-through" : sz.warn ? "bg-amber-50 text-amber-800" : "bg-background",
                           )}>
-                            {/* a red dot = some colors of this size are sold out */}
+                            {/* a red dot = some sizes of this color are sold out */}
                             {sz.qty > 0 && sz.someOut && <span className="size-1.5 rounded-full bg-red-600" aria-hidden />}
                             {sz.label}
                           </span>
@@ -366,52 +368,57 @@ export function InventoryView({
 
                 {isOpen && (<>
                 <ul className="divide-y border-t">
-                  {bySize(variants).map((g) => {
-                    const sizePhoto = p.variants.find((v) => (v.size ?? "").toLowerCase() === (g.size ?? "").toLowerCase() && v.variant_image_path)?.variant_image_path;
+                  {byColor(variants).map((g) => {
+                    const colorPhoto = p.variants.find((v) => sameColor(v, g.color) && v.variant_image_path)?.variant_image_path;
                     const total = g.variants.reduce((n, v) => n + v.quantity, 0);
                     return (
-                      <li key={g.size ?? "none"} className="bg-muted/20">
+                      <li key={g.color ?? "none"} className="bg-muted/20">
                         <div className="flex items-center gap-2.5 px-3 pt-2 pb-1">
                           {!showArchived ? (
                             <SizePhotoButton
-                              value={sizePhoto}
-                              label={`size ${g.size ?? "(no size)"}`}
+                              value={colorPhoto}
+                              label={g.color ?? t("common.noColor")}
                               businessId={p.variants[0].business_id}
                               storeId={p.store_id}
-                              onChange={(path) => setSizePhoto(p, g.size, path)}
+                              onChange={(path) => setColorPhoto(p, g.color, path)}
                               className="size-9"
                             />
                           ) : null}
-                          <span className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.size ?? t("common.noSize")}</span>
+                          <bdi className="rounded-md bg-foreground px-2 py-0.5 text-sm font-bold text-background">{g.color ?? t("common.noColor")}</bdi>
                           <span className="text-xs text-muted-foreground">
-                            {t("inventory.colors", { count: g.variants.length })} · {t("sell.inStock", { count: total })}
+                            {t("inventory.sizes", { count: g.variants.length })} · {t("sell.inStock", { count: total })}
                           </span>
                         </div>
                         <ul className="pb-1">
-                          {g.variants.map((v) => (
+                          {g.variants.map((v) => {
+                            const label = variantLabel(v.size, v.color) || t("inventory.thisVariation");
+                            return (
                             <li key={v.id} className="flex items-center gap-2 py-1 ps-3 pe-1 sm:ps-14">
                               {!showArchived && (
                                 <SizePhotoButton
                                   value={v.variation_image_path}
-                                  fallback={sizePhoto ?? p.image_path}
-                                  label={[g.size, v.color].filter(Boolean).join(" ") || t("inventory.thisVariation")}
+                                  fallback={colorPhoto ?? p.image_path}
+                                  label={label}
                                   businessId={v.business_id}
                                   storeId={v.store_id}
                                   onChange={(path) => setVariationPhoto(v, path)}
                                   className="size-9"
                                 />
                               )}
-                              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 text-sm">
-                                <span className="truncate font-medium">{v.color ?? t("common.noColor")}</span>
+                              {/* Tap the size to open this variation's own page. */}
+                              <Link href={`/inventory/${v.id}`} aria-label={t("inventory.openVariation", { label: `${p.name} ${label}` })}
+                                className="group flex min-w-0 flex-1 items-center gap-1.5 rounded-md py-1 text-sm">
+                                <span className="min-w-9 rounded border px-1.5 py-0.5 text-center font-semibold group-hover:bg-muted">{v.size ?? t("inventory.oneSize")}</span>
                                 {p.minPrice !== p.maxPrice && <span className="text-xs text-muted-foreground">{formatMoney(v.price_cents)}</span>}
-                              </div>
+                                <ChevronRight className="size-4 text-muted-foreground rtl:rotate-180" aria-hidden />
+                              </Link>
                               {showArchived ? (
                                 <span className="w-20 text-end text-sm tabular-nums">{t("common.left", { count: v.quantity })}</span>
                               ) : (
                                 <button
                                   type="button"
                                   onClick={() => setSettingQty(v)}
-                                  aria-label={t("inventory.setQuantityFor", { label: `${g.size ?? ""} ${v.color ?? ""}`.trim() })}
+                                  aria-label={t("inventory.setQuantityFor", { label })}
                                   className={cn(
                                     "h-9 min-w-20 rounded-md border bg-background px-2 text-sm font-semibold tabular-nums hover:bg-muted",
                                     v.stock_status !== "OK" && "text-orange-700", v.quantity === 0 && "text-red-700",
@@ -421,11 +428,12 @@ export function InventoryView({
                                 </button>
                               )}
                               <StockBadge status={v.stock_status} className="w-16 justify-center" />
-                              <Button variant="ghost" size="icon-lg" aria-label={t("inventory.actionsFor", { label: `${p.name} ${g.size ?? ""} ${v.color ?? ""}`.trim() })} onClick={() => setActing(v)}>
+                              <Button variant="ghost" size="icon-lg" aria-label={t("inventory.actionsFor", { label: `${p.name} ${label}` })} onClick={() => setActing(v)}>
                                 <MoreHorizontal />
                               </Button>
                             </li>
-                          ))}
+                            );
+                          })}
                         </ul>
                       </li>
                     );

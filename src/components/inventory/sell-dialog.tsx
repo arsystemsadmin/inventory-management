@@ -45,8 +45,9 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
   const colors = Array.from(new Set(variants.map((v) => v.color ?? "")));
   const pick = (size: string, color: string) => {
     const match = variants.find((v) => (v.size ?? "") === size && (v.color ?? "") === color)
-      ?? variants.find((v) => (v.size ?? "") === size)
-      ?? variants.find((v) => (v.color ?? "") === color);
+      // Color comes first: keep the color, then try the size.
+      ?? [...variants].sort((x, y) => Number(y.quantity > 0) - Number(x.quantity > 0)).find((v) => (v.color ?? "") === color)
+      ?? variants.find((v) => (v.size ?? "") === size);
     if (match) { setSelectedId(match.id); setQty(1); }
   };
 
@@ -105,32 +106,14 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
           </div>
         </DialogHeader>
 
-        {sizes.some(Boolean) && (
-          <div className="grid gap-2">
-            <div className="text-sm font-medium">{t("fields.size")}</div>
-            <div className="flex flex-wrap gap-2">
-              {sizes.map((s) => {
-                const any = variants.filter((v) => (v.size ?? "") === s);
-                const stock = any.reduce((n, v) => n + v.quantity, 0);
-                return (
-                  <button key={s || "none"} type="button" className={chip((selected.size ?? "") === s, stock === 0)}
-                    onClick={() => pick(s, selected.color ?? "")}>
-                    {s || "—"}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
         {colors.some(Boolean) && (
           <div className="grid gap-2">
             <div className="text-sm font-medium">{t("fields.color")}</div>
             <div className="flex flex-wrap gap-2">
               {colors.map((c) => {
-                const match = variants.find((v) => (v.size ?? "") === (selected.size ?? "") && (v.color ?? "") === c);
+                const stock = variants.filter((v) => (v.color ?? "") === c).reduce((n, v) => n + v.quantity, 0);
                 return (
-                  <button key={c || "none"} type="button"
-                    className={chip((selected.color ?? "") === c, !match || match.quantity === 0)}
+                  <button key={c || "none"} type="button" className={chip((selected.color ?? "") === c, stock === 0)}
                     onClick={() => pick(selected.size ?? "", c)}>
                     {c || "—"}
                   </button>
@@ -139,7 +122,23 @@ export function SellDialog({ item, variants, onClose }: { item: Item | null; var
             </div>
           </div>
         )}
-
+        {sizes.some(Boolean) && (
+          <div className="grid gap-2">
+            <div className="text-sm font-medium">{t("fields.size")}</div>
+            <div className="flex flex-wrap gap-2">
+              {sizes.map((sz) => {
+                const match = variants.find((v) => (v.color ?? "") === (selected.color ?? "") && (v.size ?? "") === sz);
+                return (
+                  <button key={sz || "none"} type="button"
+                    className={chip((selected.size ?? "") === sz, !match || match.quantity === 0)}
+                    onClick={() => pick(sz, selected.color ?? "")}>
+                    {sz || "—"}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between rounded-lg bg-muted/60 px-3 py-2 text-sm">
           <span><bdi className="font-medium">{variantLabel(selected.size, selected.color) || t("common.standard")}</bdi> · <bdi>{t("sell.inStock", { count: max })}</bdi></span>
           <StockBadge status={selected.stock_status} />

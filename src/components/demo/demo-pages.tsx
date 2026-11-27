@@ -15,6 +15,7 @@ import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import { StoreDetailView } from "@/components/views/store-detail-view";
 import { StoresView } from "@/components/views/stores-view";
 import { SettingsView } from "@/components/views/settings-view";
+import { VariationDetailView } from "@/components/views/variation-detail-view";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { setSessionUser } from "@/lib/demo/store";
@@ -247,6 +248,34 @@ export function DemoSettingsPage() {
           <LogOut /> {tClient("common.signOut")}
         </Button>
       }
+    />
+  );
+}
+
+export function DemoVariationPage({ id }: { id: string }) {
+  const { state, user } = useDemoSession();
+  const t = useT();
+  const items = visibleItems(state, user);
+  const item = items.find((i) => i.id === id);
+  if (!item) {
+    return (
+      <div className="grid gap-3 py-10 text-center text-sm text-muted-foreground">
+        <p>{t("variation.notFound")}</p>
+        <Link href="/inventory" className="underline">{t("nav.inventory")}</Link>
+      </div>
+    );
+  }
+  const key = item.name.trim().toLowerCase();
+  const store = inventoryStores(state, user).find((s) => s.id === item.store_id) ?? null;
+  return (
+    <VariationDetailView
+      item={item}
+      siblings={items.filter((i) => i.store_id === item.store_id && i.name.trim().toLowerCase() === key)}
+      store={store}
+      sales={visibleSales(state, user).filter((s) => s.item_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 200)}
+      movements={state.movements.filter((m) => m.item_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 100)}
+      peopleNames={names(state, user)}
+      role={user.role}
     />
   );
 }

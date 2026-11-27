@@ -75,6 +75,7 @@ const en = {
     empty: "No products yet. Tap “Add product” to start building this inventory.", noMatch: "Nothing matches these filters.",
     oneSize: "One size", showVariations: "Show sizes and colors for {{name}}", hideVariations: "Hide sizes and colors for {{name}}",
     sell: "Sell", colors_one: "{{count}} color", colors_other: "{{count}} colors",
+    sizes_one: "{{count}} size", sizes_other: "{{count}} sizes", openVariation: "Open {{label}}",
     thisVariation: "this variation", setQuantityFor: "Set quantity for {{label}}", actionsFor: "Actions for {{label}}",
     addVariation: "Add variation", editProduct: "Edit product",
     soldOutCount_one: "{{count}} sold out", soldOutCount_other: "{{count}} sold out",
@@ -241,6 +242,15 @@ const en = {
   errorPage: {
     title: "Something went wrong", body: "That didn't work. Your data is safe. Try again, or go back to the app.",
     code: "Error code: {{code}}", backToApp: "Back to the app",
+  },
+  variation: {
+    stock: "Stock", more: "More", inStock: "In stock", alertAt: "Alert at", margin: "Margin",
+    unitsSold: "Units sold", revenue: "Revenue", lastSold: "Last sold", removed: "Removed",
+    otherVariations: "All sizes & colors", salesHistory: "Sales", noSales: "No sales yet.",
+    stockHistory: "Stock history", noMovements: "No stock changes yet.",
+    reason_initial: "Starting stock", reason_restock: "Stock added", reason_edit: "Stock adjusted",
+    reason_sale: "Sold", reason_void: "Sale voided (returned to stock)",
+    notFound: "This variation doesn't exist or you don't have access to it.",
   },
   install: {
     bannerText: "Add Binventory to your home screen — it opens full-screen like an app.",

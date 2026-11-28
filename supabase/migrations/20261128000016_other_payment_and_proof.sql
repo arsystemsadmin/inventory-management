@@ -2,7 +2,18 @@
 -- 2) Optional proof-of-payment photo per sale, in a PRIVATE bucket.
 
 alter table public.sales drop constraint if exists payment_adds_up;
-alter table public.sales drop constraint if exists sales_payment_method_check;
+-- Drop the old payment_method check whatever it is named.
+do $$
+declare c record;
+begin
+  for c in
+    select conname from pg_constraint
+    where conrelid = 'public.sales'::regclass and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%payment_method%'
+  loop
+    execute format('alter table public.sales drop constraint %I', c.conname);
+  end loop;
+end $$;
 alter table public.sales add constraint sales_payment_method_check
   check (payment_method in ('cash', 'credit', 'split', 'other'));
 alter table public.sales

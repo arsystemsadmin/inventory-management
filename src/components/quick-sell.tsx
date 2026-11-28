@@ -14,6 +14,7 @@ import { groupProducts, type Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActiveStore } from "@/lib/active-store";
+import { usePathname } from "next/navigation";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -58,6 +59,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
   const total = cartTotal(cart);
   const units = cartUnits(cart);
   const pay = usePayment(total);
+  const pathname = usePathname();
 
   const openPicker = async (startOn: "browse" | "cart" = "browse") => {
     setOpen(true);
@@ -126,9 +128,12 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
     });
   };
 
+  // Quick setup has its own bottom save bar; selling isn't needed there.
+  const hidden = pathname.startsWith("/inventory/setup");
+
   return (
     <>
-      <button
+      {!hidden && <button
         type="button"
         onClick={() => openPicker(cart.length ? "cart" : "browse")}
         aria-label={cart.length ? t("cart.buttonWithCount", { count: units }) : t("quickSell.button")}
@@ -142,7 +147,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
         {cart.length > 0 && (
           <span className="min-w-6 rounded-full bg-white px-1.5 text-center text-sm font-bold leading-6 text-emerald-700">{units}</span>
         )}
-      </button>
+      </button>}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

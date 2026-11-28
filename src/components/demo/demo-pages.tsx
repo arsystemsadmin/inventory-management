@@ -14,6 +14,7 @@ import { SalesView } from "@/components/views/sales-view";
 import { parseSalesRange, salesRangeStart } from "@/lib/sales-range";
 import { StoreDetailView } from "@/components/views/store-detail-view";
 import { StoresView } from "@/components/views/stores-view";
+import { QuickSetupView } from "@/components/inventory/quick-setup-view";
 import { SettingsView } from "@/components/views/settings-view";
 import { ColorDetailView, ProductDetailView, type DetailProps } from "@/components/views/product-detail-views";
 import { Button } from "@/components/ui/button";
@@ -291,4 +292,11 @@ export function DemoColorPage({ id }: { id: string }) {
   const { user } = useDemoSession();
   const d = useDemoDetail(id);
   return d ? <ColorDetailView {...d} role={user.role} /> : <DemoNotFound />;
+}
+
+export function DemoQuickSetupPage() {
+  const { state, user } = useDemoSession();
+  const items = visibleItems(state, user);
+  const categories = Array.from(new Set(items.map((i) => i.category).filter(Boolean) as string[])).sort();
+  return <QuickSetupView stores={inventoryStores(state, user)} categories={categories} />;
 }

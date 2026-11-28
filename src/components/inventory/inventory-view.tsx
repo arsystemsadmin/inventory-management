@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, PackagePlus, Plus, Search } from "lucide-react";
+import { AlertTriangle, PackagePlus, Plus, Rows3, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -169,7 +169,12 @@ export function InventoryView({
           </NativeSelect>
         </div>
         {editableStores.length > 0 && (
-          <Button size="lg" onClick={() => setAdding(true)}><Plus /> {t("inventory.addProduct")}</Button>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <Button size="lg" onClick={() => setAdding(true)}><Plus /> {t("inventory.addProduct")}</Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/inventory/setup"><Rows3 /> {t("bulk.open")}</Link>
+            </Button>
+          </div>
         )}
       </div>
 

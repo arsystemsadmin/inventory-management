@@ -1,6 +1,6 @@
 "use client";
 
-import { Banknote, CreditCard, Split } from "lucide-react";
+import { Banknote, CreditCard, Split, Wallet } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
@@ -10,14 +10,18 @@ const STYLES: Record<PaymentMethod, string> = {
   cash: "border-emerald-200 bg-emerald-50 text-emerald-800",
   credit: "border-sky-200 bg-sky-50 text-sky-800",
   split: "border-violet-200 bg-violet-50 text-violet-800",
+  other: "border-amber-200 bg-amber-50 text-amber-900",
 };
-const ICONS = { cash: Banknote, credit: CreditCard, split: Split };
+const ICONS = { cash: Banknote, credit: CreditCard, split: Split, other: Wallet };
 
 /** Small badge showing how a sale was paid. Older sales without a method count as cash. */
 export function PaymentBadge({
-  method, cashCents, creditCents, showAmounts = false, className,
+  method, cashCents, creditCents, otherName, showAmounts = false, className,
 }: {
-  method?: PaymentMethod | null; cashCents?: number; creditCents?: number; showAmounts?: boolean; className?: string;
+  method?: PaymentMethod | null; cashCents?: number; creditCents?: number;
+  /** For "other": what it was (Bit, bank transfer…). */
+  otherName?: string | null;
+  showAmounts?: boolean; className?: string;
 }) {
   const t = useT();
   const m: PaymentMethod = method ?? "cash";
@@ -31,7 +35,7 @@ export function PaymentBadge({
       className={cn("inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-semibold whitespace-nowrap", STYLES[m], className)}
     >
       <Icon className="size-3" aria-hidden />
-      {t(`payment.${m}`)}
+      {m === "other" && otherName ? <bdi>{otherName}</bdi> : t(`payment.${m}`)}
       {showAmounts && detail && <span className="font-normal">· {detail}</span>}
     </span>
   );

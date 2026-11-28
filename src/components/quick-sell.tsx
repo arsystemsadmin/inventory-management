@@ -10,6 +10,7 @@ import { cartTotal, cartUnits, clearCart, onOpenCart, refreshCart, removeFromCar
 import { useActions } from "@/lib/actions-context";
 import { Button } from "@/components/ui/button";
 import { PaymentPicker, usePayment } from "@/components/sales/payment-picker";
+import { ProofField } from "@/components/sales/proof-field";
 import { groupProducts, type Product } from "@/lib/products";
 import type { Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
   const total = cartTotal(cart);
   const units = cartUnits(cart);
   const pay = usePayment(total);
+  const [proof, setProof] = useState<string | null>(null);
   const pathname = usePathname();
 
   const openPicker = async (startOn: "browse" | "cart" = "browse") => {
@@ -115,6 +117,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
       const res = await actions.sellCart({
         lines: cart.map((l) => ({ itemId: l.item.id, quantity: l.quantity })),
         payment: pay.input(),
+        proofPath: proof,
       });
       if (!res.ok) { toast.error(res.error); return; }
       const r = res.data!;
@@ -124,6 +127,7 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
       r.lines.forEach((l) => announceSale(l, method, t, true)); // low / out warnings only
       clearCart();
       pay.reset();
+      setProof(null);
       setOpen(false);
     });
   };
@@ -198,6 +202,8 @@ export function QuickSell({ load }: { load: QuickSellLoader }) {
                     <span className="text-xl font-bold tabular-nums">{formatMoney(total)}</span>
                   </div>
                   <PaymentPicker state={pay} />
+                  <ProofField value={proof} onChange={setProof} businessId={cart[0]?.item.business_id}
+                    storeId={cart[0]?.item.store_id} disabled={pending} />
                 </>
               )}
               <div className="grid gap-2">

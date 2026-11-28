@@ -151,7 +151,7 @@ export function DashboardView({
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-0.5">
                       <span className="font-semibold">{formatMoney(s.total_cents)}</span>
-                      <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} />
+                      <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} otherName={s.payment_other} />
                     </div>
                   </li>
                 ))}

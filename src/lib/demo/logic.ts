@@ -110,6 +110,7 @@ function findItem(s: DemoState, u: DemoUser, id: string) {
 
 export function sellItem(
   s: DemoState, uid: string | null, itemId: string, qty: number, at?: string, payment: PaymentInput = { method: "cash" },
+  proofPath: string | null = null,
 ): SellResult {
   const u = requireUser(s, uid);
   if (!Number.isInteger(qty) || qty <= 0 || qty > 10000) fail("INVALID_QUANTITY");
@@ -119,8 +120,13 @@ export function sellItem(
   if (s.stores.find((x) => x.id === item.store_id)?.status === "closed") fail("STORE_CLOSED");
   if (item.quantity < qty) fail("OUT_OF_STOCK", `Requested ${qty}, only ${item.quantity} left`);
   const total = qty * item.price_cents;
-  let cash = total, credit = 0;
+  let cash = total, credit = 0, other = 0;
+  const otherName = payment.other_name?.trim() || null;
   if (payment.method === "credit") { cash = 0; credit = total; }
+  else if (payment.method === "other") {
+    if (!otherName || otherName.length > 60) fail("INVALID_PAYMENT");
+    cash = 0; other = total;
+  }
   else if (payment.method === "split") {
     // Same rule as the database: both parts > 0 and they add up to the total.
     if (!payment.cash_cents || payment.cash_cents <= 0 || payment.cash_cents >= total) fail("INVALID_PAYMENT");
@@ -131,14 +137,16 @@ export function sellItem(
     id: newId(), business_id: item.business_id, store_id: item.store_id, item_id: item.id, sold_by: u.id,
     item_name: item.name, size: item.size, color: item.color, quantity: qty, unit_price_cents: item.price_cents,
     total_cents: total, created_at: at ?? nowIso(), voided_at: null, voided_by: null,
-    payment_method: payment.method, cash_cents: cash, credit_cents: credit,
+    payment_method: payment.method, cash_cents: cash, credit_cents: credit, other_cents: other,
+    payment_other: payment.method === "other" ? otherName : null, proof_path: proofPath,
   };
   s.sales.push(sale);
   moveStock(s, item, -qty, "sale", u.id, sale.id);
   return {
     sale_id: sale.id, item_id: item.id, item_name: item.name, size: item.size, color: item.color,
     quantity_sold: qty, total_cents: sale.total_cents, quantity_after: item.quantity,
-    payment_method: payment.method, cash_cents: cash, credit_cents: credit,
+    payment_method: payment.method, cash_cents: cash, credit_cents: credit, other_cents: other,
+    payment_other: payment.method === "other" ? otherName : null,
     status_before: before, status_after: stockStatus(item.quantity, item.low_stock_threshold),
   };
 }
@@ -146,6 +154,7 @@ export function sellItem(
 /** Same rules as sell_cart: all lines or none; one payment spread over the lines. */
 export function sellCart(
   s: DemoState, uid: string | null, lines: { itemId: string; quantity: number }[], payment: PaymentInput,
+  proofPath: string | null = null,
 ): CartResult {
   requireUser(s, uid);
   const merged = new Map<string, number>();
@@ -155,23 +164,34 @@ export function sellCart(
   const priceOf = (id: string) => (s.items.find((i) => i.id === id) ?? fail("ITEM_NOT_FOUND")).price_cents;
   const total = ordered.reduce((n, [id, q]) => n + q * priceOf(id), 0);
   if (payment.method === "split" && (!payment.cash_cents || payment.cash_cents <= 0 || payment.cash_cents >= total)) fail("INVALID_PAYMENT");
-  let left = payment.method === "cash" ? total : payment.method === "credit" ? 0 : payment.cash_cents!;
+  let left = payment.method === "cash" ? total : payment.method === "split" ? payment.cash_cents! : 0;
   const cartId = newId();
   const results: SellResult[] = [];
   for (const [id, q] of ordered) {
     const lt = q * priceOf(id);
-    let pay: PaymentInput = { method: payment.method };
+    let pay: PaymentInput = { method: payment.method, other_name: payment.other_name };
     if (payment.method === "split") {
       if (left >= lt) { pay = { method: "cash" }; left -= lt; }
       else if (left > 0) { pay = { method: "split", cash_cents: left }; left = 0; }
       else pay = { method: "credit" };
     }
-    const r = sellItem(s, uid, id, q, undefined, pay);
+    const r = sellItem(s, uid, id, q, undefined, pay, proofPath);
     const sale = s.sales.find((x) => x.id === r.sale_id);
     if (sale) (sale as typeof sale & { cart_id?: string }).cart_id = cartId;
     results.push(r);
   }
   return { cart_id: cartId, total_cents: total, lines: results };
+}
+
+/** Same rules as set_sale_proof: anyone who can see the store; a checkout's lines share one proof. */
+export function setSaleProof(s: DemoState, uid: string | null, saleId: string, proofPath: string | null) {
+  const u = requireUser(s, uid);
+  const sale = s.sales.find((x) => x.id === saleId && x.business_id === u.business_id) ?? fail("SALE_NOT_FOUND");
+  if (!canAccessStore(s, u, sale.store_id)) fail("SALE_NOT_FOUND");
+  const cart = (sale as typeof sale & { cart_id?: string | null }).cart_id;
+  for (const x of s.sales) {
+    if (x.id === saleId || (cart && (x as typeof x & { cart_id?: string | null }).cart_id === cart)) x.proof_path = proofPath;
+  }
 }
 
 type ItemFields = {

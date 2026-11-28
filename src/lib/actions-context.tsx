@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 import { addStock, createItem, createItems, removeItem, removeStock, restoreItem, saveItemEdit, saveProductEdit, sellCart, sellItem } from "@/app/actions/inventory";
 import { createStore, finishSetup, reopenSetup, setStoreMembers, updateStore } from "@/app/actions/stores";
-import { decideApproval, requestVoid, voidSale } from "@/app/actions/sales";
+import { decideApproval, requestVoid, setSaleProof, voidSale } from "@/app/actions/sales";
 import { createEmployee, setEmployeeActive, updateEmployee } from "@/app/actions/employees";
 import { clockIn, clockOut, deleteTimeEntry, saveTimeEntry } from "@/app/actions/time";
 import { updateMySettings } from "@/app/actions/settings";
@@ -16,7 +16,7 @@ import { safeActions } from "@/lib/safe-call";
 const rawServerActions = {
   sellItem, sellCart, createItem, createItems, saveItemEdit, saveProductEdit, addStock, removeStock, removeItem, restoreItem,
   createStore, updateStore, finishSetup, reopenSetup, setStoreMembers,
-  voidSale, requestVoid, decideApproval,
+  voidSale, requestVoid, decideApproval, setSaleProof,
   createEmployee, updateEmployee, setEmployeeActive,
   clockIn, clockOut, saveTimeEntry, deleteTimeEntry,
   updateMySettings,

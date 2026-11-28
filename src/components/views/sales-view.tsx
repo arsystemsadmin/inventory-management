@@ -6,6 +6,7 @@ import { Search, X } from "lucide-react";
 import { LocalTime } from "@/components/local-time";
 import { SaleRowActions } from "@/components/sales/sale-row-actions";
 import { PaymentBadge } from "@/components/sales/payment-badge";
+import { SaleProofButton } from "@/components/sales/sale-proof-button";
 import { SalesChart } from "@/components/sales/sales-chart";
 import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { Button } from "@/components/ui/button";
@@ -20,8 +21,9 @@ type Status = "active" | "voided" | "all";
 type Sort = "newest" | "oldest" | "highest" | "lowest";
 const PAGE = 15;
 
-const cashOf = (s: Sale) => s.cash_cents ?? (s.payment_method === "credit" ? 0 : s.total_cents);
+const cashOf = (s: Sale) => s.cash_cents ?? (s.payment_method === "credit" || s.payment_method === "other" ? 0 : s.total_cents);
 const creditOf = (s: Sale) => s.credit_cents ?? (s.payment_method === "credit" ? s.total_cents : 0);
+const otherOf = (s: Sale) => s.other_cents ?? (s.payment_method === "other" ? s.total_cents : 0);
 
 export function SalesView({
   sales, stores, peopleNames, pendingVoidIds, isOwner, range, store, asOf,
@@ -55,7 +57,7 @@ export function SalesView({
     return sales.filter((s) =>
       (!seller || s.sold_by === seller)
       && (!payment || (s.payment_method ?? "cash") === payment)
-      && (!needle || [s.item_name, s.size, s.color].some((x) => x?.toLowerCase().includes(needle))));
+      && (!needle || [s.item_name, s.size, s.color, s.payment_other].some((x) => x?.toLowerCase().includes(needle))));
   }, [sales, q, seller, payment]);
   const valid = useMemo(() => matching.filter((s) => !s.voided_at), [matching]);
   const voided = matching.filter((s) => s.voided_at);
@@ -75,6 +77,12 @@ export function SalesView({
   const units = valid.reduce((n, s) => n + s.quantity, 0);
   const cashTotal = valid.reduce((n, s) => n + cashOf(s), 0);
   const creditTotal = valid.reduce((n, s) => n + creditOf(s), 0);
+  const otherTotal = valid.reduce((n, s) => n + otherOf(s), 0);
+  // "Other" totals per method name (Bit, bank transfer…).
+  const otherByName = [...valid.filter((s) => otherOf(s) > 0).reduce((m, s) => {
+    const k = s.payment_other?.trim() || "—";
+    return m.set(k, (m.get(k) ?? 0) + otherOf(s));
+  }, new Map<string, number>())];
   const avg = valid.length ? Math.round(total / valid.length) : 0;
 
   const group = (key: (s: Sale) => string, name: (k: string, s: Sale) => string) => {
@@ -211,13 +219,14 @@ export function SalesView({
                       <div className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
                         <LocalTime iso={s.created_at} /> · {storeName.get(s.store_id)} · {peopleNames[s.sold_by] ?? "—"}
                         {s.voided_at && <span className="font-medium text-red-700">· {t("sales.voided")}</span>}
-                        <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} showAmounts className="ms-1" />
+                        <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} otherName={s.payment_other} showAmounts className="ms-1" />
                       </div>
                     </div>
                     <div className="text-end">
                       <div className="font-semibold tabular-nums">{formatMoney(s.total_cents)}</div>
                       {s.quantity > 1 && <div className="text-xs text-muted-foreground">{t("sales.each", { price: formatMoney(s.unit_price_cents) })}</div>}
                     </div>
+                    <SaleProofButton sale={s} label={label} />
                     {!s.voided_at && (
                       <SaleRowActions saleId={s.id} label={label} isOwner={isOwner} pendingRequest={pendingSet.has(s.id)} />
                     )}
@@ -246,6 +255,9 @@ export function SalesView({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
             <span className="inline-flex items-center gap-1"><PaymentBadge method="cash" /> <b className="tabular-nums">{formatMoney(cashTotal)}</b></span>
             <span className="inline-flex items-center gap-1"><PaymentBadge method="credit" /> <b className="tabular-nums">{formatMoney(creditTotal)}</b></span>
+            {otherTotal > 0 && otherByName.map(([name, cents]) => (
+              <span key={name} className="inline-flex items-center gap-1"><PaymentBadge method="other" otherName={name} /> <b className="tabular-nums">{formatMoney(cents)}</b></span>
+            ))}
             {voided.length > 0 && (
               <span className="text-muted-foreground">
                 {t("sales.voidedSummary", { count: voided.length, amount: formatMoney(voided.reduce((n, s) => n + s.total_cents, 0)) })}

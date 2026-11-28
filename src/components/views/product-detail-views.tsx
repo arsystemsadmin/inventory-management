@@ -99,7 +99,7 @@ function SalesCard({ sales, peopleNames, showVariant }: { sales: Sale[]; peopleN
                         {s.voided_at && <span className="ms-1 font-medium text-red-700">· {t("sales.voided")}</span>}
                       </div>
                     </div>
-                    <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} />
+                    <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} otherName={s.payment_other} />
                     <div className="w-20 text-end font-semibold tabular-nums">{formatMoney(s.total_cents)}</div>
                   </li>
                 );

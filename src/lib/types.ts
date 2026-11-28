@@ -49,6 +49,7 @@ export type Item = {
 
 export type Sale = {
   id: string;
+  business_id?: string;
   store_id: string;
   item_id: string;
   sold_by: string;
@@ -66,12 +67,17 @@ export type Sale = {
   credit_cents?: number;
   /** Set when the sale was one line of a multi-item checkout. */
   cart_id?: string | null;
+  other_cents?: number;
+  /** Name of the "other" payment method (Bit, PayBox, bank transfer…). */
+  payment_other?: string | null;
+  /** Optional proof-of-payment photo (private storage path, or a data URL in demo mode). */
+  proof_path?: string | null;
 };
 
-export type PaymentMethod = "cash" | "credit" | "split";
-export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "credit", "split"];
+export type PaymentMethod = "cash" | "credit" | "split" | "other";
+export const PAYMENT_METHODS: PaymentMethod[] = ["cash", "credit", "split", "other"];
 /** What the seller picked; cash_cents only matters for a split. */
-export type PaymentInput = { method: PaymentMethod; cash_cents?: number };
+export type PaymentInput = { method: PaymentMethod; cash_cents?: number; /** "other": what it was (Bit, bank transfer…) */ other_name?: string };
 
 export type SellResult = {
   sale_id: string;
@@ -84,6 +90,8 @@ export type SellResult = {
   payment_method?: PaymentMethod;
   cash_cents?: number;
   credit_cents?: number;
+  other_cents?: number;
+  payment_other?: string | null;
   quantity_after: number;
   status_before: StockStatus;
   status_after: StockStatus;

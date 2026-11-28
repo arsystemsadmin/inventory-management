@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StockBadge } from "@/components/stock-badge";
 import { PaymentPicker, usePayment } from "@/components/sales/payment-picker";
+import { ProofField } from "@/components/sales/proof-field";
 import { addToCart, openCart } from "@/lib/cart";
 import { ItemThumb } from "./item-thumb";
 import { cn } from "@/lib/utils";
@@ -53,9 +54,10 @@ export function SellDialog({
   const t = useT();
   const selectedPrice = variants.find((v) => v.id === selectedId)?.price_cents ?? item?.price_cents ?? 0;
   const pay = usePayment(qty * selectedPrice);
+  const [proof, setProof] = useState<string | null>(null);
 
   useEffect(() => {
-    if (item) { setSelectedId(item.id); setQty(1); pay.reset(); }
+    if (item) { setSelectedId(item.id); setQty(1); pay.reset(); setProof(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.id]);
 
@@ -80,7 +82,7 @@ export function SellDialog({
     if (!pay.valid) return;
     const method = pay.method;
     startTransition(async () => {
-      const res = await actions.sellItem({ itemId: selected.id, quantity: qty, payment: pay.input() });
+      const res = await actions.sellItem({ itemId: selected.id, quantity: qty, payment: pay.input(), proofPath: proof });
       if (!res.ok) { toast.error(res.error); return; }
       announceSale(res.data!, method, t);
       onClose();
@@ -177,7 +179,12 @@ export function SellDialog({
           </div>
         </div>
 
-        {mode === "sell" && <PaymentPicker state={pay} />}
+        {mode === "sell" && (
+          <>
+            <PaymentPicker state={pay} />
+            <ProofField value={proof} onChange={setProof} businessId={selected.business_id} storeId={selected.store_id} disabled={pending} />
+          </>
+        )}
 
         {mode === "sell" ? (
           <div className="grid gap-2">

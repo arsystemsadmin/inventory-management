@@ -17,6 +17,19 @@ function revalidateSales() {
   revalidatePath("/approvals");
 }
 
+/** Add, replace (path) or remove (null) a sale's proof-of-payment photo. Optional, any time. */
+async function setSaleProofImpl(input: { saleId: string; proofPath: string | null }): Promise<ActionResult> {
+  const tr = await getTr();
+  const parsed = z.object({ saleId: z.string().uuid(), proofPath: z.string().max(300).nullable() }).safeParse(input);
+  if (!parsed.success) return { ok: false, error: tr("errors.invalidSale") };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_sale_proof", { p_sale_id: parsed.data.saleId, p_proof_path: parsed.data.proofPath });
+  if (error?.code === "PGRST202") return { ok: false, error: tr("errors.paymentNeedsUpdate") };
+  if (error) return { ok: false, error: friendlyError(error, tr) };
+  revalidateSales();
+  return { ok: true, message: parsed.data.proofPath ? tr("proof.saved") : tr("proof.removed") };
+}
+
 async function voidSaleImpl(saleId: string): Promise<ActionResult> {
   const tr = await getTr();
   await requireOwner();
@@ -58,6 +71,7 @@ async function decideApprovalImpl(requestId: string, approve: boolean, note?: st
 }
 
 // Failures are recorded in the developer error log (see src/lib/error-log.ts).
+export const setSaleProof = logged("setSaleProof", setSaleProofImpl);
 export const voidSale = logged("voidSale", voidSaleImpl);
 export const requestVoid = logged("requestVoid", requestVoidImpl);
 export const decideApproval = logged("decideApproval", decideApprovalImpl);

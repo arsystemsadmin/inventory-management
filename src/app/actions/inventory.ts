@@ -8,7 +8,7 @@ import { friendlyError } from "@/lib/errors";
 import type { ActionResult, AddVariationsResult, CartLineInput, CartResult, PaymentInput, SellResult } from "@/lib/types";
 import { variantLabel } from "@/lib/format";
 
-import { cartSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
+import { cartSchema, itemFields, newItemSchema, proofPath as proofSchema, newItemsSchema, paymentSchema, qty, STORAGE_IMAGE_PATH, uuid } from "@/lib/validation";
 import { getTr } from "@/i18n/server";
 import { logged } from "@/lib/error-log";
 
@@ -30,19 +30,29 @@ async function canEditDirectly(storeId: string) {
   return !!data && data.inventory_locked_at === null;
 }
 
-async function sellItemImpl(input: { itemId: string; quantity: number; payment?: PaymentInput }): Promise<ActionResult<SellResult>> {
+async function sellItemImpl(input: {
+  itemId: string; quantity: number; payment?: PaymentInput; proofPath?: string | null;
+}): Promise<ActionResult<SellResult>> {
   const tr = await getTr();
-  const parsed = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
+  const parsed = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional(), proofPath: proofSchema }).safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
   const payment = parsed.data.payment ?? { method: "cash" as const };
+  const proof = parsed.data.proofPath ?? null;
   const supabase = await createClient();
-  let { data, error } = await supabase.rpc("sell_item", {
+  const base = {
     p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity,
     p_payment_method: payment.method, p_cash_cents: payment.method === "split" ? payment.cash_cents ?? null : null,
+  };
+  let { data, error } = await supabase.rpc("sell_item", {
+    ...base, p_payment_other: payment.method === "other" ? payment.other_name ?? null : null, p_proof_path: proof,
   });
-  // Database not migrated yet (payment-method migration 20261126000011): record the sale the old way.
+  // Database not updated yet (migration 20261128000016): the old function still records plain sales.
   if (error?.code === "PGRST202") {
-    ({ data, error } = await supabase.rpc("sell_item", { p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity }));
+    if (payment.method === "other" || proof) return { ok: false, error: tr("errors.paymentNeedsUpdate") };
+    ({ data, error } = await supabase.rpc("sell_item", base));
+    if (error?.code === "PGRST202") {
+      ({ data, error } = await supabase.rpc("sell_item", { p_item_id: parsed.data.itemId, p_qty: parsed.data.quantity }));
+    }
   }
   if (error) return { ok: false, error: friendlyError(error, tr) };
   revalidateInventory();
@@ -51,19 +61,27 @@ async function sellItemImpl(input: { itemId: string; quantity: number; payment?:
 }
 
 /** Several variations in one checkout, all or nothing (sell_cart). */
-async function sellCartImpl(input: { lines: CartLineInput[]; payment: PaymentInput }): Promise<ActionResult<CartResult>> {
+async function sellCartImpl(input: { lines: CartLineInput[]; payment: PaymentInput; proofPath?: string | null }): Promise<ActionResult<CartResult>> {
   const tr = await getTr();
   const parsed = cartSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: tr(parsed.error.issues[0].message) };
   const { lines, payment } = parsed.data;
+  const proof = parsed.data.proofPath ?? null;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("sell_cart", {
+  const base = {
     p_lines: lines.map((l) => ({ item_id: l.itemId, quantity: l.quantity })),
     p_payment_method: payment.method,
     p_cash_cents: payment.method === "split" ? payment.cash_cents ?? null : null,
+  };
+  let { data, error } = await supabase.rpc("sell_cart", {
+    ...base, p_payment_other: payment.method === "other" ? payment.other_name ?? null : null, p_proof_path: proof,
   });
-  // Database not updated yet (migration 20261127000015).
-  if (error?.code === "PGRST202") return { ok: false, error: tr("errors.cartNeedsUpdate") };
+  // Database not updated yet: migration 16 (other/proof) or 15 (carts).
+  if (error?.code === "PGRST202") {
+    if (payment.method === "other" || proof) return { ok: false, error: tr("errors.paymentNeedsUpdate") };
+    ({ data, error } = await supabase.rpc("sell_cart", base));
+    if (error?.code === "PGRST202") return { ok: false, error: tr("errors.cartNeedsUpdate") };
+  }
   if (error) return { ok: false, error: friendlyError(error, tr) };
   revalidateInventory();
   revalidatePath("/sales");

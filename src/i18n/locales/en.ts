@@ -120,6 +120,14 @@ const en = {
     pasteAdded_one: "Added {{count}} line — check the cards, then Save all.", pasteAdded_other: "Added {{count}} lines — check the cards, then Save all.",
     warn_noName: "no name", warn_noPrice: "no price", warn_noSizes: "no sizes",
   },
+  proof: {
+    title: "Proof of payment", add: "Add proof of payment (optional)", attached: "Proof attached",
+    replace: "Replace", remove: "Remove proof", uploading: "Uploading…",
+    saved: "Proof of payment saved", removed: "Proof of payment removed",
+    viewFor: "Proof of payment for {{label}}", addFor: "Add proof of payment for {{label}}",
+    wholeCart: "applies to every item in this checkout",
+    privacy: "Private: only people with access to this store can see it.",
+  },
   cart: {
     title: "Cart", note: "Check the items, choose how they're paying, then check out once.",
     browseNote: "Tap a product, pick color, size and quantity, and add it to the cart. Add as many as you like.",
@@ -145,7 +153,9 @@ const en = {
     askOwner: "Ask the owner to bring more.", outOfStock: "Out of stock", selling: "Selling…", confirm: "Confirm sale · {{label}}",
   },
   payment: {
-    method: "Payment", cash: "Cash", credit: "Credit", split: "Split",
+    method: "Payment", cash: "Cash", credit: "Credit", split: "Split", other: "Other",
+    otherName: "Payment method", otherPlaceholder: "e.g. Bit, PayBox, bank transfer",
+    otherNameRequired: "Enter the payment method's name", bankTransfer: "Bank transfer", check: "Check",
     cashAmount: "Cash amount (₪)", creditAmount: "Credit amount (₪)",
     splitMustMatch: "Cash + credit must add up to {{total}}", splitRemaining: "Still to assign: {{amount}}",
     splitOver: "Over by {{amount}}",
@@ -350,6 +360,7 @@ const en = {
   },
   errors: {
     generic: "Something went wrong. Please try again.",
+    paymentNeedsUpdate: "\"Other\" payments and proof photos need a database update. Ask the developer to run migration 16.",
     cartNeedsUpdate: "Selling several items at once needs a database update. Ask the developer to run migration 15, or sell items one by one for now.",
     cartTooBig: "A cart can have up to 50 different items. Check out and start a new one.",
     STORE_NOT_ACCESSIBLE: "You don't have access to that store.",

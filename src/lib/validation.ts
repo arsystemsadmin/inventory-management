@@ -9,14 +9,21 @@ const optText = (max: number) =>
 const cents = z.coerce.number().int().min(0).max(100_000_000);
 
 export const paymentSchema = z.object({
-  method: z.enum(["cash", "credit", "split"]),
+  method: z.enum(["cash", "credit", "split", "other"]),
   cash_cents: z.coerce.number().int().min(0).max(100_000_000).optional(),
-}).refine((p) => p.method !== "split" || (p.cash_cents ?? 0) > 0, { message: "errors.INVALID_PAYMENT" });
+  other_name: z.string().trim().max(60).optional(),
+})
+  .refine((p) => p.method !== "split" || (p.cash_cents ?? 0) > 0, { message: "errors.INVALID_PAYMENT" })
+  .refine((p) => p.method !== "other" || !!p.other_name, { message: "payment.otherNameRequired" });
+
+/** Proof-of-payment photo: a storage path (or a demo data URL). Optional everywhere. */
+export const proofPath = z.string().max(400_000).nullable().optional();
 
 /** A multi-item sale: up to 50 lines, one payment for the whole cart. */
 export const cartSchema = z.object({
   lines: z.array(z.object({ itemId: uuid, quantity: qty })).min(1, "errors.INVALID_QUANTITY").max(50, "errors.cartTooBig"),
   payment: paymentSchema,
+  proofPath,
 });
 
 export const itemFields = z.object({

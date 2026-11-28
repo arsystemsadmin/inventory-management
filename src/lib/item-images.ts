@@ -83,3 +83,39 @@ export async function uploadItemImage(
     return { ok: false, error: e instanceof Error ? e.message : tr("photo.useFailed") };
   }
 }
+
+// ---------------------------------------------------------------- proofs ---
+// Proof-of-payment photos (receipts, Bit / bank-transfer screenshots) are
+// private: stored in the "sale-proofs" bucket and only shown through
+// short-lived signed links to people with access to that store.
+const PROOF_BUCKET = "sale-proofs";
+
+export async function uploadSaleProof(
+  file: File, businessId: string, storeId: string,
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+  if (!file.type.startsWith("image/")) return { ok: false, error: tr("photo.chooseImage") };
+  if (file.size > 20 * 1024 * 1024) return { ok: false, error: tr("photo.tooLarge") };
+  try {
+    // Sharper than product photos: the text on a receipt has to stay readable.
+    if (isDemoMode) return { ok: true, path: await blobToDataUrl(await compress(file, 900, 0.75)) };
+    const blob = await compress(file, 1600, 0.85);
+    const path = `${businessId}/${storeId}/${crypto.randomUUID()}.jpg`;
+    const { error } = await createClient().storage.from(PROOF_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false });
+    if (error) {
+      void reportClientError({ action: "proof-upload", message: error.message, path: window.location.pathname,
+        details: { size: blob.size, storeId } }).catch(() => undefined);
+      return { ok: false, error: tr("photo.uploadFailed") };
+    }
+    return { ok: true, path };
+  } catch {
+    return { ok: false, error: tr("photo.processFailed") };
+  }
+}
+
+/** A link to view a proof (valid for one hour). Null if it can't be opened. */
+export async function saleProofUrl(path: string | null | undefined): Promise<string | null> {
+  if (!path) return null;
+  if (path.startsWith("data:")) return path;
+  const { data } = await createClient().storage.from(PROOF_BUCKET).createSignedUrl(path, 3600);
+  return data?.signedUrl ?? null;
+}

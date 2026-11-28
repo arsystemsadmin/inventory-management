@@ -8,7 +8,7 @@ import { tClient as tr } from "@/i18n/client";
 import type { AppActions } from "@/lib/actions-context";
 import type { ActionResult } from "@/lib/types";
 import {
-  cartSchema, settingsSchema, createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
+  cartSchema, proofPath, settingsSchema, createEmployeeSchema, itemFields, newItemSchema, newItemsSchema, paymentSchema, qty, storeSchema, storeToRow, timeEntrySchema, updateEmployeeSchema, uuid,
 } from "@/lib/validation";
 import * as L from "./logic";
 import { commit, getState, getUserId, hashPassword } from "./store";
@@ -32,14 +32,14 @@ const me = () => L.currentUser(getState(), getUserId());
 /** Same signatures as the server actions; runs the browser rules against localStorage. */
 const rawDemoActions: AppActions = {
   async sellItem(input) {
-    const p = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional() }).safeParse(input);
+    const p = z.object({ itemId: uuid, quantity: qty, payment: paymentSchema.optional(), proofPath }).safeParse(input);
     if (!p.success) return invalid(p.error);
-    return run(() => commit((s) => L.sellItem(s, getUserId(), p.data.itemId, p.data.quantity, undefined, p.data.payment)));
+    return run(() => commit((s) => L.sellItem(s, getUserId(), p.data.itemId, p.data.quantity, undefined, p.data.payment, p.data.proofPath ?? null)));
   },
   async sellCart(input) {
     const p = cartSchema.safeParse(input);
     if (!p.success) return invalid(p.error);
-    return run(() => commit((s) => L.sellCart(s, getUserId(), p.data.lines, p.data.payment)));
+    return run(() => commit((s) => L.sellCart(s, getUserId(), p.data.lines, p.data.payment, p.data.proofPath ?? null)));
   },
   async createItem(input) {
     const p = newItemSchema.safeParse(input);
@@ -158,6 +158,13 @@ const rawDemoActions: AppActions = {
     return r.ok ? { ok: true, message: r.message } : r;
   },
 
+  async setSaleProof(input) {
+    const p = z.object({ saleId: uuid, proofPath: z.string().max(400_000).nullable() }).safeParse(input);
+    if (!p.success) return invalid(p.error);
+    const r = run(() => commit((s) => L.setSaleProof(s, getUserId(), p.data.saleId, p.data.proofPath)),
+      p.data.proofPath ? tr("proof.saved") : tr("proof.removed"));
+    return r.ok ? { ok: true, message: r.message } : r;
+  },
   async voidSale(saleId) {
     const r = run(() => commit((s) => L.voidSale(s, getUserId(), saleId)), tr("toasts.saleVoided"));
     return r.ok ? { ok: true, message: r.message } : r;

@@ -90,8 +90,11 @@ const en = {
   },
   bulk: {
     open: "Quick setup", title: "Quick setup",
-    intro: "Add many products at once: one card per product, a row per color, tap sizes and type quantities. Save once at the end.",
-    cardsTab: "Product cards", pasteTab: "Paste a list",
+    intro: "Add many products and variations at once, then save everything together at the end.",
+    tableTab: "Table", cardsTab: "Cards", pasteTab: "Paste",
+    tableHelp: "One row per variation. Type quantities under each size; leave a size empty if you don't have it. Enter moves down a row.",
+    colVariation: "Variation", colPhoto: "Photo", addVariation: "Add variation", newProduct: "New product",
+    addSizeColumn: "Add a size column", removeRow: "Remove row", qtyCell: "Quantity of size {{size}} for {{row}}",
     namePlaceholder: "Product name", price: "Price", cost: "Cost", colorPlaceholder: "Color",
     productN: "Product {{n}}", colProduct: "Product",
     pcs_one: "{{count}} pc", pcs_other: "{{count}} pcs",

@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ClipboardPaste, LayoutList, Loader2, Plus, Trash2, X } from "lucide-react";
+import { ArrowLeft, ClipboardPaste, LayoutList, Loader2, Plus, Sheet, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { SizePhotoButton } from "./photo-field";
 import type { InventoryStore } from "./inventory-view";
+import { QuickSetupTable } from "./quick-setup-table";
 import { useActions } from "@/lib/actions-context";
 import { useActiveStore } from "@/lib/active-store";
 import { parseMoneyToCents } from "@/lib/format";
@@ -33,7 +34,7 @@ export function QuickSetupView({ stores, categories }: { stores: InventoryStore[
   const editable = stores.filter((s) => s.status !== "closed");
   const [storeId, setStoreId] = useState(editable.some((s) => s.id === activeStoreId) ? activeStoreId : editable[0]?.id ?? "");
   const store = editable.find((s) => s.id === storeId);
-  const [mode, setMode] = useState<"cards" | "paste">("cards");
+  const [mode, setMode] = useState<"table" | "cards" | "paste">("table");
   const [draft, setDraft] = useState<DraftProduct[]>([emptyProduct()]);
   const [loaded, setLoaded] = useState(false);
   const [showErrors, setShowErrors] = useState(false);
@@ -131,7 +132,8 @@ export function QuickSetupView({ stores, categories }: { stores: InventoryStore[
         store_id: store.id, name: p.name.trim(), category: p.category.trim(), color: c.color.trim(), size,
         sku: "", price_cents: parseMoneyToCents(p.price), cost_cents: p.cost.trim() ? parseMoneyToCents(p.cost) : 0,
         quantity: parseInt(q || "0", 10) || 0, low_stock_threshold: 1,
-        image_path: p.photo, variant_image_path: c.photo,
+        // Product photo: the card's photo, or (from the table) the first row's photo.
+        image_path: p.photo ?? p.colors.find((x) => x.photo)?.photo ?? null, variant_image_path: c.photo,
       })));
       const res = await actions.createItems(rows);
       if (res.ok) {
@@ -155,7 +157,7 @@ export function QuickSetupView({ stores, categories }: { stores: InventoryStore[
     if (!ok.length) { toast.error(t("bulk.pasteNothing")); return; }
     setDraft((d) => mergeParsed(d, ok));
     setPasteText("");
-    setMode("cards");
+    setMode("table");
     toast.success(t("bulk.pasteAdded", { count: ok.length }));
   };
 
@@ -179,18 +181,26 @@ export function QuickSetupView({ stores, categories }: { stores: InventoryStore[
         </NativeSelect>
       )}
 
-      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
-        {(["cards", "paste"] as const).map((m) => (
+      <div role="tablist" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+        {(["table", "cards", "paste"] as const).map((m) => (
           <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
             className={cn("flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
               mode === m ? "bg-background shadow-sm" : "text-muted-foreground")}>
-            {m === "cards" ? <LayoutList className="size-4" /> : <ClipboardPaste className="size-4" />}
-            {m === "cards" ? t("bulk.cardsTab") : t("bulk.pasteTab")}
+            {m === "table" ? <Sheet className="size-4" /> : m === "cards" ? <LayoutList className="size-4" /> : <ClipboardPaste className="size-4" />}
+            {m === "table" ? t("bulk.tableTab") : m === "cards" ? t("bulk.cardsTab") : t("bulk.pasteTab")}
           </button>
         ))}
       </div>
 
-      {mode === "paste" ? (
+      {mode === "table" ? (
+        <QuickSetupTable
+          draft={draft}
+          setDraft={setDraft}
+          businessId={store?.business_id}
+          storeId={storeId}
+          issuesFor={(p) => (showErrors && !isBlank(p) ? problems(p) : [])}
+        />
+      ) : mode === "paste" ? (
         <div className="grid gap-3">
           <p className="text-sm text-muted-foreground">{t("bulk.pasteHelp")}</p>
           <pre dir="ltr" className="overflow-x-auto rounded-md bg-muted px-3 py-2 text-xs">{"Polly, White, 120, S1 M2 L1\nPolly, Black, 120, S2 M3\nBeanie, Grey, 45, 10"}</pre>

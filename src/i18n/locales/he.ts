@@ -97,8 +97,11 @@ const he = {
   },
   bulk: {
     open: "הקמה מהירה", title: "הקמה מהירה",
-    intro: "הוספת הרבה מוצרים בבת אחת: כרטיס לכל מוצר, שורה לכל צבע, מקישים על מידות ומקלידים כמויות. שומרים פעם אחת בסוף.",
-    cardsTab: "כרטיסי מוצרים", pasteTab: "הדבקת רשימה",
+    intro: "הוספת הרבה מוצרים ווריאציות בבת אחת, ושמירה של הכול יחד בסוף.",
+    tableTab: "טבלה", cardsTab: "כרטיסים", pasteTab: "הדבקה",
+    tableHelp: "שורה לכל וריאציה. הקלידו כמות מתחת לכל מידה; השאירו ריק אם אין. Enter עובר לשורה הבאה.",
+    colVariation: "וריאציה", colPhoto: "תמונה", addVariation: "הוספת וריאציה", newProduct: "מוצר חדש",
+    addSizeColumn: "הוספת עמודת מידה", removeRow: "הסרת שורה", qtyCell: "כמות במידה {{size}} עבור {{row}}",
     namePlaceholder: "שם המוצר", price: "מחיר", cost: "עלות", colorPlaceholder: "צבע",
     productN: "מוצר {{n}}", colProduct: "מוצר",
     ...pl("pcs", "יחידה אחת", "{{count}} יח׳", "{{count}} יח׳"),

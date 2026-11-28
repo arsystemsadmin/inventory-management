@@ -136,9 +136,12 @@ export function ProductEditDialog({
               <Textarea id="p-reason" value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} />
             </div>
           )}
-          <Button type="submit" size="lg" disabled={pending || uploading}>
-            {pending ? t("common.saving") : confirmZero ? t("form.saveAtZero") : needsApproval ? t("productEdit.saveOrRequest") : t("productEdit.saveAll")}
-          </Button>
+          {/* Always reachable: stays at the bottom of the sheet while the fields scroll. */}
+          <div className="sticky -bottom-5 -mx-5 border-t bg-background px-5 pt-3 pb-5">
+            <Button type="submit" size="lg" className="w-full" disabled={pending || uploading}>
+              {pending ? t("common.saving") : confirmZero ? t("form.saveAtZero") : needsApproval ? t("productEdit.saveOrRequest") : t("productEdit.saveAll")}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -224,7 +224,7 @@ const he = {
     clearFilters: "ניקוי סינון",
     ...pl("voidedSummary", "מכירה מבוטלת אחת ({{amount}}) לא נספרת", "{{count}} מכירות מבוטלות ({{amount}}) לא נספרות", "{{count}} מכירות מבוטלות ({{amount}}) לא נספרות"),
     topProducts: "המוצרים המובילים", topVariations: "מידות וצבעים מובילים", bySeller: "לפי מוכר/ת", byStore: "לפי חנות",
-    allSales: "מכירות", showingOf: "מוצגות {{shown}} מתוך {{count}}", showMore: "להציג עוד",
+    allSales: "מכירות", summary: "סיכום", ...pl("countSales", "מכירה אחת", "{{count}} מכירות", "{{count}} מכירות"), overTime: "מכירות לאורך זמן", breakdowns: "מוצרים ומוכרים מובילים", showingOf: "מוצגות {{shown}} מתוך {{count}}", showMore: "להציג עוד",
     empty: "אין מכירות בתקופה הזו.", voided: "בוטלה", each: "{{price}} ליחידה",
     voidRequested: "התבקש ביטול", void: "ביטול", requestVoid: "בקשת ביטול",
     voidTitleOwner: "לבטל את המכירה?", voidTitleEmployee: "לבקש מהבעלים לבטל את המכירה?",

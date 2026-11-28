@@ -7,6 +7,7 @@ import { LocalTime } from "@/components/local-time";
 import { SaleRowActions } from "@/components/sales/sale-row-actions";
 import { PaymentBadge } from "@/components/sales/payment-badge";
 import { SalesChart } from "@/components/sales/sales-chart";
+import { CollapsibleSection } from "@/components/ui/collapsible-section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -17,7 +18,7 @@ import { useT } from "@/i18n/client";
 
 type Status = "active" | "voided" | "all";
 type Sort = "newest" | "oldest" | "highest" | "lowest";
-const PAGE = 100;
+const PAGE = 15;
 
 const cashOf = (s: Sale) => s.cash_cents ?? (s.payment_method === "credit" ? 0 : s.total_cents);
 const creditOf = (s: Sale) => s.credit_cents ?? (s.payment_method === "credit" ? s.total_cents : 0);
@@ -112,7 +113,7 @@ export function SalesView({
   const ranking = (title: string, rows: { name: string; revenue: number; units: number; count: number }[]) => {
     const top = rows[0]?.revenue ?? 0;
     return (
-      <div className="rounded-xl border bg-card p-4">
+      <div>
         <h3 className="mb-2 text-sm font-semibold">{title}</h3>
         {rows.length === 0 ? <p className="text-sm text-muted-foreground">{t("sales.empty")}</p> : (
           <ul className="grid gap-2">
@@ -134,7 +135,7 @@ export function SalesView({
   };
 
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <h1 className="text-2xl font-semibold">{t("nav.sales")}</h1>
 
       {/* Period + store (reloads) */}
@@ -156,8 +157,8 @@ export function SalesView({
       </div>
 
       {/* Refine (instant) */}
-      <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-center">
-        <div className="relative">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-[1fr_auto_auto_auto_auto] lg:items-center">
+        <div className="relative col-span-2 lg:col-span-1">
           <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("sales.searchPlaceholder")} className="ps-9" />
         </div>
@@ -187,71 +188,85 @@ export function SalesView({
         </button>
       )}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {tile(t("sales.revenue"), formatMoney(total))}
-        {tile(t("sales.units"), String(units))}
-        {tile(t("salesChart.salesCount"), String(valid.length))}
-        {tile(t("sales.avgSale"), formatMoney(avg))}
-      </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <span className="inline-flex items-center gap-1"><PaymentBadge method="cash" /> <b className="tabular-nums">{formatMoney(cashTotal)}</b></span>
-        <span className="inline-flex items-center gap-1"><PaymentBadge method="credit" /> <b className="tabular-nums">{formatMoney(creditTotal)}</b></span>
-        {voided.length > 0 && (
-          <span className="text-muted-foreground">
-            {t("sales.voidedSummary", { count: voided.length, amount: formatMoney(voided.reduce((n, s) => n + s.total_cents, 0)) })}
-          </span>
-        )}
-      </div>
-
-      <SalesChart key={range} sales={valid} range={range} asOf={asOf} />
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {ranking(t("sales.topProducts"), topProducts)}
-        {ranking(t("sales.topVariations"), topVariations)}
-        {(isOwner || bySeller.length > 1) && ranking(t("sales.bySeller"), bySeller)}
-        {byStore.length > 0 && ranking(t("sales.byStore"), byStore)}
-      </div>
-
-      <div className="flex items-baseline justify-between">
-        <h2 className="font-semibold">{t("sales.allSales")}</h2>
-        <span className="text-xs text-muted-foreground">{t("sales.showingOf", { shown: Math.min(limit, list.length), count: list.length })}</span>
-      </div>
-      {list.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground">
-          {sales.length === 0 ? t("sales.empty") : t("inventory.noMatch")}
-        </p>
-      ) : (
-        <>
-          <ul className="divide-y rounded-lg border bg-card">
-            {list.slice(0, limit).map((s) => {
-              const v = variantLabel(s.size, s.color);
-              const label = `${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}`;
-              return (
-                <li key={s.id} className="flex items-center gap-3 px-3 py-3">
-                  <div className="min-w-0 flex-1">
-                    <div className={`font-medium ${s.voided_at ? "line-through text-muted-foreground" : ""}`}>{label}</div>
-                    <div className="text-xs text-muted-foreground">
-                      <LocalTime iso={s.created_at} /> · {storeName.get(s.store_id)} · {peopleNames[s.sold_by] ?? "—"}
-                      {s.voided_at && <span className="ms-1 font-medium text-red-700">· {t("sales.voided")}</span>}
+      {/* The list comes first; the rest folds away. */}
+      <CollapsibleSection
+        storageKey="sales-list"
+        title={t("sales.allSales")}
+        summary={`${formatMoney(total)} · ${t("sales.countSales", { count: valid.length })}`}
+      >
+        {list.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            {sales.length === 0 ? t("sales.empty") : t("inventory.noMatch")}
+          </p>
+        ) : (
+          <>
+            <ul className="-mx-4 -my-3 divide-y">
+              {list.slice(0, limit).map((s) => {
+                const v = variantLabel(s.size, s.color);
+                const label = `${s.quantity} × ${s.item_name}${v ? ` (${v})` : ""}`;
+                return (
+                  <li key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className={`line-clamp-2 font-medium ${s.voided_at ? "line-through text-muted-foreground" : ""}`}>{label}</div>
+                      <div className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+                        <LocalTime iso={s.created_at} /> · {storeName.get(s.store_id)} · {peopleNames[s.sold_by] ?? "—"}
+                        {s.voided_at && <span className="font-medium text-red-700">· {t("sales.voided")}</span>}
+                        <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} showAmounts className="ms-1" />
+                      </div>
                     </div>
-                    <PaymentBadge method={s.payment_method} cashCents={s.cash_cents} creditCents={s.credit_cents} showAmounts className="mt-1" />
-                  </div>
-                  <div className="text-end">
-                    <div className="font-semibold tabular-nums">{formatMoney(s.total_cents)}</div>
-                    <div className="text-xs text-muted-foreground">{t("sales.each", { price: formatMoney(s.unit_price_cents) })}</div>
-                  </div>
-                  {!s.voided_at && (
-                    <SaleRowActions saleId={s.id} label={label} isOwner={isOwner} pendingRequest={pendingSet.has(s.id)} />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-          {list.length > limit && (
-            <Button variant="outline" onClick={() => setLimit((n) => n + PAGE)}>{t("sales.showMore")}</Button>
-          )}
-        </>
-      )}
+                    <div className="text-end">
+                      <div className="font-semibold tabular-nums">{formatMoney(s.total_cents)}</div>
+                      {s.quantity > 1 && <div className="text-xs text-muted-foreground">{t("sales.each", { price: formatMoney(s.unit_price_cents) })}</div>}
+                    </div>
+                    {!s.voided_at && (
+                      <SaleRowActions saleId={s.id} label={label} isOwner={isOwner} pendingRequest={pendingSet.has(s.id)} />
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="mt-3 flex items-center justify-between gap-2 border-t pt-3">
+              <span className="text-xs text-muted-foreground">{t("sales.showingOf", { shown: Math.min(limit, list.length), count: list.length })}</span>
+              {list.length > limit && (
+                <Button variant="outline" size="sm" onClick={() => setLimit((n) => n + PAGE)}>{t("sales.showMore")}</Button>
+              )}
+            </div>
+          </>
+        )}
+      </CollapsibleSection>
+
+      <CollapsibleSection storageKey="sales-summary" title={t("sales.summary")}>
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {tile(t("sales.revenue"), formatMoney(total))}
+            {tile(t("sales.units"), String(units))}
+            {tile(t("salesChart.salesCount"), String(valid.length))}
+            {tile(t("sales.avgSale"), formatMoney(avg))}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            <span className="inline-flex items-center gap-1"><PaymentBadge method="cash" /> <b className="tabular-nums">{formatMoney(cashTotal)}</b></span>
+            <span className="inline-flex items-center gap-1"><PaymentBadge method="credit" /> <b className="tabular-nums">{formatMoney(creditTotal)}</b></span>
+            {voided.length > 0 && (
+              <span className="text-muted-foreground">
+                {t("sales.voidedSummary", { count: voided.length, amount: formatMoney(voided.reduce((n, s) => n + s.total_cents, 0)) })}
+              </span>
+            )}
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      <CollapsibleSection storageKey="sales-chart" title={t("sales.overTime")}>
+        <SalesChart key={range} sales={valid} range={range} asOf={asOf} />
+      </CollapsibleSection>
+
+      <CollapsibleSection storageKey="sales-breakdowns" title={t("sales.breakdowns")} defaultOpen={false}>
+        <div className="grid gap-5 md:grid-cols-2">
+          {ranking(t("sales.topProducts"), topProducts)}
+          {ranking(t("sales.topVariations"), topVariations)}
+          {(isOwner || bySeller.length > 1) && ranking(t("sales.bySeller"), bySeller)}
+          {byStore.length > 0 && ranking(t("sales.byStore"), byStore)}
+        </div>
+      </CollapsibleSection>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, Table2 } from "lucide-react";
+import { LineChart, Table2 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { bucketsFor, bucketStart, defaultBucket, nextBucket, salesRangeStart, type SalesBucket, type SalesRange } from "@/lib/sales-range";
 import type { Sale } from "@/lib/types";
@@ -70,14 +70,14 @@ export function SalesChart({ sales, range, asOf }: { sales: Sale[]; range: Sales
   );
 
   return (
-    <section className="grid gap-3 rounded-xl border bg-card p-4">
+    <section className="grid gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="me-auto font-semibold">{t(`salesChart.title_${metric}`)}</h2>
+        <span className="me-auto" />
         {seg(metric, [["revenue", t("sales.revenue")], ["units", t("sales.units")], ["count", t("salesChart.salesCount")]], (v) => setMetric(v as Metric), t("salesChart.metric"))}
         {options.length > 1 && seg(bucket, options.map((b) => [b, t(`salesChart.by_${b}`)]), (v) => setChosen(v as SalesBucket), t("salesChart.groupBy"))}
         <button type="button" onClick={() => setAsTable((v) => !v)} aria-pressed={asTable}
           className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
-          {asTable ? <BarChart3 className="size-3.5" /> : <Table2 className="size-3.5" />}
+          {asTable ? <LineChart className="size-3.5" /> : <Table2 className="size-3.5" />}
           {asTable ? t("salesChart.showChart") : t("salesChart.showTable")}
         </button>
       </div>
@@ -123,36 +123,49 @@ export function SalesChart({ sales, range, asOf }: { sales: Sale[]; range: Sales
             <div className="pointer-events-none absolute inset-x-0 top-0 border-t border-dashed border-border" />
             <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-border" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 border-t border-border" />
-            <div className="absolute inset-0 flex items-end gap-[2px]">
-              {bars.map((b, i) => {
-                const v = value(b);
-                const h = max > 0 ? (v / max) * 100 : 0;
-                return (
-                  <button
-                    key={b.start.getTime()}
-                    type="button"
-                    aria-label={`${label(b.start, true)}: ${fmt(v)}`}
-                    onMouseEnter={() => setActive(i)}
-                    onFocus={() => setActive(i)}
-                    onBlur={() => setActive(null)}
-                    onClick={() => setActive(active === i ? null : i)}
-                    className="group flex h-full min-w-0 flex-1 items-end"
-                  >
-                    <span
-                      className={cn(
-                        "block w-full rounded-t-[4px] bg-emerald-600 transition-opacity dark:bg-emerald-400",
-                        v > 0 && "min-h-[2px]",
-                        active !== null && active !== i && "opacity-40",
-                      )}
-                      style={{ height: `${h}%` }}
-                    />
-                  </button>
-                );
-              })}
+            {/* Line + light area. Points sit in the middle of each period's column. */}
+            {(() => {
+              const n = Math.max(1, bars.length);
+              const pts = bars.map((b, i) => ({ x: i + 0.5, y: max > 0 ? 100 - (value(b) / max) * 100 : 100 }));
+              const line = pts.map((p, i) => `${i ? "L" : "M"}${p.x},${p.y}`).join(" ");
+              const area = pts.length ? `${line} L${pts[pts.length - 1].x},100 L${pts[0].x},100 Z` : "";
+              const a = active !== null ? pts[active] : null;
+              return (
+                <>
+                  <svg viewBox={`0 0 ${n} 100`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden>
+                    <path d={area} className="fill-emerald-600/10 dark:fill-emerald-400/15" />
+                    {a && <line x1={a.x} x2={a.x} y1={0} y2={100} className="stroke-border" strokeWidth={1} vectorEffect="non-scaling-stroke" />}
+                    <path d={line} fill="none" className="stroke-emerald-600 dark:stroke-emerald-400" strokeWidth={2}
+                      strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+                  </svg>
+                  {/* Dots as HTML so they stay round at any width; all shown when there are few points. */}
+                  {pts.map((p, i) => (bars.length <= 31 || i === active) && (
+                    <span key={i} aria-hidden
+                      className={cn("pointer-events-none absolute size-2 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-emerald-600 bg-background dark:border-emerald-400",
+                        i === active && "size-3 bg-emerald-600 dark:bg-emerald-400")}
+                      style={{ left: `${(p.x / n) * 100}%`, bottom: `${100 - p.y}%` }} />
+                  ))}
+                </>
+              );
+            })()}
+            {/* Hit areas: one per period, bigger than the dot. */}
+            <div className="absolute inset-0 flex">
+              {bars.map((b, i) => (
+                <button
+                  key={b.start.getTime()}
+                  type="button"
+                  aria-label={`${label(b.start, true)}: ${fmt(value(b))}`}
+                  onMouseEnter={() => setActive(i)}
+                  onFocus={() => setActive(i)}
+                  onBlur={() => setActive(null)}
+                  onClick={() => setActive(active === i ? null : i)}
+                  className="h-full min-w-0 flex-1"
+                />
+              ))}
             </div>
           </div>
           <div />
-          <div className="flex gap-[2px] pt-1 text-[10px] text-muted-foreground">
+          <div className="flex pt-1 text-[10px] text-muted-foreground">
             {bars.map((b, i) => (
               <span key={b.start.getTime()} className="min-w-0 flex-1 overflow-visible whitespace-nowrap text-center">
                 {i % every === 0 ? label(b.start) : ""}

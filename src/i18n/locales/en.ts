@@ -215,7 +215,7 @@ const en = {
     clearFilters: "Clear filters",
     voidedSummary_one: "{{count}} voided sale ({{amount}}) not counted", voidedSummary_other: "{{count}} voided sales ({{amount}}) not counted",
     topProducts: "Top products", topVariations: "Top sizes & colors", bySeller: "By seller", byStore: "By store",
-    allSales: "Sales", showingOf: "Showing {{shown}} of {{count}}", showMore: "Show more",
+    allSales: "Sales", summary: "Summary", countSales_one: "{{count}} sale", countSales_other: "{{count}} sales", overTime: "Sales over time", breakdowns: "Top products & sellers", showingOf: "Showing {{shown}} of {{count}}", showMore: "Show more",
     empty: "No sales in this period.", voided: "Voided", each: "{{price}} each",
     voidRequested: "Void requested", void: "Void", requestVoid: "Request void",
     voidTitleOwner: "Void this sale?", voidTitleEmployee: "Ask the owner to void this sale?",
